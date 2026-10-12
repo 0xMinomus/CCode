@@ -1,0 +1,12 @@
+# Machine-readable HARD deps, for scripts/run-python.sh auto-provisioning only.
+#
+# requirements.txt is the human-facing full set (and documents the system packages
+# pip cannot install). It is NOT usable for auto-install: it also lists optional
+# backends and pytest, so installing it would pull ~200MB of onnxruntime on first
+# MCP start. This file is the minimum that makes `import server` succeed.
+#
+# The launcher installs these into a `--system-site-packages` venv — that flag is
+# load-bearing, since PyGObject `gi` / GStreamer / PipeWire are system packages a
+# plain venv would hide.
+numpy>=1.26
+Pillow>=10.0

@@ -1,0 +1,19 @@
+# Full RUNTIME pip layer — what scripts/run-python.sh auto-provisions by default.
+#
+# Everything screen-mcp can use at runtime, minus test-only deps. Compatibility is the
+# priority over install size, so the heavy grounding backends are included rather than
+# left as a manual step: users kept hitting a server that started but had no OCR/icon
+# detection, which looks like a broken tool rather than a missing extra.
+#
+# glibc (manylinux) only by design — measured 2026-07-25: onnxruntime publishes NO musl
+# wheel, so an Alpine/musl build silently loses OmniParser grounding entirely. numpy and
+# Pillow do have musl wheels; onnxruntime is the wall. Do not "simplify" this to Alpine.
+-r requirements-core.txt
+opencv-python-headless>=4.8   # INTER_AREA downscale (15x faster than PIL) + OmniParser NMS
+onnxruntime>=1.18             # OmniParser icon_detect (CPU-only, YOLOv8 ONNX)
+rapidocr>=3.9.2                 # OCR backend (import is `from rapidocr import RapidOCR`)
+# evdev is deliberately NOT here. It has no wheel: it compiles against kernel headers
+# (linux/input.h) and hard-fails where they are absent, which sank the ENTIRE install --
+# one unbuildable dep took opencv, onnxruntime and rapidocr down with it (measured in a
+# clean container). run-python.sh installs it separately, best-effort, preferring the
+# prebuilt `evdev-binary`. The uinput backend is optional; the portal path still works.

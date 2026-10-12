@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# screen-mcp launcher. Prefers plugin .venv (deps) via run-python.sh, then
+# system/Homebrew Python. Fails fast if numpy/Pillow are missing.
+set -euo pipefail
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+RUNNER="${ROOT}/scripts/run-python.sh"
+
+if [ ! -f "$RUNNER" ]; then
+  echo "screen-mcp: run-python.sh missing at $RUNNER" >&2
+  exit 1
+fi
+
+if ! bash "$RUNNER" -c "import numpy, PIL" >/dev/null 2>&1; then
+  echo "screen-mcp: required Python deps missing (numpy, Pillow). One-time setup:" >&2
+  echo "  cd \"$ROOT\" && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt" >&2
+  echo "  (plus system packages in the README: GStreamer>=1.28, PipeWire, PyGObject, xdg-desktop-portal-gnome, wl-clipboard)" >&2
+  echo "  Override interpreter: EIGHTYEIGHT_PYTHON=/path/to/python or SCREEN_PYTHON=..." >&2
+  exit 1
+fi
+
+exec bash "$RUNNER" "$ROOT/server.py"

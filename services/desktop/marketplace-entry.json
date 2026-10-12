@@ -1,0 +1,20 @@
+{
+  "name": "screen-mcp",
+  "source": {
+    "source": "url",
+    "url": "https://github.com/88plug/screen-mcp.git"
+  },
+  "description": "Eyes and hands on a Linux Wayland desktop: screenshot, click, type, scroll, drag, read — plus screen_watch (~1 fps human-eye) to catch thrashing UIs. Pure-Python, CPU-only. GNOME/Wayland. drive-screen skill: locate → ground → act → confirm/watch.",
+  "category": "productivity",
+  "tags": [
+    "type:mcp",
+    "wayland",
+    "gnome",
+    "screenshot",
+    "desktop-automation",
+    "ocr",
+    "pipewire",
+    "portal"
+  ],
+  "homepage": "https://github.com/88plug/screen-mcp"
+}

@@ -1,0 +1,26 @@
+{
+  "include": [
+    "autoloop.py",
+    "awareness.py",
+    "capture.py",
+    "grounding.py",
+    "input.py",
+    "prereqs.py",
+    "recorder.py",
+    "reliability.py",
+    "sense.py",
+    "server.py",
+    "state.py",
+    "uinput_backend.py",
+    "version.py",
+    "worldmodel.py",
+    "tests",
+    ".ci"
+  ],
+  "exclude": ["**/__pycache__", ".venv", "site", ".ruff_cache", "models"],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "stubPath": "typings",
+  "reportMissingImports": true,
+  "reportMissingModuleSource": "none"
+}

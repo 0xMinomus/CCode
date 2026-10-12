@@ -1,0 +1,11 @@
+{
+  "name": "zcode-on-steroids",
+  "private": true,
+  "type": "module",
+  "description": "Local ZCode Electron patch workspace for Fedora",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "test": "python3 scripts/check.py",
+    "apply": "python3 scripts/apply_build.py"
+  }
+}

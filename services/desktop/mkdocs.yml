@@ -1,0 +1,54 @@
+site_name: screen-mcp
+site_description: 'Linux Wayland computer-use MCP for Claude Code and Grok — screenshot, click, type, scroll, drag, read any desktop app.'
+site_url: https://88plug.github.io/screen-mcp/
+repo_url: https://github.com/88plug/screen-mcp
+repo_name: 88plug/screen-mcp
+edit_uri: edit/main/docs/
+use_directory_urls: true
+strict: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - content.code.copy
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Overview: index.md
+  - Install & prerequisites: install.md
+  - Tool loop: tool-loop.md
+  - Tools: tools.md
+  - Guards (HIL): guards.md
+  - Pairing with os-control: pairing.md
+  - Configuration: configuration.md
+  - Grounding research: v1.1-grounding-research.md

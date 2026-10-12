@@ -1,0 +1,47 @@
+# Packaged app, pinned baselines, and vendor Git metadata stay local.
+/app/
+/baselines/
+/runtime/
+/vendor-metadata/
+
+# Local search index, caches, and build leftovers.
+.code-graph/
+**/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Obsidian editor state: this project folder doubles as a vault, and workspace
+# state is per-machine.
+.obsidian/
+
+# Local models, sync state, and captured media.
+/services/voice/model/
+/services/model-sync/catalog.json
+/services/model-sync/state.json
+/services/model-sync/sync.lock
+/services/model-sync/backups/
+/services/desktop/models/
+*.wav
+*.webm
+*.log
+
+# Private runtime data: never commit credentials, task databases, or snapshots.
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.pem
+*.key
+credentials.json
+provider_config.json
+*.backup
+.DS_Store
+
+# Obsidian scratch canvases created by a stray click.
+Untitled*.canvas

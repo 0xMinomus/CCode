@@ -1,0 +1,49 @@
+[project]
+name = "screen-mcp"
+# Placeholder ONLY. The shipped version is rolling calver from version.py ->
+# server.__version__; the 88plug hub computes YEAR.MONTH.<commit-count>. Nothing reads this
+# value — it exists because [project] requires it and because declaring dependencies here
+# is what lets `uv sync` / `pip install .` replace 200 lines of bootstrap bash.
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "Pillow>=10.0",
+    "opencv-python-headless>=4.8",
+    "onnxruntime>=1.18",
+    "rapidocr>=3.9.2",   # PP-OCRv6 TINY first appears here; see grounding._v6_tiny_params
+    # X11 capture fallback. Pure-ctypes XCB (py3-none-any wheel, no compilation, no runtime
+    # pip deps). Load-bearing on X11: it reads XRandR in-process, so per-monitor geometry
+    # works with NO xrandr/xdpyinfo binaries — both of which are absent on a normal desktop,
+    # which is why the shell-out version reported zero monitors on a two-monitor box.
+    "mss>=10.2",
+]
+
+[project.optional-dependencies]
+# evdev has NO wheels (0 on PyPI); evdev-binary ships 14. Building evdev needs kernel
+# headers, and its failure previously sank the entire install.
+uinput = ["evdev-binary>=1.9"]
+
+[tool.uv]
+package = false
+# rapidocr depends on opencv-python (GL-linked), so cv2 died with "libGL.so.1: cannot open
+# shared object file" on headless hosts. The previous fix force-reinstalled headless AFTER
+# the fact, which trips pip #13763: verified here that it leaves BOTH
+# opencv_python-*.dist-info AND opencv_python_headless-*.dist-info plus both .libs trees on
+# disk, so which .so wins is undefined. This override prevents opencv-python being resolved
+# at all — verified: only opencv_python_headless remains, and cv2 imports.
+override-dependencies = ["opencv-python; sys_platform == 'never'"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Flat layout with no package dir: without this, `pip install .` fails auto-discovery.
+py-modules = []
+
+[tool.pytest.ini_options]
+# Run from repo root: `pytest`. tests/ imports project modules at the top level
+# (sense, grounding, input, recorder), so the project root must be on PYTHONPATH.
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "screen-mcp",
+  "displayName": "screen-mcp",
+  "description": "Eyes and hands on a Linux Wayland desktop: screenshot any monitor and click, type, scroll, drag, and read any visible app over xdg-desktop-portal (RemoteDesktop + ScreenCast), with optional OCR + OmniParser icon grounding. Includes screen_watch (~1 fps human-eye observe) so agents catch thrashing UIs like people do. Pure-Python, CPU-only. GNOME/Wayland only. Ships the MCP server plus a drive-screen skill (locate-ground-act-confirm/watch).",
+  "author": {
+    "name": "88plug",
+    "email": "andrew@88plug.com"
+  },
+  "homepage": "https://github.com/88plug/screen-mcp",
+  "repository": "https://github.com/88plug/screen-mcp.git",
+  "license": "FSL-1.1-ALv2",
+  "keywords": [
+    "claude-code",
+    "claude",
+    "anthropic",
+    "ai",
+    "llm",
+    "ai-agents",
+    "developer-tools",
+    "productivity",
+    "automation",
+    "cli",
+    "claude-code-plugin",
+    "claude-skills",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "wayland",
+    "gnome",
+    "screenshot",
+    "desktop-automation",
+    "ocr"
+  ],
+  "mcpServers": {
+    "screen": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/screen-mcp"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "uuid": "window-info@local",
+  "name": "Window Info D-Bus",
+  "description": "Exposes focused-window, window-list and monitor geometry over D-Bus for mcp-screen awareness.",
+  "shell-version": ["50"],
+  "version": 1
+}

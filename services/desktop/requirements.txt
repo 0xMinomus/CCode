@@ -1,0 +1,48 @@
+# mcp-screen v0.9 — Python dependencies.
+#
+# REQUIRED — the core server (capture + input + recorder + sense + worldmodel) will
+# not function without these.
+numpy>=1.26
+Pillow>=10.0
+
+# OPTIONAL — grounding (annotate=true / Set-of-Marks). Each backend is imported in
+# its own try/except; the server runs without them but annotate=true returns the
+# image unchanged with an empty element list.
+rapidocr>=3.9.2               # text OCR backend. The code does `from rapidocr import RapidOCR`,
+                            # which rapidocr-onnxruntime does NOT provide (it ships
+                            # `rapidocr_onnxruntime`) — installing that one yields NO OCR.
+onnxruntime>=1.18           # OmniParser icon_detect (CPU-only, YOLOv8 ONNX)
+opencv-python-headless>=4.8 # letterbox/NMS for OmniParser, classical CV fallback, and the INTER_AREA screenshot downscale (15x faster than PIL LANCZOS)
+
+# DEV — test runner. The conftest stubs heavy modules so tests run without a live
+# D-Bus session; install just this to run `pytest -q`.
+pytest>=8.0
+
+# ---------------------------------------------------------------------------
+# SYSTEM DEPENDENCIES (NOT installable via pip — install via the OS package manager)
+# ---------------------------------------------------------------------------
+#  * python-gobject + gobject-introspection   # PyGObject (gi.repository.GLib / Gio / Gst)
+#  * gstreamer + gst-plugins-base + gst-plugins-good + gst-libav   # >= 1.28 (uses 1.28's leaky-type;
+#                                                                  #   the older drop= prop was removed)
+#  * pipewire + pipewire-pulse + xdg-desktop-portal-gnome (Wayland + GNOME)
+#  * wl-clipboard                              # wl-copy / wl-paste — needed for type_text Unicode paste
+#  * ttf-dejavu (or any DejaVuSans-Bold)       # Set-of-Marks label font (falls back to PIL default)
+#  * GNOME Shell + a Wayland session           # AT-SPI fallback covers GTK; full window awareness wants
+#                                              #   the bundled GNOME Shell extension (see gnome-shell-extension/)
+#
+# Arch / pacman:
+#   sudo pacman -S python-gobject gobject-introspection \
+#                  gstreamer gst-plugins-base gst-plugins-good gst-libav \
+#                  pipewire pipewire-pulse xdg-desktop-portal-gnome \
+#                  wl-clipboard ttf-dejavu
+#
+# Debian / Ubuntu:
+#   sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
+#                    gstreamer1.0-tools gstreamer1.0-plugins-base \
+#                    gstreamer1.0-plugins-good gstreamer1.0-libav \
+#                    pipewire xdg-desktop-portal-gnome \
+#                    wl-clipboard fonts-dejavu-core
+#
+# Models: the OmniParser ONNX (~11.6MB) is bundled at models/onnx/model.onnx.
+# RapidOCR downloads its detection + recognition models on first use into ~/.cache/.
+evdev>=1.6          # kernel-level uinput input backend (absolute pointer + hi-res wheel + keys)

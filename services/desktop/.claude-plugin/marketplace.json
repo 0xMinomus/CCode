@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "screen-mcp",
+  "description": "Eyes and hands on a Linux Wayland desktop over xdg-desktop-portal — screenshot, click, type, scroll, drag, read.",
+  "owner": {
+    "name": "88plug",
+    "email": "andrew@88plug.com"
+  },
+  "plugins": [
+    {
+      "name": "screen-mcp",
+      "source": ".",
+      "displayName": "screen-mcp",
+      "description": "MCP server (+ drive-screen skill) that gives Claude eyes and hands on a Linux Wayland desktop: screenshot any monitor and click/type/scroll/drag/read any visible app over xdg-desktop-portal, with optional OCR + icon grounding. Pure-Python, CPU-only. GNOME/Wayland only.",
+      "author": { "name": "88plug", "email": "andrew@88plug.com" },
+      "homepage": "https://github.com/88plug/screen-mcp",
+      "license": "FSL-1.1-ALv2",
+      "category": "productivity",
+      "tags": ["type:mcp", "wayland", "gnome", "screenshot", "desktop-automation", "ocr", "portal"]
+    }
+  ]
+}
