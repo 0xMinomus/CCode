@@ -1,11 +1,13 @@
-.PHONY: build test check apply run install dry-run models obsidian obsidian-check
+.PHONY: build test check apply run install dry-run models icons obsidian obsidian-check
 # Standalone namespace the model sync reads and writes; override with
 # `make models STANDALONE_ROOT=/path` when testing against another root.
-STANDALONE_ROOT ?= $(HOME)/.local/share/zcode-on-steroids
+STANDALONE_ROOT ?= $(HOME)/.local/share/ccode
 build:
 	python3 scripts/build.py
 test check:
 	python3 scripts/check.py
+icons:
+	python3 scripts/make_icons.py
 apply:
 	python3 scripts/apply_build.py
 run:

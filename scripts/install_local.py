@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Install standalone integration without changing upstream launchers or user data."""
+"""Install the CCode standalone integration without touching upstream launchers or data."""
 import argparse
 import copy
 import datetime
@@ -8,13 +8,22 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import urllib.parse
 
-from data_backup import assert_offline, atomic_json, namespace_lock, namespace_root, private_dir, safe_path
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'src'))
+from local_only import branding
+
+from data_backup import (DEFAULT_LEGACY_ROOT, assert_offline, atomic_json, namespace_lock, namespace_root,
+                         private_dir, safe_path)
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 HOME = pathlib.Path.home()
-UNIT_NAME = 'zcode-on-steroids-model-sync'
+UNIT_NAME = 'ccode-model-sync'
+LAUNCHER_NAME = 'ccode.desktop'
+LEGACY_UNIT_NAME = 'zcode-on-steroids-model-sync'
+LEGACY_LAUNCHER_NAME = 'zcode-on-steroids.desktop'
+WINDOW_CLASS = 'ccode'
 
 
 def import_personal_provider(path):
@@ -171,6 +180,48 @@ def write_integration(path, text, namespace):
     os.replace(temporary, path)
 
 
+def install_icons():
+    """Install the CCode launcher icon into the user's hicolor theme."""
+    theme = HOME / '.local/share/icons/hicolor'
+    written = []
+    for size in branding.LOCAL_ICON_SIZES:
+        destination = theme / f'{size}x{size}/apps/ccode.png'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(branding.ICON_DIR / f'ccode-{size}.png', destination)
+        written.append(destination)
+    scalable = theme / 'scalable/apps/ccode.svg'
+    scalable.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(branding.LOGO_SOURCE, scalable)
+    written.append(scalable)
+    return written
+
+
+def migrate_namespace(namespace):
+    """Move the ZCode-era namespace to the CCode path once, before anything is written."""
+    legacy = pathlib.Path(DEFAULT_LEGACY_ROOT)
+    if pathlib.Path(namespace) != namespace_root() or not legacy.exists() or namespace.exists():
+        return None
+    assert_offline(legacy)
+    os.rename(legacy, namespace)
+    return legacy
+
+
+def remove_legacy_integration(applications, units, namespace):
+    """Retire the ZCode-era launcher and timer so nothing keeps using the old namespace."""
+    for name in (LEGACY_UNIT_NAME + '.timer', LEGACY_UNIT_NAME + '.path'):
+        subprocess.run(['systemctl', '--user', 'disable', '--now', name], check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    removed = []
+    for path in (units / (LEGACY_UNIT_NAME + '.service'), units / (LEGACY_UNIT_NAME + '.timer'),
+                 units / (LEGACY_UNIT_NAME + '.path'), applications / LEGACY_LAUNCHER_NAME):
+        if not path.exists():
+            continue
+        backup_integration(path, namespace)
+        path.unlink()
+        removed.append(path)
+    return removed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dry-run', action='store_true')
@@ -188,9 +239,9 @@ def main():
             raise ValueError('Standalone provider config already exists; import refused')
         applications = safe_path(HOME / '.local/share/applications')
         units = safe_path(HOME / '.config/systemd/user')
-        launcher = applications / 'zcode-on-steroids.desktop'
+        launcher = applications / LAUNCHER_NAME
         command = '/usr/bin/env ' + quote_desktop('ZCODE_STANDALONE_ROOT=' + str(namespace)) + ' ' + quote_desktop(ROOT / 'scripts/run.sh')
-        desktop = '[Desktop Entry]\nName=ZCode on Steroids\nExec=' + command + ' %U\nTerminal=false\nType=Application\nIcon=zcode\nCategories=Development;\nStartupWMClass=zcode-on-steroids\n'
+        desktop = '[Desktop Entry]\nName=CCode\nExec=' + command + ' %U\nTerminal=false\nType=Application\nIcon=ccode\nCategories=Development;\nStartupWMClass=' + WINDOW_CLASS + '\n'
         service = '[Unit]\nDescription=Sync standalone personal model metadata\n\n[Service]\nType=oneshot\nUMask=0077\nExecStart=/usr/bin/python3 ' + quote_unit(ROOT / 'services/model-sync/sync.py') + '\nWorkingDirectory=' + unit_path(ROOT / 'services/model-sync') + '\n'
         for name, value in {'ZCODE_STANDALONE_ROOT': namespace, 'ZCODE_MODEL_SYNC_CONFIG': provider,
                             'ZCODE_MODEL_SYNC_STATE': namespace / 'model-sync', 'PYTHONUNBUFFERED': '1'}.items():
@@ -207,12 +258,23 @@ def main():
         print('Standalone namespace:', namespace)
         print('MCP config:', config)
         print('Desktop launcher:', launcher)
+        print('Icon theme:', HOME / '.local/share/icons/hicolor')
         print('Timer:', UNIT_NAME + '.timer')
         print('Path unit:', UNIT_NAME + '.path')
+        legacy = pathlib.Path(DEFAULT_LEGACY_ROOT)
+        migrating = pathlib.Path(namespace) == namespace_root() and legacy.exists() and not namespace.exists()
+        if migrating:
+            print('Data migration:', legacy, '->', namespace)
         if args.dry_run:
             return
         with namespace_lock(namespace):
             assert_offline(namespace)
+            migrated = migrate_namespace(namespace)
+            if migrated is not None:
+                print('Migrated standalone data:', migrated, '->', namespace)
+            retired = remove_legacy_integration(applications, units, namespace)
+            if retired:
+                print('Retired old integration:', *[str(path) for path in retired], sep='\n  ')
             private_dir(namespace)
             private_dir(namespace / 'electron')
             private_dir(namespace / 'model-sync')
@@ -247,12 +309,14 @@ def main():
             write_integration(units / (UNIT_NAME + '.service'), service, namespace)
             write_integration(units / (UNIT_NAME + '.timer'), timer, namespace)
             write_integration(units / (UNIT_NAME + '.path'), path_unit, namespace)
+            icons = install_icons()
         subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
         subprocess.run(['systemctl', '--user', 'enable', '--now', UNIT_NAME + '.timer'], check=True)
         subprocess.run(['systemctl', '--user', 'enable', '--now', UNIT_NAME + '.path'], check=True)
         if shutil.which('update-desktop-database'):
             subprocess.run(['update-desktop-database', str(applications)], check=True)
-        print('Standalone integration installed. Original launchers, timer, and data were not changed.')
+        print('Standalone integration installed:', len(icons), 'icon files, launcher, timer, and data root are CCode.')
+        print('The upstream ZCode launchers and the old ~/.zcode data were not changed.')
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'{type(error).__name__}: {error}\n')
 

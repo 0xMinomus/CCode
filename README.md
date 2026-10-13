@@ -1,12 +1,12 @@
-# ZCode on Steroids
+# CCode
 
-Workspace modifikasi lokal ZCode **3.14.5** untuk Fedora: aplikasi berjalan sebagai **varian mandiri tanpa akun ZCode**, dengan Computer Use melalui MCP, reasoning model Vansrouter, serta voice command lokal dengan ucapan Indonesia–English.
+Branding **CCode** untuk workspace modifikasi lokal ZCode **3.14.5** di Fedora: aplikasi berjalan sebagai **varian mandiri tanpa akun ZCode**, dengan Computer Use melalui MCP, reasoning model Vansrouter, serta voice command lokal dengan ucapan Indonesia–English. Nama produk, judul window, launcher, ikon, dan onboarding memakai CCode; akar datanya `~/.local/share/ccode`.
 
 Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh source tree upstream ZCode. Source modifikasi, baseline ASAR, runtime aplikasi, dan backend pendukung disimpan bersama agar bisa dilanjutkan lewat ohmypi.
 
 ## Cara kerja singkat
 
-- Data aplikasi berada di `~/.local/share/zcode-on-steroids` (`data/`, `electron/`, `model-sync/`). Instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis.
+- Data aplikasi berada di `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`); `make install` memindahkan sekali dari namespace lama `~/.local/share/zcode-on-steroids`. Instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis.
 - Provider native **9Router** (`http://127.0.0.1:20128/v1`, combo `combo/coding-harian`) tersedia lewat "Add provider" seperti provider bawaan lain; keluarga akun Zhipu (Z.ai, BigModel, plan) sudah dihapus dari katalog. Model gateway-nya dikelompokkan per namespace (`9Router`, `9Router · cmc`, `9Router · kios`, … `9Router · lainnya`); setelah API key diisi, tombol **Auto Detect** di Model settings mengisi semuanya sekaligus — lihat [docs/MODELS.md](docs/MODELS.md).
 - Login akun ZCode tidak dipakai. Provider model diatur di Settings dan membawa autentikasinya sendiri; layanan akun/cloud (marketing, client config/scenes, usage stats, coding plan, OAuth, telemetri, remote control) tidak lagi terdaftar di host.
 - Fitur lokal tetap: Computer Use `fedora-desktop`, Voice bilingual, Activity (prompt/hari + streak dari riwayat lokal), engine task + SQLite lokal, MCP, reasoning sesuai metadata provider, dan guard izin desktop.
@@ -15,7 +15,7 @@ Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh
 ## Mulai dengan ohmypi
 
 ```bash
-cd ~/Documents/zcode-on-steroids   # sesuaikan dengan lokasi clone kamu
+cd ~/Documents/CCode   # sesuaikan dengan lokasi clone kamu
 omp
 ```
 
@@ -29,7 +29,9 @@ Minta agent membaca `AGENTS.md` dan `docs/ARCHITECTURE.md` terlebih dahulu. Cont
 | `src/main/voice.cjs` | IPC Electron, rekaman mikrofon, worker voice |
 | `src/main/activity.cjs` | Modul Activity lokal: prompt/hari (seluruh riwayat), streak, dan rekap tahun |
 | `src/local_only/catalog.py` | Patch katalog provider native: buang keluarga Zhipu, tambah template 9Router |
-| `src/local_only/` | Patch standalone: namespace data dan pembersihan akun/cloud |
+| `src/local_only/` | Patch standalone: namespace data, pembersihan akun/cloud, dan branding CCode |
+| `ccode-logo.svg` | Sumber tunggal mark CCode (dipakai patch mark, data URI, dan ikon) |
+| `assets/icons/` | Ikon hasil rasterisasi `ccode-logo.svg` (`make icons`), dipakai paket dan launcher |
 | `services/desktop/` | screen-mcp dan profil `zcode-fast` |
 | `services/voice/` | Whisper worker, kosakata bilingual, venv, model lokal |
 | `services/model-sync/` | Discovery model 9Router + sinkronisasi metadata reasoning, cache, state |
@@ -44,21 +46,22 @@ Minta agent membaca `AGENTS.md` dan `docs/ARCHITECTURE.md` terlebih dahulu. Cont
 
 ```bash
 make build        # hasil di runtime/build/, belum mengubah app aktif
+make icons        # rasterisasi ulang assets/icons/ dari ccode-logo.svg
 make test         # syntax source + unit test + syntax hasil ASAR
 make dry-run      # lihat integrasi lokal yang akan dipasang
-make apply        # tutup ZCode dulu; promote build dan simpan cadangan
-make install      # pasang launcher + timer + path unit standalone (launcher lama tidak diubah)
-make run          # buka app/zcode lewat scripts/run.sh
+make apply        # tutup aplikasi dulu; promote build + rename identitas AppDir ke CCode, simpan cadangan
+make install      # pasang launcher/ikon/timer CCode, migrasikan namespace lama, pensiunkan integrasi ZCode-era
+make run          # buka app/ccode lewat scripts/run.sh
 make models       # deteksi/segarkan semua model 9Router (kelompok per namespace)
 make obsidian     # salin README, AGENTS, dan docs/ ke vault Obsidian
 make obsidian-check  # laporkan selisih vault tanpa menulis
 
-python3 scripts/data_backup.py backup  --root ~/.local/share/zcode-on-steroids --destination ~/zcode-backups/$(date +%F)
-python3 scripts/data_backup.py verify  ~/zcode-backups/2026-10-12
-python3 scripts/data_backup.py restore ~/zcode-backups/2026-10-12
+python3 scripts/data_backup.py backup  --root ~/.local/share/ccode --destination ~/ccode-backups/$(date +%F)
+python3 scripts/data_backup.py verify  ~/ccode-backups/2026-10-12
+python3 scripts/data_backup.py restore ~/ccode-backups/2026-10-12
 ```
 
-`make build` menolak baseline berbeda atau anchor upstream yang tidak cocok. Perubahan file di `src/main/` perlu build/apply; worker di `services/voice/` dimuat ulang setelah ZCode ditutup dan dibuka kembali.
+`make build` menolak baseline berbeda atau anchor upstream yang tidak cocok. Perubahan file di `src/main/` perlu build/apply; worker di `services/voice/` dimuat ulang setelah aplikasi ditutup dan dibuka kembali. `make apply` sekaligus mengganti nama identitas AppDir (`app/zcode` → `app/ccode`, launcher, ikon, `AppRun`), jadi jalankan `make build && make test && make apply` lalu `make run`; `make install` hanya bila ada perubahan integrasi user.
 
 Data instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis; symlink kompatibilitas lama dibiarkan sampai proses yang memakainya benar-benar berhenti.
 
@@ -73,4 +76,6 @@ Catatan Obsidian: folder project ini bisa dibuka langsung sebagai vault (`.obsid
 - Bukan port native Linux dari helper macOS/Windows: Computer Use memakai `fedora-desktop`/screen-mcp, dan kualitas model terpisah dari performa backend.
 - Audit menyeluruh atas seluruh trafik keluar belum dilakukan; yang diverifikasi adalah tidak ada lagi channel akun/cloud di aplikasi dan tidak ada error/handler hilang saat startup.
 - Permukaan akun yang tidak lagi punya pemilik (misalnya panel plan di Settings) menampilkan status tidak tersedia, bukan data palsu.
+- Yang sengaja **tidak** diganti nama: env `ZCODE_*`, kanal IPC (`zcode-*`), skema URL `zcode://`, layout penyimpanan `.zcode` di dalam namespace, id provider/plugin/MCP, dan string protokol/transport (`ZCode Protocol`, error transport/runtime). Semua itu kontrak dengan host dan agent yang dipaketkan — menggantinya tidak mengubah apa pun yang terlihat dan berisiko memutus handshake.
+- Mark CCode berasal dari satu file `ccode-logo.svg`; PNG di `assets/icons/` adalah hasil rasterisasi yang di-commit supaya `make build` tidak butuh tool tambahan (ImageMagick hanya perlu saat `make icons`).
 - Lisensi redistribusi paket installer dan komponen pihak ketiga belum diselesaikan; lihat docs/THIRD_PARTY.md.

@@ -1,9 +1,9 @@
 ---
-tags: [zcode, fedora, project]
+tags: [ccode, fedora, project]
 ---
-# ZCode on Steroids
+# CCode
 
-Workspace patch untuk **ZCode 3.14.5** di Fedora. Aplikasi berjalan sebagai varian mandiri tanpa akun ZCode: Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
+Branding CCode untuk workspace patch **ZCode 3.14.5** di Fedora: varian mandiri tanpa akun ZCode, Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
 
 Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AGENTS.md`, dan `docs/` adalah file asli; `make obsidian` hanya menyegarkan note ini.
 
@@ -23,10 +23,10 @@ Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AG
 
 ## Fakta kunci
 
-- Repo: `/home/andikaputra/Documents/zcode-on-steroids`
-- Vault: `/home/andikaputra/Documents/zcode-on-steroids`
-- Data aplikasi: `~/.local/share/zcode-on-steroids` (`data/`, `electron/`, `model-sync/`)
-- Launcher: `zcode-on-steroids.desktop`; timer: `zcode-on-steroids-model-sync.timer`
+- Repo: `/home/andikaputra/Documents/CCode`
+- Vault: `/home/andikaputra/Documents/CCode`
+- Data aplikasi: `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`)
+- Launcher: `ccode.desktop`; timer: `ccode-model-sync.timer`
 - Data lama `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis
 - Build: `make build && make test`; promote: `make apply` (aplikasi harus tertutup)
 - Backup/restore: `python3 scripts/data_backup.py backup|verify|restore`

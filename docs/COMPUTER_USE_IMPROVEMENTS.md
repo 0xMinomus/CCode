@@ -34,7 +34,7 @@ Guard bawaan diganti pembungkusnya, bukan dihapus:
 - Kursor yang terus bergerak sepanjang jendela `ZCODE_CUA_TAKEOVER_MS` dianggap pengambilalihan nyata: aksi dibatalkan dengan pesan `STOPPED` yang sama seperti sebelumnya.
 - Pointer yang tidak terbaca tetap gagal-terbuka, sama seperti guard bawaan.
 - `force=true` tetap menerobos kebijakan ini, dan instruksi model tetap melarang memakainya untuk melawan pengambilalihan.
-- Kanal berhenti yang tersisa: pengendalian kursor berkelanjutan oleh pengguna, dan tombol stop task di UI ZCode.
+- Kanal berhenti yang tersisa: pengendalian kursor berkelanjutan oleh pengguna, dan tombol stop task di UI CCode.
 
 Yang tidak dilakukan: membiarkan agent terus mengklik sementara pengguna aktif memakai desktop. Satu pointer berarti input agent mendarat di jendela yang baru difokuskan pengguna; karena itu pengambilalihan nyata tetap menghentikan aksi.
 
@@ -50,7 +50,7 @@ Yang tidak dilakukan: membiarkan agent terus mengklik sementara pengguna aktif m
 | `ZCODE_CUA_WARMUP` | (kosong) | Set `1` untuk memuat model OCR/OmniParser saat MCP start lagi (~60 MB prefetch) |
 | `MCP_SCREEN_WAIT_MODE` | (profil menetapkan `hybrid`) | Setel `poll` untuk kembali ke perilaku lama |
 
-Perubahan ini berlaku saat MCP desktop dimuat ulang (chat baru atau ZCode dibuka ulang). Env di atas dibaca oleh profil, jadi tidak perlu `make install`.
+Perubahan ini berlaku saat MCP desktop dimuat ulang (chat baru atau CCode dibuka ulang). Env di atas dibaca oleh profil, jadi tidak perlu `make install`.
 
 ## Berikutnya (belum dikerjakan)
 

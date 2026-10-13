@@ -16,10 +16,12 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 spec = importlib.util.spec_from_file_location('apply_build', ROOT / 'scripts/apply_build.py')
 apply_build = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(apply_build)
+sys.path.insert(0, str(ROOT / 'src'))
+from local_only import branding
 
 
 def identity_archive():
-    payload = json.dumps({'name': 'zcode-on-steroids'}).encode()
+    payload = json.dumps({'name': 'ccode'}).encode()
     header = json.dumps({'files': {'package.json': {'offset': '0', 'size': len(payload)}}}).encode()
     padding = (-len(header)) % 4
     size = 4 + len(header) + padding
@@ -33,7 +35,8 @@ class PromotionTests(unittest.TestCase):
         self.root = pathlib.Path(self.temp.name)
         self.staged = self.root / 'runtime/build/resources'
         self.target = self.root / 'app/resources'
-        self.names = ['app.asar', 'glm/zcode.cjs', 'voice/main.cjs', 'activity/main.cjs', 'config/provider/zcode-builtin.json']
+        self.names = ['app.asar', 'glm/zcode.cjs', 'voice/main.cjs', 'activity/main.cjs',
+                      'config/provider/zcode-builtin.json', 'icon.png', 'icon_512x512.png', 'icon_windows.png']
         self.previous = {}
         for name in self.names:
             old = ('previous:' + name).encode()
@@ -42,7 +45,14 @@ class PromotionTests(unittest.TestCase):
                 (base / name).parent.mkdir(parents=True, exist_ok=True)
             (self.target / name).write_bytes(old)
             (self.staged / name).write_bytes(identity_archive() if name == 'app.asar' else ('new:' + name).encode())
-        (self.root / 'project.json').write_text(json.dumps({'application_name': 'zcode-on-steroids'}))
+        (self.root / 'project.json').write_text(json.dumps({'application_name': 'ccode'}))
+        self.app_dir = self.root / 'app'
+        (self.app_dir / 'usr/share/icons/hicolor/16x16/apps').mkdir(parents=True)
+        (self.app_dir / 'zcode.desktop').write_text('[Desktop Entry]\nName=ZCode\nExec=AppRun --no-sandbox %U\n'
+                                                    'Icon=zcode\nStartupWMClass=ZCode\nComment=ZCode Desktop App\n')
+        (self.app_dir / 'AppRun').write_text('#!/bin/bash\nBIN="$APPDIR/zcode"\nexec "$BIN"\n')
+        (self.app_dir / 'zcode').write_bytes(b'electron-binary')
+        (self.app_dir / 'zcode.png').symlink_to('usr/share/icons/hicolor/1024x1024/apps/zcode.png')
         self.namespace = self.root / 'namespace'
         self.cache = self.namespace / 'data/.zcode/v2/runtime/provider/linux-x86_64/3.14.5/endpoint-test/zcode-builtin.json'
         self.cache.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +66,7 @@ class PromotionTests(unittest.TestCase):
         env = mock.patch.dict(os.environ, {'ZCODE_STANDALONE_ROOT': str(self.namespace)})
         env.start()
         self.addCleanup(env.stop)
-        proof = {'application_name': 'zcode-on-steroids', 'sha256': {
+        proof = {'application_name': 'ccode', 'sha256': {
             name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest() for name in self.names}}
         (self.staged / 'build-manifest.json').write_text(json.dumps(proof))
         patch = mock.patch.object(apply_build, 'ROOT', self.root)
@@ -69,6 +79,22 @@ class PromotionTests(unittest.TestCase):
             apply_build.main()
         for name in self.names:
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
+
+    def test_app_dir_identity_is_renamed_to_ccode(self):
+        apply_build.main()
+        self.assertFalse((self.app_dir / 'zcode').exists())
+        self.assertEqual((self.app_dir / 'ccode').read_bytes(), b'electron-binary')
+        launcher = (self.app_dir / 'ccode.desktop').read_text()
+        for expected in ('Name=CCode', 'Icon=ccode', 'StartupWMClass=ccode', 'Comment=CCode Desktop App'):
+            self.assertIn(expected, launcher)
+        self.assertFalse((self.app_dir / 'zcode.desktop').exists())
+        self.assertEqual((self.app_dir / 'AppRun').read_text().count('BIN="$APPDIR/ccode"'), 1)
+        self.assertFalse((self.app_dir / 'zcode.png').is_symlink())
+        self.assertEqual(os.readlink(self.app_dir / '.DirIcon'), 'usr/share/icons/hicolor/1024x1024/apps/ccode.png')
+        installed = self.app_dir / 'usr/share/icons/hicolor/16x16/apps/ccode.png'
+        self.assertEqual(installed.read_bytes(), (branding.ICON_DIR / 'ccode-16.png').read_bytes())
+        previous = sorted((self.root / 'runtime/backups').glob('*/appdir/zcode.desktop'))
+        self.assertEqual(len(previous), 1)
 
     def test_derived_catalog_cache_is_refreshed(self):
         apply_build.main()

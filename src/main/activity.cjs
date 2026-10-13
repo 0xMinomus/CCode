@@ -109,7 +109,7 @@ function detectionSummary(configPath) {
 function detectionOutcome(log, code) {
   if (!/Gateway models: \d+/.test(log)) return { ok: false, error: 'The 9Router gateway did not answer. Is it running?' };
   if (/Refusing to drop/.test(log)) return { ok: false, error: 'Refused to write a configuration that would remove existing models.' };
-  if (/Config changed concurrently/.test(log)) return { ok: false, error: 'ZCode was saving settings at the same time. Try Auto Detect again.' };
+  if (/Config changed concurrently/.test(log)) return { ok: false, error: 'CCode was saving settings at the same time. Try Auto Detect again.' };
   if (code !== 0) return { ok: false, error: `Model discovery failed (exit ${code}).` };
   return { ok: true };
 }
@@ -189,7 +189,7 @@ exports.register = ({ app, ipcMain }) => {
     return frame === event.sender.mainFrame && frame.url.startsWith('file://') && frame.url.includes('/out/renderer/index.html');
   }
   ipcMain.handle('zcode-activity:summary', async event => {
-    if (!trusted(event)) throw Error('Activity is only available in the local ZCode window.');
+    if (!trusted(event)) throw Error('Activity is only available in the local CCode window.');
     if (cache.value && Date.now() - cache.at < CACHE_MS) return cache.value;
     const dbPath = sessionDbPath();
     if (!dbPath || !fs.existsSync(dbPath)) return { available: false, error: 'The local session database is not available yet.' };
@@ -202,7 +202,7 @@ exports.register = ({ app, ipcMain }) => {
     }
   });
   ipcMain.handle('zcode-detect:run', async event => {
-    if (!trusted(event)) throw Error('Auto Detect is only available in the local ZCode window.');
+    if (!trusted(event)) throw Error('Auto Detect is only available in the local CCode window.');
     try {
       return await runDetection();
     } catch (error) {

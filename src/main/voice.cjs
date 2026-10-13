@@ -1,11 +1,11 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spawn}=require('node:child_process'),readline=require('node:readline');
 exports.register=({app,ipcMain})=>{
  let project=__dirname;
- while(!fs.existsSync(path.join(project,'project.json'))){const parent=path.dirname(project);if(parent===project)throw Error('ZCode project root not found.');project=parent;}
+ while(!fs.existsSync(path.join(project,'project.json'))){const parent=path.dirname(project);if(parent===project)throw Error('CCode project root not found.');project=parent;}
  const root=path.join(project,'services/voice');
  let worker=null,ready=null,recording=null,sequence=0;const jobs=new Map();
  function trusted(event){const frame=event.senderFrame;return frame===event.sender.mainFrame&&frame.url.startsWith('file://')&&frame.url.includes('/out/renderer/index.html');}
- function requireTrusted(event){if(!trusted(event))throw Error('Voice input is only available in the local ZCode window.');}
+ function requireTrusted(event){if(!trusted(event))throw Error('Voice input is only available in the local CCode window.');}
  function startWorker(){
   if(worker&&ready)return ready;
   worker=spawn(path.join(root,'.venv/bin/python'),['-u',path.join(root,'worker.py')],{stdio:['pipe','pipe','pipe'],env:{...process.env,HF_HUB_OFFLINE:'1',TOKENIZERS_PARALLELISM:'false'}});

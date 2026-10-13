@@ -15,7 +15,9 @@ import tempfile
 import urllib.parse
 
 PROJECT = pathlib.Path(__file__).resolve().parents[1]
-DEFAULT_ROOT = pathlib.Path.home() / '.local/share/zcode-on-steroids'
+DEFAULT_ROOT = pathlib.Path.home() / '.local/share/ccode'
+# Namespace of the ZCode-era standalone variant; `install_local.py` migrates it once.
+DEFAULT_LEGACY_ROOT = pathlib.Path.home() / '.local/share/zcode-on-steroids'
 TRANSIENT = {'SingletonLock', 'SingletonSocket', 'SingletonCookie'}
 
 
@@ -75,7 +77,7 @@ def namespace_lock(root, exclusive=True):
 
 def assert_offline(root):
     """Refuse when a process uses this namespace, including a direct-launched default app."""
-    executable = str((PROJECT / 'app/zcode').resolve())
+    executable = str((PROJECT / 'app/ccode').resolve())
     marker = ('ZCODE_STANDALONE_ROOT=' + str(root)).encode()
     default = pathlib.Path(DEFAULT_ROOT)
     same_default = pathlib.Path(root) == default

@@ -1,12 +1,14 @@
-# Agent instructions: ZCode on Steroids
+# Agent instructions: CCode
 
 ## Scope and reality
 
-This is a local patch workspace for a packaged Electron ZCode 3.14.5 installation on Fedora. It is not the complete upstream TypeScript source tree. The app now runs as a **standalone variant without a ZCode account**: no login gate, no account/cloud services, and its own data namespace. Read README.md and docs/ARCHITECTURE.md before changes. User instructions take precedence.
+This is a local patch workspace for a packaged Electron ZCode 3.14.5 installation on Fedora, rebranded **CCode**. It is not the complete upstream TypeScript source tree. The app now runs as a **standalone variant without a ZCode account**: no login gate, no account/cloud services, and its own data namespace. Read README.md and docs/ARCHITECTURE.md before changes. User instructions take precedence.
 
 - Edit canonical source under `src/` and `services/`, not the generated minified bundle in `app/resources/app.asar`.
 - Use `scripts/build.py` to reproduce the UI/IPC modifications from the pinned original baseline. Preserve the upstream anchor assertions and checksum verification.
-- Standalone patches live in `src/local_only/`: `storage.py` owns data/config/profile/database namespacing and the env bootstrap; `cloud.py` owns account/cloud removal and the local answers for channels whose Z.ai owner is gone. Both run after the renderer patch in `scripts/build.py`.
+- Standalone patches live in `src/local_only/`: `storage.py` owns data/config/profile/database namespacing and the env bootstrap; `cloud.py` owns account/cloud removal and the local answers for channels whose Z.ai owner is gone; `branding.py` owns the CCode mark and product name. All run after the renderer patch in `scripts/build.py`, branding last.
+- Branding is data-driven from `ccode-logo.svg` (mark paths, data URIs, rasterized icons in `assets/icons/`). Change the artwork, run `make icons`, then `make build`. Never hand-edit the generated PNGs or re-draw the mark inside a patch.
+- `branding.py` renames only the product name in string literals and never touches identifiers, object keys, or the intentionally kept copies (`ZCode Protocol`, transport/runtime error strings, old Chromium profile directories). `branding.guard()` fails the build when another `ZCode` or an upstream mark path survives — keep it strict instead of widening the exception list.
 - The packaged agent backend (`app/resources/glm/zcode.cjs`) is patched too. Keep it pinned to `baselines/zcode-3.14.5-original-agent.cjs` via `agent_baseline_sha256` in project.json; never edit the deployed copy directly.
 - Do not present the MCP bridge as a native Linux port. Computer Use currently uses `fedora-desktop`/screen-mcp; model quality is separate from backend performance.
 - Use existing ZCode React/UI components where possible. Current bundled symbols are pinned to this version; consult ARCHITECTURE.md before using them.
@@ -31,8 +33,9 @@ Setiap perubahan perilaku, arsitektur, operasi, atau daftar resource harus langs
 4. Inspect a rendered UI when changing layout. Do not send model prompts merely to inspect UI.
 5. Smoke-test the standalone variant in an isolated root: `ZCODE_STANDALONE_ROOT=<dir> scripts/run.sh --remote-debugging-port=<port>`. Expect an open workspace with no login screen, no `Unknown channel`/`No handler registered` lines, and no runtime `ReferenceError`/`TypeError`. Clean that root afterwards.
 6. Never export the namespace env in a persistent shell. `scripts/data_backup.py` and `scripts/install_local.py` refuse to run when they see `ZCODE_STANDALONE_ROOT` on another process, so a leaked variable looks like a running app. Unset it before apply/install/backup.
-7. Close ZCode before `make apply`; do not forcibly kill an active task. `apply` verifies the staged manifest, rolls back all three resources on failure, and keeps the previous set in `runtime/backups`.
-8. `make install` changes the user's standalone launcher, MCP config inside the namespace, the standalone systemd user timer, and the model-sync path unit that fills 9Router models when the app writes the provider config. Use it for user-authorized deployment/migration, not automatically for every source edit.
+7. Close the app before `make apply`; do not forcibly kill an active task. `apply` verifies the staged manifest, rolls back the promoted resources on failure, keeps the previous set in `runtime/backups`, and then renames the deployed AppDir identity (binary `app/ccode`, launcher `app/ccode.desktop`, `.DirIcon`/`app/ccode.png`, `AppRun`, hicolor icons).
+8. `make install` changes the user's standalone launcher, icon theme entries, MCP config inside the namespace, the standalone systemd user timer, and the model-sync path unit that fills 9Router models when the app writes the provider config. It also migrates the pre-rebrand namespace (`~/.local/share/zcode-on-steroids` → `~/.local/share/ccode`) and retires the old launcher and units, with backups under `<namespace>/integration-backups`. Use it for user-authorized deployment/migration, not automatically for every source edit.
+9. Apply and install both refuse while the app is running; `scripts/data_backup.py` refuses when the namespace looks in use. Do not point a smoke run at the real namespace root.
 
 There is no need to reinstall dependencies or run vendor setup scripts for routine modifications. No root audio permissions or input-device permission changes are needed for the existing portal backend.
 
@@ -49,8 +52,8 @@ There is no need to reinstall dependencies or run vendor setup scripts for routi
 
 ## Data and handoff
 
-- Standalone data lives in `~/.local/share/zcode-on-steroids` (`data/`, `electron/`, `model-sync/`). Never point verification runs at the real `~/.zcode` or `~/.config/ZCode`, and never copy them into the repo.
-- Backups: `python3 scripts/data_backup.py backup --root ~/.local/share/zcode-on-steroids` (app closed), `verify <snapshot>`, `restore <snapshot>`. Snapshots hold user tasks and provider keys; keep them private.
+- Standalone data lives in `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`). Never point verification runs at the real `~/.zcode` or `~/.config/ZCode`, and never copy them into the repo.
+- Backups: `python3 scripts/data_backup.py backup --root ~/.local/share/ccode` (app closed), `verify <snapshot>`, `restore <snapshot>`. Snapshots hold user tasks and provider keys; keep them private.
 - Do not copy credentials, portal tokens, user tasks, or live provider configs into tracked source. `runtime/install-backups`, model-sync backups, and namespace snapshots may contain secrets; keep them private and ignored.
 - Do not commit `app/`, `baselines/`, models, virtualenvs, vendor Git metadata, runtime captures, or user configuration backups. Do not publish the bundled application as if the project had one universal license.
 - Update docs/CHANGELOG.md and the affected architecture/operation notes when behavior changes.

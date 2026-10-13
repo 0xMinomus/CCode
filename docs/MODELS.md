@@ -1,6 +1,6 @@
 # Model Vansrouter dan reasoning
 
-Live provider config varian standalone berada di `~/.local/share/zcode-on-steroids/data/.zcode/v2/provider_config.json` (root dapat dipindah lewat `ZCODE_STANDALONE_ROOT`). Instalasi lama di `~/.zcode/v2/provider_config.json` tetap ada dan tidak diubah. Source sinkronisasi berada di `services/model-sync/sync.py`; cache/state merupakan runtime, bukan source yang perlu di-commit.
+Live provider config varian standalone berada di `~/.local/share/ccode/data/.zcode/v2/provider_config.json` (root dapat dipindah lewat `ZCODE_STANDALONE_ROOT`). Instalasi lama di `~/.zcode/v2/provider_config.json` tetap ada dan tidak diubah. Source sinkronisasi berada di `services/model-sync/sync.py`; cache/state merupakan runtime, bukan source yang perlu di-commit.
 
 ## Discovery 9Router (otomatis, terkelompok)
 
@@ -16,15 +16,15 @@ Gateway 9Router di `http://127.0.0.1:20128/v1` menerbitkan daftar modelnya di `G
 - **Penghapusan milik pengguna dihormati, tanpa heuristik**: run otomatis (timer/path unit) **hanya mengisi grup yang sudah ada** dan tidak pernah membuat grup baru; pemulihan/pembuatan keluarga provider adalah aksi eksplisit — tombol **Auto Detect** atau `make models` (keduanya `--bootstrap`). Jadi grup yang kamu hapus tetap terhapus, dan sekali klik Auto Detect membangunnya kembali. Aturan lama (`removedProviders` + ambang penghapusan massal) dibuang karena tidak bisa membedakan "user menghapus 11 grup satu per satu" dari "file ditulis ulang" — dengan kontrak ini tidak ada lagi sync yang melawan pengguna maupun yang membangkitkan grup diam-diam. Di level model: penghapusan hanya diingat bila jumlahnya kecil (≤5 per run) dan provider-nya tidak jadi kosong; daftar yang dikosongkan/ditulis ulang diisi ulang, dan model yang dikenal host tetapi tidak terdaftar didaftarkan kembali dengan switch mengikuti flag rule-nya.
 - **Pengaman data**: `sync.py` hanya menambah model, sehingga `commit()` menolak menulis config yang mengurangi jumlah model aktif (≥5 model). Backup pra-tulis tetap disimpan maksimal 10 di `<namespace>/model-sync/backups/`.
 
-Timer `zcode-on-steroids-model-sync.timer` menjalankan sync untuk namespace standalone dengan env `ZCODE_MODEL_SYNC_CONFIG` dan `ZCODE_MODEL_SYNC_STATE`. Tanpa env tersebut, `sync.py` tetap memakai jalur lama (`~/.zcode/v2/provider_config.json`) supaya timer instalasi lama tidak berubah perilakunya.
+Timer `ccode-model-sync.timer` menjalankan sync untuk namespace standalone dengan env `ZCODE_MODEL_SYNC_CONFIG` dan `ZCODE_MODEL_SYNC_STATE`. Tanpa env tersebut, `sync.py` tetap memakai jalur lama (`~/.zcode/v2/provider_config.json`) supaya timer instalasi lama tidak berubah perilakunya.
 
 Status **Auto Detect** (proses, sukses, atau gagal) tampil di kiri tombol. Label dan ukuran tombol tetap selama deteksi; pesan panjang dipotong sesuai ruang header, dengan pesan lengkap pada tooltip dan status yang diumumkan melalui `role="status"`.
 
 ## Reasoning Vansrouter
 
-`oc/` dipetakan ke katalog OpenCode. Hanya model yang sudah didaftarkan di provider Vansrouter ZCode yang dilengkapi. Level `effort` berasal dari `reasoning_options.values`; pilihan dikirim melalui `reasoning_effort`. Toggle membutuhkan wire format yang diketahui, misalnya `reasoning.enabled` untuk Ling dan `thinking.type` untuk LongCat. Nama model saja tidak membuktikan dukungan semua level.
+`oc/` dipetakan ke katalog OpenCode. Hanya model yang sudah didaftarkan di provider Vansrouter CCode yang dilengkapi. Level `effort` berasal dari `reasoning_options.values`; pilihan dikirim melalui `reasoning_effort`. Toggle membutuhkan wire format yang diketahui, misalnya `reasoning.enabled` untuk Ling dan `thinking.type` untuk LongCat. Nama model saja tidak membuktikan dukungan semua level.
 
-Pemetaan ZCode berupa expression string, contoh:
+Pemetaan di CCode berupa expression string, contoh:
 
 ```json
 {"values":["low","medium","high","xhigh","max"],"map":"{\"reasoning_effort\": reasoningLevel}"}

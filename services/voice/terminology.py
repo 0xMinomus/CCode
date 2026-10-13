@@ -1,6 +1,6 @@
 """Narrow repairs for explicitly requested desktop vocabulary, not general rewriting."""
 import re
-TECH_HINTS='computer use, Brave, Brave Origin, YouTube, ZCode, Vansrouter, MCP, browser, screenshot, voice command'
+TECH_HINTS='computer use, Brave, Brave Origin, YouTube, CCode, Vansrouter, MCP, browser, screenshot, voice command'
 PROMPT=('Percakapan Indonesia dan English bercampur. Transcribe verbatim, do not translate English terms. '
         'Istilah teknis: '+TECH_HINTS+'. '
         'Contoh ucapan: Pakai computer use lalu buka Brave Origin dan cari video di YouTube. '

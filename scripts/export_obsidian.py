@@ -10,7 +10,7 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_VAULT = pathlib.Path.home() / 'orca/chessrpg'
 MCP_CONFIG = pathlib.Path.home() / '.omp/agent/mcp.json'
-FOLDER = 'ZCode on Steroids'
+FOLDER = 'CCode'
 FILES = ('README.md', 'AGENTS.md')
 DOCS = 'docs'
 
@@ -70,27 +70,28 @@ def with_frontmatter(relative, content):
     if content.startswith('---\n'):
         return content
     slug = pathlib.PurePosixPath(relative).stem.lower().replace(' ', '-')
-    return f'---\ntags: [zcode, "zcode/{slug}"]\nsource: {relative}\n---\n\n{content}'
+    return f'---\ntags: [ccode, "ccode/{slug}"]\nsource: {relative}\n---\n\n{content}'
 
 
 def latest_snapshot():
     parent = pathlib.Path.home() / '.local/share'
-    candidates = sorted(parent.glob('zcode-on-steroids-backups/*'), reverse=True)
-    return candidates[0].name if candidates else 'belum ada snapshot'
+    candidates = sorted([*parent.glob('ccode-backups/*'), *parent.glob('zcode-on-steroids-backups/*')], reverse=True)
+    # Snapshots taken before the rename stay readable; report the directory that holds them.
+    return f'{candidates[0].parent.name}/{candidates[0].name}' if candidates else 'belum ada snapshot'
 
 
 def key_facts(vault, mode):
     refresh = ('Vault ini adalah folder project, jadi tidak ada salinan: catatan `README`, `AGENTS`, dan `docs/` adalah file asli repo.'
                if mode == 'native' else
-               'Catatan di folder ini adalah salinan dari repo: setiap file diberi frontmatter `tags` dan `source` agar bisa difilter di tag pane (`#zcode`).')
+               'Catatan di folder ini adalah salinan dari repo: setiap file diberi frontmatter `tags` dan `source` agar bisa difilter di tag pane (`#ccode`).')
     return f'''- Repo: `{ROOT}`
 - Vault: `{vault}`
-- Data aplikasi: `~/.local/share/zcode-on-steroids` (`data/`, `electron/`, `model-sync/`)
-- Launcher: `zcode-on-steroids.desktop`; timer: `zcode-on-steroids-model-sync.timer`
+- Data aplikasi: `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`)
+- Launcher: `ccode.desktop`; timer: `ccode-model-sync.timer`
 - Data lama `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis
 - Build: `make build && make test`; promote: `make apply` (aplikasi harus tertutup)
 - Backup/restore: `python3 scripts/data_backup.py backup|verify|restore`
-- Snapshot terakhir: `~/.local/share/zcode-on-steroids-backups/{latest_snapshot()}`
+- Snapshot terakhir: `~/.local/share/{latest_snapshot()}`
 - {refresh}'''
 
 
@@ -108,11 +109,11 @@ def index_note(vault, mode='mirror'):
                  'menyegarkan setelah dokumen berubah; `make obsidian-check` melaporkan selisih tanpa menulis. '
                  'Vault terdeteksi otomatis dari konfigurasi MCP omp, atau lewat `OBSIDIAN_VAULT_PATH`/`--vault`.')
     return f'''---
-tags: [zcode, fedora, project]
+tags: [ccode, fedora, project]
 ---
-# ZCode on Steroids
+# CCode
 
-Workspace patch untuk **ZCode 3.14.5** di Fedora. Aplikasi berjalan sebagai varian mandiri tanpa akun ZCode: Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
+Branding CCode untuk workspace patch **ZCode 3.14.5** di Fedora: varian mandiri tanpa akun ZCode, Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
 
 {intro}
 

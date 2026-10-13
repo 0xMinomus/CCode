@@ -25,13 +25,13 @@ def node_command():
     if plain:
         candidates.append([plain])
         candidates.append([plain, '--experimental-sqlite'])
-    electron = ROOT / 'app/zcode'
+    electron = ROOT / 'app/ccode'
     if electron.exists():
         candidates.append([str(electron)])
     probe = "try{require('node:sqlite');console.log('yes')}catch(e){console.log('no')}"
     for command in candidates:
         env = dict(os.environ)
-        if command[0].endswith('zcode'):
+        if command[0].endswith('ccode'):
             env['ELECTRON_RUN_AS_NODE'] = '1'
         else:
             env.pop('ELECTRON_RUN_AS_NODE', None)

@@ -1,23 +1,23 @@
 # Operasi dan rollback
 
-Aplikasi aktif: `app/zcode`, dijalankan sebagai varian mandiri lewat `scripts/run.sh`. Launcher `zcode-on-steroids.desktop` dan timer `zcode-on-steroids-model-sync.timer` adalah integrasi baru; launcher `zcode.desktop`, shortcut AppImage, dan timer `zcode-vansrouter-model-sync.timer` milik instalasi lama tidak diubah. MCP mengarah ke `services/desktop/bin/screen-mcp`.
+Aplikasi aktif: `app/ccode`, dijalankan sebagai varian mandiri lewat `scripts/run.sh` (nama ini berasal dari rebrand CCode; `make apply` yang mengganti nama binary/launcher/ikon AppDir). Launcher `ccode.desktop` dan timer `ccode-model-sync.timer` adalah integrasi baru; launcher `zcode.desktop`, shortcut AppImage, dan timer `zcode-vansrouter-model-sync.timer` milik instalasi lama tidak diubah. MCP mengarah ke `services/desktop/bin/screen-mcp`.
 
 ```bash
 make dry-run
 make install
-systemctl --user status zcode-on-steroids-model-sync.timer
-journalctl --user -u zcode-on-steroids-model-sync.service -n 20
+systemctl --user status ccode-model-sync.timer
+journalctl --user -u ccode-model-sync.service -n 20
 ```
 
-`make install` menulis config MCP di dalam namespace standalone, launcher baru, dan unit timer baru, plus unit **path** `zcode-on-steroids-model-sync.path` yang memantau `provider_config.json` supaya model 9Router terisi begitu provider dibuat/diubah dari UI. Provider API keys tidak diubah. Cadangan integrasi tersimpan di `<namespace>/integration-backups` dengan izin 0600.
+`make install` menulis config MCP di dalam namespace standalone, launcher `ccode.desktop`, ikon hicolor (`ccode.png` per ukuran + `ccode.svg`), dan unit timer/path `ccode-model-sync.*` yang memantau `provider_config.json` supaya model 9Router terisi begitu provider dibuat/diubah dari UI. Provider API keys tidak diubah. Bila namespace lama masih ada dan root baru belum ada, install juga memindahkan `~/.local/share/zcode-on-steroids` → `~/.local/share/ccode` (rename, bukan salin), lalu memensiunkan launcher `zcode-on-steroids.desktop` dan unit `zcode-on-steroids-model-sync.*` (di-`disable --now` lebih dulu). Cadangan semua file integrasi yang diganti/dihapus tersimpan di `<namespace>/integration-backups` dengan izin 0600.
 
 Periksa/matikan integrasi sync bila perlu:
 
 ```bash
-systemctl --user status zcode-on-steroids-model-sync.path zcode-on-steroids-model-sync.timer
-journalctl --user -u zcode-on-steroids-model-sync.service -n 20
-systemctl --user disable --now zcode-on-steroids-model-sync.path      # hentikan pengisian instan
-systemctl --user disable --now zcode-on-steroids-model-sync.timer     # hentikan sync rutin
+systemctl --user status ccode-model-sync.path ccode-model-sync.timer
+journalctl --user -u ccode-model-sync.service -n 20
+systemctl --user disable --now ccode-model-sync.path      # hentikan pengisian instan
+systemctl --user disable --now ccode-model-sync.timer     # hentikan sync rutin
 ```
 
 ## Backup dan restore data standalone
@@ -25,9 +25,9 @@ systemctl --user disable --now zcode-on-steroids-model-sync.timer     # hentikan
 Tutup aplikasi lebih dulu; snapshot diambil offline agar index task, database sesi, dan file task konsisten sebagai satu set.
 
 ```bash
-python3 scripts/data_backup.py backup  --root ~/.local/share/zcode-on-steroids --destination ~/zcode-backups/$(date +%F)
-python3 scripts/data_backup.py verify  ~/zcode-backups/2026-10-12
-python3 scripts/data_backup.py restore ~/zcode-backups/2026-10-12 --root ~/.local/share/zcode-on-steroids
+python3 scripts/data_backup.py backup  --root ~/.local/share/ccode --destination ~/ccode-backups/$(date +%F)
+python3 scripts/data_backup.py verify  ~/ccode-backups/2026-10-12
+python3 scripts/data_backup.py restore ~/ccode-backups/2026-10-12 --root ~/.local/share/ccode
 ```
 
 Snapshot memakai SQLite backup API, menolak symlink dan path traversal, dan menyimpan manifest berisi hash setiap entri. Restore menahan lock operasi eksklusif, menolak bila aplikasi masih berjalan, dan menyimpan namespace lama sebagai `<root>-pre-restore-<stamp>`.
@@ -38,10 +38,10 @@ Build baru tidak aktif sampai `make apply`. Apply menolak jika executable projec
 
 Apply menyisakan **dua** cadangan terbaru (`BACKUP_RETENTION` di `scripts/apply_build.py`); cadangan lebih tua dihapus otomatis, begitu pula marker `zcode-builtin-refresh.json` di namespace (`zcode-builtin.json` tidak pernah disentuh). Rollback hanya mungkin dari dua promote terakhir, jadi promote besar sebaiknya diikuti verifikasi cepat sebelum promote berikutnya.
 
-Ukuran yang perlu dijaga: `app/resources` (aset live), `runtime/build` (staged), `runtime/backups` (dua cadangan), `runtime/cutover-backups` (snapshot migrasi, salinan `app/` sudah dibuang saat pembersihan 2026-10-13), dan `runtime/no-login` (fixture uji; salinan `app/`-nya reproducible dan tidak disimpan). Snapshot namespace lama tetap di `~/.local/share/zcode-on-steroids-backups`.
+Ukuran yang perlu dijaga: `app/resources` (aset live), `runtime/build` (staged), `runtime/backups` (dua cadangan), `runtime/cutover-backups` (snapshot migrasi, salinan `app/` sudah dibuang saat pembersihan 2026-10-13), dan `runtime/no-login` (fixture uji; salinan `app/`-nya reproducible dan tidak disimpan). Snapshot lama tetap di `~/.local/share/zcode-on-steroids-backups` (default baru: `~/.local/share/ccode-backups`).
 
-Integrasi lama dapat dipulihkan dengan menyalin kembali launcher/unit dari `<namespace>/integration-backups`; timer lama tetap berjalan sendiri karena tidak pernah dimatikan.
+Integrasi lama dapat dipulihkan dengan menyalin kembali launcher/unit dari `<namespace>/integration-backups`, tetapi perhatikan: sejak rebrand CCode, `make install` memindahkan namespace ke `~/.local/share/ccode` dan memensiunkan launcher/unit ZCode-era. Rollback penuh berarti memindahkan namespace kembali (`mv ~/.local/share/ccode ~/.local/share/zcode-on-steroids`) dan mengembalikan launcher/unit dari backup; tanpa langkah itu aplikasi akan memakai root yang baru.
 
 AppImage ZCode asli tetap tersedia di Applications. Versi modifikasi sebelumnya masih tersedia di direktori tools lama selain empat komponen yang dipindahkan. Path empat komponen tersebut sekarang symlink ke project baru. Jangan menghapus symlink sampai aplikasi lama benar-benar ditutup dan referensi eksternal sudah diperbarui.
 
-Preferences voice disimpan dalam localStorage profil Electron standalone (`<root>/electron`): `zcode-voice-send-mode` (`review`/`auto`) dan `zcode-voice-language` (`id`/`en`/`auto`). Data task/account tidak dipindahkan ke repo. Timer model sync standalone dapat dimatikan dengan `systemctl --user disable --now zcode-on-steroids-model-sync.timer`; perintah yang sama dengan nama timer lama mematikan sync instalasi lama.
+Preferences voice disimpan dalam localStorage profil Electron standalone (`<root>/electron`): `zcode-voice-send-mode` (`review`/`auto`) dan `zcode-voice-language` (`id`/`en`/`auto`). Data task/account tidak dipindahkan ke repo. Timer model sync standalone dapat dimatikan dengan `systemctl --user disable --now ccode-model-sync.timer`; perintah yang sama dengan nama timer lama mematikan sync instalasi lama.

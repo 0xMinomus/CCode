@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once
-from local_only import storage,cloud,catalog
+from local_only import storage,cloud,catalog,branding
 def main():
  manifest=json.loads((ROOT/'project.json').read_text());base=ROOT/manifest['baseline']
  if hashlib.sha256(base.read_bytes()).hexdigest()!=manifest['baseline_sha256']:raise ValueError('Baseline hash mismatch; review upstream version before changing project.json')
@@ -27,8 +27,9 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  replacements={renderer:s.encode(),manifest['main_asset']:main.encode(),manifest['preload_asset']:preload.encode()}
  storage.patch_archive(archive,replacements,renderer)
  cloud.patch_archive(archive,replacements,renderer)
+ branding.patch_archive(archive,replacements,{'renderer':renderer,'intl':manifest['renderer_intl_asset'],'icon':manifest['renderer_icon_asset']})
  identity=json.loads(archive.read('package.json'))
- identity.update({'name':manifest['application_name'],'productName':'ZCode on Steroids'})
+ identity.update({'name':manifest['application_name'],'productName':branding.PRODUCT,'description':branding.PRODUCT+' desktop application'})
  replacements['package.json']=(json.dumps(identity,indent=2)+'\n').encode()
  agent_base=ROOT/manifest['agent_baseline']
  if hashlib.sha256(agent_base.read_bytes()).hexdigest()!=manifest['agent_baseline_sha256']:raise ValueError('Agent baseline hash mismatch; review upstream version before changing project.json')
@@ -41,7 +42,8 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  if not catalog_source.exists():raise ValueError('Installed provider catalog is missing: '+str(catalog_source))
  (output/'config/provider').mkdir(parents=True,exist_ok=True)
  (output/'config/provider/zcode-builtin.json').write_text(catalog.patch_catalog(catalog_source.read_text()))
- files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json']
+ for name,source in branding.PACKAGED_ICONS.items():shutil.copy2(branding.ICON_DIR/source,output/name)
+ files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}
  (output/'build-manifest.json').write_text(json.dumps(proof,indent=2)+'\n')
  print('Build staged:',output/'app.asar')

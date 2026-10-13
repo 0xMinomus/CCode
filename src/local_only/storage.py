@@ -3,9 +3,9 @@
 from . import replace_once
 
 
-_ENV_BODY = '''const zcodeStandaloneRoot=zcodeStandalonePath.resolve(process.env.ZCODE_STANDALONE_ROOT?.trim()||zcodeStandalonePath.join(zcodeStandaloneOs.homedir(),".local","share","zcode-on-steroids"));
+_ENV_BODY = '''const zcodeStandaloneRoot=zcodeStandalonePath.resolve(process.env.ZCODE_STANDALONE_ROOT?.trim()||zcodeStandalonePath.join(zcodeStandaloneOs.homedir(),".local","share","ccode"));
 const zcodeStandaloneData=zcodeStandalonePath.join(zcodeStandaloneRoot,"data");
-Object.assign(process.env,{ZCODE_STANDALONE_ROOT:zcodeStandaloneRoot,ZCODE_DATA_BASE_DIR:zcodeStandaloneData,ZCODE_DESKTOP_HOME_DIR:zcodeStandaloneData,DESKTOP_HOME_DIR:zcodeStandaloneData,ZCODE_STORAGE_DIR:zcodeStandalonePath.join(zcodeStandaloneData,".zcode"),STORAGE_DIR:zcodeStandalonePath.join(zcodeStandaloneData,".zcode"),ZCODE_SESSION_DB_PATH:zcodeStandalonePath.join(zcodeStandaloneData,".zcode","cli","db","db.sqlite"),ZCODE_DESKTOP_USER_DATA_DIR:zcodeStandalonePath.join(zcodeStandaloneRoot,"electron"),ZCODE_DESKTOP_SESSION_DATA_DIR:zcodeStandalonePath.join(zcodeStandaloneRoot,"electron","session"),ZCODE_DESKTOP_USE_ELECTRON_DEFAULT_USER_DATA:"0",ZCODE_DESKTOP_APPLICATION_NAME:"zcode-on-steroids"});
+Object.assign(process.env,{ZCODE_STANDALONE_ROOT:zcodeStandaloneRoot,ZCODE_DATA_BASE_DIR:zcodeStandaloneData,ZCODE_DESKTOP_HOME_DIR:zcodeStandaloneData,DESKTOP_HOME_DIR:zcodeStandaloneData,ZCODE_STORAGE_DIR:zcodeStandalonePath.join(zcodeStandaloneData,".zcode"),STORAGE_DIR:zcodeStandalonePath.join(zcodeStandaloneData,".zcode"),ZCODE_SESSION_DB_PATH:zcodeStandalonePath.join(zcodeStandaloneData,".zcode","cli","db","db.sqlite"),ZCODE_DESKTOP_USER_DATA_DIR:zcodeStandalonePath.join(zcodeStandaloneRoot,"electron"),ZCODE_DESKTOP_SESSION_DATA_DIR:zcodeStandalonePath.join(zcodeStandaloneRoot,"electron","session"),ZCODE_DESKTOP_USE_ELECTRON_DEFAULT_USER_DATA:"0",ZCODE_DESKTOP_APPLICATION_NAME:"ccode"});
 '''
 ESM_BOOTSTRAP = 'import * as zcodeStandaloneOs from "node:os";import * as zcodeStandalonePath from "node:path";\n' + _ENV_BODY
 AGENT_BOOTSTRAP = 'const zcodeStandaloneOs=require("node:os"),zcodeStandalonePath=require("node:path");\n' + _ENV_BODY
