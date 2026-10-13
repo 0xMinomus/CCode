@@ -107,7 +107,7 @@ def main():
  for proc in pathlib.Path('/proc').iterdir():
   if not proc.name.isdigit():continue
   try:
-   if (proc/'exe').resolve() in executables:raise SystemExit('Close ZCode before applying the build. Current app PID: '+proc.name)
+   if (proc/'exe').resolve() in executables:raise SystemExit('Close CCode before applying the build. Current app PID: '+proc.name)
   except (OSError,PermissionError):pass
  staged=ROOT/'runtime/build/resources';target=ROOT/'app/resources'
  manifest=json.loads((ROOT/'project.json').read_text())

@@ -2,6 +2,11 @@
 
 ## 2026-10-14
 
+### Pesan `make apply` memakai nama CCode
+
+- Pengguna menyorot keluaran terminal `make apply` yang masih menulis `Close ZCode before applying the build. Current app PID: …`. Itu pesan penjaga di `scripts/apply_build.py` (skrip dev), bukan teks aplikasi — penjaganya sendiri sudah menerima binary `app/zcode` **maupun** `app/ccode`, hanya kalimatnya yang belum ikut rebranding. Kini berbunyi `Close CCode before applying the build.`
+- Rujukan `ZCode` yang tersisa di skrip/`docs` sengaja dibiarkan karena menunjuk ke **upstream**: launcher ZCode asli (`install_local.py`), path lama `~/.zcode`/`~/.config/ZCode` (`data_backup.py`, `export_obsidian.py`), nama namespace pra-rebranding `zcode-on-steroids`, dan versi upstream `ZCode 3.14.5`. Jangan ganti itu.
+
 ### Activity: segmen tahun saja, grid Januari–Desember statis, hover tooltip ZCode
 
 - Permintaan lanjutan pengguna: tombol rentang "12 months" dibuang (cukup tahun saja), segmen tahun bertambah otomatis saat tahun baru muncul (2027 nanti, dengan 2026 bergeser ke kiri), jumlah kotak statis Januari–Desember (365 hari, 366 di tahun kabisat), dan hover kotak berwarna memakai desain ZCode, bukan tooltip bawaan browser.
