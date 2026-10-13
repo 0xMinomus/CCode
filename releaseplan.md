@@ -42,10 +42,13 @@ Diverifikasi 2026-10-13:
 
 ## 4. Repo dan strategi sinkronisasi
 
-1. Fork `zai-org/ZCode` → `0xMinomus/CCode` (fork asli, bukan salinan; history upstream tetap ada supaya bisa dibedakan).
-2. Remote: `origin` = fork, `upstream` = `zai-org/ZCode`.
-3. Branch: `main` mengikuti upstream bersih (untuk rebase), `ccode` memuat perubahan kita (bentuk commit terpisah per fitur, bukan satu commit raksasa) supaya `git rebase upstream/main` tetap murah.
-4. Alternatif bila tidak mau memuat history upstream: repo patch (kondisi sekarang) + direktori `patches/*.patch` yang bisa diterapkan ke checkout upstream, dan skrip `make upstream-apply`. Ini pilihan cadangan, bukan utama.
+Status per 2026-10-13: sudah dibuat — workspace patch lama di-rename jadi **`0xMinomus/CCode-archive`**, dan **`0xMinomus/CCode`** dibuat sebagai fork dari `zai-org/ZCode` (history upstream ikut, `0` star/issue karena repo baru). Snapshot workspace ini didorong ke branch `ccode-workspace` di fork itu.
+
+1. Fork: `0xMinomus/CCode`, dibuat lewat `gh repo fork zai-org/ZCode --fork-name CCode`. Jangan ubah `main` supaya rebase tetap murah.
+2. Remote: `origin` = workspace (`0xMinomus/CCode-archive`), `upstream` = `zai-org/ZCode`, `fork` = `0xMinomus/CCode`.
+3. Branch di fork: `main` mengikuti upstream bersih, `ccode` memuat perubahan kita (commit terpisah per fitur, bukan satu commit raksasa), `ccode-workspace` = snapshot patch workspace ini untuk rujukan spesifikasi perilaku.
+4. Catatan URL: karena nama `0xMinomus/CCode` dipakai ulang oleh fork, redirect URL lama dari repo workspace tidak lagi mengarah ke arsip. Pakai selalu URL eksplisit (`CCode-archive` untuk workspace, `CCode` untuk fork).
+5. Alternatif bila tidak mau memuat history upstream: repo patch + direktori `patches/*.patch` yang bisa diterapkan ke checkout upstream, dan skrip `make upstream-apply`. Ini cadangan, bukan jalur utama.
 
 ## 5. Fase
 

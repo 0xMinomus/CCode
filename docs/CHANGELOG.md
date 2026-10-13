@@ -16,6 +16,13 @@
 - Verifikasi: `make build` + `make test` lolos **134 tes** (termasuk `tests/test_branding.py` baru: lexer/rename/guard/scaled path, dan `tests/test_apply_build.py` yang kini membuat AppDir minimal untuk menguji rename identitas). Smoke test di root terisolasi (`/tmp/ccode-*`): judul window `CCode`, tidak ada layar login, **0** `Unknown channel`, **0** `No handler registered`, **0** `ReferenceError`/`TypeError`; DOM onboarding merender mark CCode (`svg path` = path CCode, 0 path legacy) dan `<img alt="CCode">` memakai data URI CCode; splash `#loading` juga memakai mark baru. `make apply` dijalankan (identitas AppDir diganti), `make install` dijalankan (namespace 149 MB dipindahkan ke `~/.local/share/ccode`, unit lama dipensiunkan, `ccode-model-sync.timer`/`.path` aktif dan service-nya selesai tanpa error).
 - Dokumen yang diperbarui: README, AGENTS, ARCHITECTURE (bagian **Branding** baru), DEVELOPMENT (bagian Branding dan ikon), OPERATIONS (install/migrasi/rollback), MODELS, VOICE, THIRD_PARTY, COMPUTER_USE_IMPROVEMENTS.
 
+### Fork resmi: CCode (fork) + CCode-archive (workspace)
+
+- Repo workspace ini di-rename `0xMinomus/CCode` → **`0xMinomus/CCode-archive`**, dan **`0xMinomus/CCode`** dibuat sebagai fork dari `zai-org/ZCode` (Apache-2.0) lewat `gh repo fork`. Fork membawa history upstream; snapshot workspace ini didorong sebagai branch `ccode-workspace` supaya spesifikasi perilaku tetap bisa dirujuk dari repo rilis.
+- Remote lokal dirapikan (`origin` = workspace, `fork` = repo fork, `upstream` = `zai-org/ZCode`), dan integritas diverifikasi: tree hash branch yang didorong identik dengan HEAD lokal, jadi tidak ada file yang hilang/berubah saat pindah.
+- Catatan URL: karena nama `CCode` dipakai ulang oleh fork, redirect URL lama tidak lagi menunjuk arsip — semua dokumen memakai URL eksplisit (`CCode-archive` vs `CCode`).
+- Dokumen yang diperbarui: README (seksi **Repositori** + perintah clone), AGENTS (aturan repo/fork), `docs/THIRD_PARTY.md` (provenance), `releaseplan.md` §4 (status fork & strategi branch).
+
 ### Rencana rilis + status lisensi upstream
 
 - Menambahkan `releaseplan.md`: rencana rilis CCode sebagai aplikasi mandiri (user unduh lalu pakai), termasuk keputusan jalur, port patch ke sumber, packaging per platform, checklist pra-rilis, risiko, dan daftar larangan.

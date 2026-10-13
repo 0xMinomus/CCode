@@ -4,6 +4,16 @@ Branding **CCode** untuk workspace modifikasi lokal ZCode **3.14.5** di Fedora: 
 
 Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh source tree upstream ZCode. Source modifikasi, baseline ASAR, runtime aplikasi, dan backend pendukung disimpan bersama agar bisa dilanjutkan lewat ohmypi.
 
+## Repositori
+
+| Repo | Isi | URL |
+|---|---|---|
+| **CCode** (fork) | Fork resmi dari upstream dan rumah rilis: branch `main` mengikuti upstream, `ccode` untuk hasil porting, `ccode-workspace` snapshot workspace patch ini | https://github.com/0xMinomus/CCode |
+| **CCode-archive** | Repo workspace patch (dokumen ini): source patch Linux/Fedora, build/apply, services, docs | https://github.com/0xMinomus/CCode-archive |
+| **zai-org/ZCode** | Upstream asli ZCode — Apache-2.0, `Copyright 2026 Z.AI Co., Ltd`; sumber fork | https://github.com/zai-org/ZCode |
+
+Rilis nanti dibangun dari fork (build dari sumber), bukan dari patch binary di repo workspace ini; jalurnya ada di [releaseplan.md](releaseplan.md).
+
 ## Cara kerja singkat
 
 - Data aplikasi berada di `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`); `make install` memindahkan sekali dari namespace lama `~/.local/share/zcode-on-steroids`. Instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis.
@@ -15,7 +25,9 @@ Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh
 ## Mulai dengan ohmypi
 
 ```bash
-cd ~/Documents/CCode   # sesuaikan dengan lokasi clone kamu
+# repo workspace (patch Linux/Fedora)
+git clone https://github.com/0xMinomus/CCode-archive.git ~/Documents/CCode
+cd ~/Documents/CCode
 omp
 ```
 
