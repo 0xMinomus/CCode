@@ -2,6 +2,12 @@
 
 ## 2026-10-13
 
+### Riset penggantian Computer Use dengan Codex
+
+- Rencana di `docs/COMPUTER_USE_PLAN.md` membedakan empat jalur: actuator `@oai/sky` langsung dari ZCode, harness `cua-repl`, delegasi planner lewat app-server, dan kombinasi X11/XWayland dengan portal. Instalasi lokal `chatgpt-26.930.61225` membawa `codex-cli 0.160.1` serta SDK desktop Linux nyata (`@oai/sky` 0.7.5 dengan helper `sky_linux_x64`), tetapi manifest `cua_repl` aktif hanya mengaktifkan permukaan `browser`.
+- Probe isolated `CODEX_HOME`: handshake app-server stdio berhasil (`platformOs=linux`, exit 0), schema lokal memuat 104 metode termasuk thread/turn/interrupt/MCP call tanpa RPC desktop/browser khusus, dan provider `wire_api="chat"` ditolak (Responses wajib). Import SDK tanpa aksi melaporkan `target="linux"` dengan tool screenshot/window/AX/input/clipboard/launch; `ldd` menunjukkan helper hanya menautkan `libX11` (XTEST + AT-SPI, tanpa Wayland/portal/PipeWire/libei). Sesi mesin ini `wayland`, sehingga jendela Wayland native belum terjangkau oleh jalur X11. Tidak ada prompt model, akses kredensial, capture layar, atau input desktop.
+- Jalur rekomendasi: proof-of-integration dimulai dari probe cakupan helper Sky, lalu cutover hanya untuk scope yang terbukti. Gate wajib mencakup cakupan target pada sesi Wayland, kesiapan helper (library/permission/SELinux), approval/stop/privasi milik ZCode, kompatibilitas provider untuk vision dan tool calling, benchmark task, serta rollback. Runtime, source Computer Use, config pengguna, launcher, serta backup versi terpasang tidak diubah.
+
 ### Kebiasaan delivery disimpan di AGENTS.md
 
 - TODO wajib untuk setiap pekerjaan; subagent hanya bila perlu; setiap perubahan file project selalu di-build dan diperiksa; Markdown terkait selalu diperbarui dan disinkronkan ke Obsidian.
