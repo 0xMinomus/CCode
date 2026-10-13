@@ -16,6 +16,12 @@
 - Verifikasi: `make build` + `make test` lolos **134 tes** (termasuk `tests/test_branding.py` baru: lexer/rename/guard/scaled path, dan `tests/test_apply_build.py` yang kini membuat AppDir minimal untuk menguji rename identitas). Smoke test di root terisolasi (`/tmp/ccode-*`): judul window `CCode`, tidak ada layar login, **0** `Unknown channel`, **0** `No handler registered`, **0** `ReferenceError`/`TypeError`; DOM onboarding merender mark CCode (`svg path` = path CCode, 0 path legacy) dan `<img alt="CCode">` memakai data URI CCode; splash `#loading` juga memakai mark baru. `make apply` dijalankan (identitas AppDir diganti), `make install` dijalankan (namespace 149 MB dipindahkan ke `~/.local/share/ccode`, unit lama dipensiunkan, `ccode-model-sync.timer`/`.path` aktif dan service-nya selesai tanpa error).
 - Dokumen yang diperbarui: README, AGENTS, ARCHITECTURE (bagian **Branding** baru), DEVELOPMENT (bagian Branding dan ikon), OPERATIONS (install/migrasi/rollback), MODELS, VOICE, THIRD_PARTY, COMPUTER_USE_IMPROVEMENTS.
 
+### Pembersihan sisa integrasi ZCode-era di luar repo
+
+- Timer lama `zcode-vansrouter-model-sync.timer` ternyata masih `enabled`/`active` dan gagal setiap ~60 detik (`Changing to the requested working directory failed`, `Failed at step CHDIR`) karena `WorkingDirectory=/home/andikaputra/Documents/zcode-on-steroids/services/model-sync` hilang saat folder repo dipindah ke `Documents/CCode`. Timer di-`disable --now`; pekerjaan yang sama (enrich Vansrouter + discovery 9Router) sudah dijalankan `ccode-model-sync.timer` untuk namespace baru.
+- Empat symlink alias di `~/Documents/Codex/tools/` yang menunjuk ke path repo lama diperbarui dan dinamai ulang mengikuti CCode: `ccode-app` → `app/`, `screen-mcp` → `services/desktop`, `ccode-voice` → `services/voice`, `ccode-model-sync` → `services/model-sync` (semuanya resolve). Daftarnya disinkronkan di `project.json.compatibility_links` dan `docs/OPERATIONS.md`.
+- Yang tidak disentuh: AppImage asli di `~/Applications`, launcher `zcode.desktop` milik instalasi lama, dan data lama `~/.zcode`/`~/.config/ZCode`.
+
 ### Latar chat polos: watermark Z di belakang draft dihapus
 
 - Permintaan pengguna: hilangkan huruf/logo Z yang muncul samar di latar chat dan pakai warna polos. Node dekoratifnya (`pointer-events-none absolute left-1/2 top-1/2 aspect-[5/4] ...` berisi komponen mark `Qgt`) diganti `null` di `src/local_only/cloud.py::_renderer`, jadi React merender tidak ada apa pun sementara paragraf sapaan tetap utuh.
