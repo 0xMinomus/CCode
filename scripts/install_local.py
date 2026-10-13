@@ -197,11 +197,18 @@ def main():
             service += 'Environment=' + quote_unit(name + '=' + str(value)) + '\n'
         service += 'TimeoutStartSec=45\n'
         timer = '[Unit]\nDescription=Keep standalone reasoning options current\n\n[Timer]\nOnStartupSec=30s\nOnUnitActiveSec=60s\nAccuracySec=5s\nUnit=' + UNIT_NAME + '.service\n\n[Install]\nWantedBy=timers.target\n'
+        # A provider is added (and its API key entered) from the UI, which writes
+        # this file: watching it lets discovery fill the model list right away
+        # instead of waiting for the next timer tick.
+        path_unit = ('[Unit]\nDescription=Discover standalone 9Router models when the provider config changes\n\n'
+                     '[Path]\nPathChanged=' + unit_path(provider) + '\nPathModified=' + unit_path(provider) +
+                     '\nUnit=' + UNIT_NAME + '.service\n\n[Install]\nWantedBy=paths.target\n')
         print('Project:', ROOT)
         print('Standalone namespace:', namespace)
         print('MCP config:', config)
         print('Desktop launcher:', launcher)
         print('Timer:', UNIT_NAME + '.timer')
+        print('Path unit:', UNIT_NAME + '.path')
         if args.dry_run:
             return
         with namespace_lock(namespace):
@@ -239,8 +246,10 @@ def main():
             write_integration(launcher, desktop, namespace)
             write_integration(units / (UNIT_NAME + '.service'), service, namespace)
             write_integration(units / (UNIT_NAME + '.timer'), timer, namespace)
+            write_integration(units / (UNIT_NAME + '.path'), path_unit, namespace)
         subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
         subprocess.run(['systemctl', '--user', 'enable', '--now', UNIT_NAME + '.timer'], check=True)
+        subprocess.run(['systemctl', '--user', 'enable', '--now', UNIT_NAME + '.path'], check=True)
         if shutil.which('update-desktop-database'):
             subprocess.run(['update-desktop-database', str(applications)], check=True)
         print('Standalone integration installed. Original launchers, timer, and data were not changed.')

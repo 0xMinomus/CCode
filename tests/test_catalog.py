@@ -54,7 +54,7 @@ class CatalogPatchTests(unittest.TestCase):
         templates = {t['templateId']: t for t in rules['templateRules']}
         ninerouter = templates['9router']['config']
         self.assertEqual(ninerouter['api']['baseUrl'], 'http://127.0.0.1:20128/v1')
-        self.assertEqual(ninerouter['builtinModelIds'], ['combo/coding-harian'])
+        self.assertEqual(ninerouter['builtinModelIds'], [], 'a fresh provider must start with an empty model list')
         self.assertEqual(ninerouter['access'], {'type': 'api-key'})
 
     def test_model_rules_for_zhipu_hosts_are_removed(self):
@@ -63,10 +63,16 @@ class CatalogPatchTests(unittest.TestCase):
         sites = [entry.get('providerId') for entry in model_rules['providerSiteRules']]
         self.assertEqual(sites, ['deepseek'])
         matches = [entry.get('modelMatch') for entry in model_rules['modelRules']]
-        self.assertIn('combo/coding-harian', matches)
         self.assertIn('.*', matches)
-        combo = [entry for entry in model_rules['modelRules'] if entry.get('modelMatch') == 'combo/coding-harian'][0]
-        self.assertEqual(combo['config']['optionSpecs']['reasoningLevel'], {'values': ['disabled'], 'map': '{}'})
+        self.assertNotIn('combo/coding-harian', matches, 'the template must not seed a model')
+
+    def test_seeded_combo_rule_is_stripped_on_repatch(self):
+        seeded = json.loads(catalog.patch_catalog(fixture()))
+        seeded['config']['modelConfigRules']['modelRules'].append(
+            {'modelMatch': catalog.NINEROUTER_SEEDED_MODEL, 'config': {'enabled': True}})
+        cleaned = json.loads(catalog.patch_catalog(json.dumps(seeded)))
+        matches = [entry.get('modelMatch') for entry in cleaned['config']['modelConfigRules']['modelRules']]
+        self.assertNotIn(catalog.NINEROUTER_SEEDED_MODEL, matches)
 
     def test_orphan_template_model_rules_are_removed(self):
         patched = json.loads(catalog.patch_catalog(fixture()))

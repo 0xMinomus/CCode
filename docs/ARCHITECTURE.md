@@ -39,7 +39,12 @@ Rekaman `pw-record` disimpan di direktori privat sementara, maksimal 60 detik. W
 
 ## Model sync
 
-`services/model-sync/sync.py` hanya melengkapi model yang sudah didaftarkan dalam provider `vansrouter` di ZCode. Metadata berasal dari snapshot OpenCode/models.dev, cache diperbarui paling sering sekali sehari, timer berjalan sekitar satu menit. Fingerprint pemetaan sebelumnya melindungi override manual. Model tak dikenal dan combo tidak ditebak. Tidak ada inference. Timer standalone `zcode-on-steroids-model-sync.timer` menunjuk config/state di dalam namespace lewat env `ZCODE_MODEL_SYNC_CONFIG`/`ZCODE_MODEL_SYNC_STATE`; tanpa env itu script tetap memakai jalur lama.
+`services/model-sync/sync.py` mengerjakan dua hal untuk namespace standalone:
+
+1. **Discovery 9Router** (aktif begitu provider keluarga 9Router ada): menarik `GET /v1/models` dari gateway lokal, mengelompokkan per namespace (combo terpisah, ambang 10 model, sisanya `· lainnya`), lalu menulis provider + manual rule di `provider_config.json`. Template katalog tidak menyemai model, jadi pengisian pertama datang dari discovery. Pemicunya: unit path systemd pada `provider_config.json` (write dari app), kondisi `needs_fill` untuk provider kosong/belum dikelompokkan, dan timer 60 detik dengan TTL 12 jam. Backoff 15 menit saat gateway mati, dan `make models` untuk memaksa. Metadata diambil dari `capabilities` gateway; snapshot models.dev hanya sebagai fallback; model tanpa limit dilewati dan dicatat. `commit()` menolak write yang mengurangi inventori model, dan hilangnya model secara massal diperlakukan sebagai file ditulis ulang (diisi ulang, bukan di-blacklist).
+2. **Enrich reasoning Vansrouter**: hanya melengkapi model yang sudah didaftarkan dalam provider `vansrouter` di ZCode. Metadata berasal dari snapshot OpenCode/models.dev, cache diperbarui paling sering sekali hari, timer berjalan sekitar satu menit.
+
+Aturan yang sama berlaku untuk keduanya: fingerprint pemetaan sebelumnya melindungi override manual, switch per model (`rule.config.enabled`) dipertahankan, model/rule yang dihapus user tidak dihidupkan lagi, dan schema host divalidasi (mis. `optionSpecs.reasoningLevel` wajib ada; model dengan rule katalog tidak boleh juga punya rule manual). Model tak dikenal dan combo tidak ditebak, dan tidak ada inference. Timer standalone `zcode-on-steroids-model-sync.timer` menunjuk config/state di dalam namespace lewat env `ZCODE_MODEL_SYNC_CONFIG`/`ZCODE_MODEL_SYNC_STATE`; tanpa env itu script tetap memakai jalur lama.
 
 ## Data pengguna
 

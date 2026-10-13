@@ -7,7 +7,7 @@ Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh
 ## Cara kerja singkat
 
 - Data aplikasi berada di `~/.local/share/zcode-on-steroids` (`data/`, `electron/`, `model-sync/`). Instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis.
-- Provider native **9Router** (`http://127.0.0.1:20128/v1`, combo `combo/coding-harian`) tersedia lewat "Add provider" seperti provider bawaan lain; keluarga akun Zhipu (Z.ai, BigModel, plan) sudah dihapus dari katalog.
+- Provider native **9Router** (`http://127.0.0.1:20128/v1`, combo `combo/coding-harian`) tersedia lewat "Add provider" seperti provider bawaan lain; keluarga akun Zhipu (Z.ai, BigModel, plan) sudah dihapus dari katalog. Model gateway-nya terdeteksi otomatis dan dikelompokkan per namespace (`9Router`, `9Router · cmc`, `9Router · kios`, … `9Router · lainnya`) — lihat [docs/MODELS.md](docs/MODELS.md).
 - Login akun ZCode tidak dipakai. Provider model diatur di Settings dan membawa autentikasinya sendiri; layanan akun/cloud (marketing, client config/scenes, usage stats, coding plan, OAuth, telemetri, remote control) tidak lagi terdaftar di host.
 - Fitur lokal tetap: Computer Use `fedora-desktop`, Voice bilingual, Activity (prompt/hari + streak dari riwayat lokal), engine task + SQLite lokal, MCP, reasoning sesuai metadata provider, dan guard izin desktop.
 - Fitur akun/langganan (login, plan/upgrade, coding plan, web/mobile remote control, plugin ber-`requiresPaidPlan`) dihapus dari build, bukan disembunyikan; halaman Usage stats berganti menjadi Activity yang seluruhnya lokal.
@@ -15,7 +15,7 @@ Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh
 ## Mulai dengan ohmypi
 
 ```bash
-cd /home/andikaputra/Documents/zcode-on-steroids
+cd ~/Documents/zcode-on-steroids   # sesuaikan dengan lokasi clone kamu
 omp
 ```
 
@@ -47,8 +47,9 @@ make build        # hasil di runtime/build/, belum mengubah app aktif
 make test         # syntax source + unit test + syntax hasil ASAR
 make dry-run      # lihat integrasi lokal yang akan dipasang
 make apply        # tutup ZCode dulu; promote build dan simpan cadangan
-make install      # pasang launcher + timer standalone (tidak mengubah launcher lama)
+make install      # pasang launcher + timer + path unit standalone (launcher lama tidak diubah)
 make run          # buka app/zcode lewat scripts/run.sh
+make models       # deteksi/segarkan semua model 9Router (kelompok per namespace)
 make obsidian     # salin README, AGENTS, dan docs/ ke vault Obsidian
 make obsidian-check  # laporkan selisih vault tanpa menulis
 

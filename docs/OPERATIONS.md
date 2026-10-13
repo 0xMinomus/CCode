@@ -9,7 +9,16 @@ systemctl --user status zcode-on-steroids-model-sync.timer
 journalctl --user -u zcode-on-steroids-model-sync.service -n 20
 ```
 
-`make install` menulis config MCP di dalam namespace standalone, launcher baru, dan unit timer baru. Provider API keys tidak diubah. Cadangan integrasi tersimpan di `<namespace>/integration-backups` dengan izin 0600.
+`make install` menulis config MCP di dalam namespace standalone, launcher baru, dan unit timer baru, plus unit **path** `zcode-on-steroids-model-sync.path` yang memantau `provider_config.json` supaya model 9Router terisi begitu provider dibuat/diubah dari UI. Provider API keys tidak diubah. Cadangan integrasi tersimpan di `<namespace>/integration-backups` dengan izin 0600.
+
+Periksa/matikan integrasi sync bila perlu:
+
+```bash
+systemctl --user status zcode-on-steroids-model-sync.path zcode-on-steroids-model-sync.timer
+journalctl --user -u zcode-on-steroids-model-sync.service -n 20
+systemctl --user disable --now zcode-on-steroids-model-sync.path      # hentikan pengisian instan
+systemctl --user disable --now zcode-on-steroids-model-sync.timer     # hentikan sync rutin
+```
 
 ## Backup dan restore data standalone
 

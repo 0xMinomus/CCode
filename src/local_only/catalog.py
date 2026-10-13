@@ -12,14 +12,17 @@ ZHIPU_ACCOUNT_GROUPS = ("zai-family", "bigmodel-family")
 ZHIPU_MARKERS = ("z.ai", "bigmodel.cn", "account:zai", "account:bigmodel", "zhipu-account", "zhipu-coding-plan-api-key")
 NINEROUTER_TEMPLATE_ID = "9router"
 NINEROUTER_BASE_URL = "http://127.0.0.1:20128/v1"
-NINEROUTER_MODEL = "combo/coding-harian"
+# The seeded model the template used to ship. It is stripped from the catalog so a
+# freshly added provider starts with an empty model list: the gateway model list is
+# discovered at runtime (services/model-sync/sync.py) instead of being hardcoded.
+NINEROUTER_SEEDED_MODEL = "combo/coding-harian"
 NINEROUTER_TEMPLATE = {
     "templateId": NINEROUTER_TEMPLATE_ID,
     "templateNameMap": {"zh-CN": "9Router", "en-US": "9Router"},
     "config": {
         "access": {"type": "api-key"},
         "api": {"type": "openai-chat-completions", "baseUrl": NINEROUTER_BASE_URL},
-        "builtinModelIds": [NINEROUTER_MODEL],
+        "builtinModelIds": [],
     },
 }
 
@@ -73,37 +76,14 @@ def patch_catalog(text):
                 model_rules[key] = [entry for entry in entries if not _is_zhipu_model_rule(entry)]
 
     if config.get("modelConfigRules") is not None:
-        _ensure_ninerouter_model_rule(config["modelConfigRules"])
+        _strip_seeded_model_rule(config["modelConfigRules"])
     return json.dumps(document, ensure_ascii=False, indent=2) + "\n"
 
 
-def _ensure_ninerouter_model_rule(model_rules):
-    """Give the combo the capability metadata 9Router reports for it."""
+def _strip_seeded_model_rule(model_rules):
+    """Drop the model rule the template used to seed, keeping the patch idempotent."""
     entries = model_rules.get("modelRules")
     if not isinstance(entries, list):
         return
-    entries = [entry for entry in entries if entry.get("modelMatch") != NINEROUTER_MODEL]
-    entries.append({
-        "modelMatch": NINEROUTER_MODEL,
-        "config": {
-            "enabled": True,
-            "properties": {
-                "contextWindow": 1000000,
-                "inputFormat": {"supportsText": True, "supportsImage": True, "supportsPdf": False,
-                                "supportsAudio": False, "supportsVideo": False},
-                "outputFormat": {"supportsText": True},
-                "supportsToolCall": True,
-                "supportsJsonSchemaOutput": False,
-                "supportsNativeWebSearch": False,
-                "supportsMidConversationSystem": False,
-                "requiresMfjsToolSchema": False,
-            },
-            "optionSpecs": {
-                "maxOutputTokens": {"max": 384000},
-                # The combo fixes its members' reasoning upstream, so the picker
-                # must not offer levels that never reach the provider.
-                "reasoningLevel": {"values": ["disabled"], "map": "{}"},
-            },
-        },
-    })
-    model_rules["modelRules"] = entries
+    model_rules["modelRules"] = [entry for entry in entries
+                                 if entry.get("modelMatch") != NINEROUTER_SEEDED_MODEL]
