@@ -32,6 +32,8 @@ Diverifikasi 2026-10-13:
 
 ## 3. Kewajiban lisensi (checklist, harus benar sebelum rilis apa pun)
 
+Status 2026-10-13: `LICENSE` (Apache-2.0, verbatim dari upstream) dan `NOTICE.md` (atribusi + ringkasan modifikasi + pernyataan tanpa afiliasi) sudah ada di root repo. Item di bawah diverifikasi ulang setiap rilis.
+
 - [ ] Sertakan `LICENSE` (Apache-2.0, Copyright 2026 Z.AI Co., Ltd) apa adanya di repo dan di setiap artifact.
 - [ ] Sertakan `NOTICE.md` dan `THIRD-PARTY-NOTICES.md` dari upstream; tambahkan bagian CCode sendiri (tidak menghapus milik upstream).
 - [ ] File yang diubah diberi penanda perubahan: header komentar pada file sumber yang disentuh, plus catatan di `docs/CHANGELOG.md`/release notes.
@@ -117,7 +119,7 @@ Kriteria selesai: orang lain bisa download → pakai tanpa menghubungi pemilik r
 | Bump upstream mengubah banyak hal | Patch besar, rebase berat | Fork berbasis commit per-fitur + daftar uji perilaku otomatis |
 | Kebijakan merek Z.ai berubah | Rilis terpaksa ganti nama lagi | Sudah rebrand penuh ke CCode; hindari penggunaan merek di artifact |
 | Upstream berhenti merilis / berubah lisensi | Fork harus mandiri | Kode fork tetap Apache-2.0 pada commit terakhir yang aman; simpan `LICENSE`/`NOTICE` historis |
-| Lihat klaim di README yang belum diverifikasi (audit trafik, dsb.) | Kredibilitas | Pertahankan seksi "Batasan yang jujur"; verifikasi sebelum klaim |
+| Klaim di README (produk, publik) tidak didukung fakta | Kredibilitas | Sejak 2026-10-13 README ditulis umum/profesional tanpa seksi batasan; catatan batasan tetap hidup di `docs/` (ARCHITECTURE, NO_LOGIN_TEST, THIRD_PARTY, releaseplan) dan di release notes |
 | Artefak besar per rilis (Electron 200+ MB) | Biaya hosting | AppImage/NSIS terkompres, hindari menyimpan semua platform di repo |
 
 ## 8. Yang tidak boleh dilakukan

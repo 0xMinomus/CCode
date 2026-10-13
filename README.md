@@ -1,95 +1,164 @@
+<div align="center">
+
+<img src="ccode-logo.svg" alt="CCode" width="150">
+
 # CCode
 
-Branding **CCode** untuk workspace modifikasi lokal ZCode **3.14.5** di Fedora: aplikasi berjalan sebagai **varian mandiri tanpa akun ZCode**, dengan Computer Use melalui MCP, reasoning model Vansrouter, serta voice command lokal dengan ucapan Indonesia–English. Nama produk, judul window, launcher, ikon, dan onboarding memakai CCode; akar datanya `~/.local/share/ccode`.
+**A no-account, local-first fork of [ZCode](https://github.com/zai-org/ZCode).**
+Chat with coding agents, drive your desktop, and keep every byte of data on your own machine.
 
-Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh source tree upstream ZCode. Source modifikasi, baseline ASAR, runtime aplikasi, dan backend pendukung disimpan bersama agar bisa dilanjutkan lewat ohmypi.
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Fork of ZCode](https://img.shields.io/badge/fork-zai--org%2FZCode-6f42c1.svg)](https://github.com/zai-org/ZCode)
+[![No account required](https://img.shields.io/badge/account-not%20required-success.svg)](#why-ccode-exists)
+[![Status: pre-release](https://img.shields.io/badge/status-pre--release-orange.svg)](releaseplan.md)
 
-## Repositori
+</div>
 
-| Repo | Isi | URL |
-|---|---|---|
-| **CCode** (fork) | Fork dari upstream dan rumah rilis. `main` mengikuti upstream apa adanya (untuk rebase), `ccode-workspace` = snapshot workspace patch ini dan **default branch**-nya, nanti `ccode` untuk hasil porting | https://github.com/0xMinomus/CCode |
-| **CCode-archive** | Repo workspace patch (dokumen ini): source patch Linux/Fedora, build/apply, services, docs — saat ini **privat** | https://github.com/0xMinomus/CCode-archive |
-| **zai-org/ZCode** | Upstream asli ZCode — Apache-2.0, `Copyright 2026 Z.AI Co., Ltd`; sumber fork | https://github.com/zai-org/ZCode |
+---
 
-Versi publik dari dokumen ini ada di branch `ccode-workspace` pada fork **CCode** — branch itu yang jadi default branch fork, jadi README ini yang tampil di halaman depan `0xMinomus/CCode` sementara label *forked from zai-org/ZCode* tetap ada. **Jangan pakai tombol `Sync fork` / `Discard commits` di halaman itu:** history branch ini tidak berhubungan dengan upstream, jadi tombol tersebut akan me-reset `ccode-workspace` ke `main` upstream dan membuang commit workspace. Sinkronisasi upstream dilakukan lokal (`git fetch upstream && git rebase upstream/main` di `main`); kalau branch terlanjur di-reset, pulihkan dari clone ini dengan `git push --force-with-lease fork main:ccode-workspace`. Rilis nanti dibangun dari fork (build dari sumber), bukan dari patch binary di repo workspace; jalurnya ada di [releaseplan.md](releaseplan.md). Kalau workspace ini dibuka untuk publik, jalankan dulu pembersihan F0 di dokumen itu (buang jalur machine-specific di `project.json`).
+## Why CCode exists
 
-## Cara kerja singkat
+CCode is a fork of **ZCode**, the agentic coding workspace by Z.AI, rebuilt around three ideas:
 
-- Data aplikasi berada di `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`); `make install` memindahkan sekali dari namespace lama `~/.local/share/zcode-on-steroids`. Instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis.
-- Provider native **9Router** (`http://127.0.0.1:20128/v1`, combo `combo/coding-harian`) tersedia lewat "Add provider" seperti provider bawaan lain; keluarga akun Zhipu (Z.ai, BigModel, plan) sudah dihapus dari katalog. Model gateway-nya dikelompokkan per namespace (`9Router`, `9Router · cmc`, `9Router · kios`, … `9Router · lainnya`); setelah API key diisi, tombol **Auto Detect** di Model settings mengisi semuanya sekaligus — lihat [docs/MODELS.md](docs/MODELS.md).
-- Login akun ZCode tidak dipakai. Provider model diatur di Settings dan membawa autentikasinya sendiri; layanan akun/cloud (marketing, client config/scenes, usage stats, coding plan, OAuth, telemetri, remote control) tidak lagi terdaftar di host.
-- Fitur lokal tetap: Computer Use `fedora-desktop`, Voice bilingual, Activity (prompt/hari + streak dari riwayat lokal), engine task + SQLite lokal, MCP, reasoning sesuai metadata provider, dan guard izin desktop.
-- Fitur akun/langganan (login, plan/upgrade, coding plan, web/mobile remote control, plugin ber-`requiresPaidPlan`) dihapus dari build, bukan disembunyikan; halaman Usage stats berganti menjadi Activity yang seluruhnya lokal.
+1. **No account, ever.** There is no sign-in screen, no account service, no plan or subscription surface. The app opens
+   straight into a workspace and talks only to the model providers *you* configure.
+2. **Your machine, your data.** Everything — tasks, sessions, provider keys, voice preferences, activity history —
+   lives in a dedicated namespace (`~/.local/share/ccode`). CCode never reads or writes another installation's data
+   and never imports anything behind your back.
+3. **Local capabilities first.** Desktop automation over MCP, bilingual local voice input, and a local activity
+   dashboard run on your hardware, with no round-trip through a vendor service.
 
-## Mulai dengan ohmypi
+CCode is an independent, unaffiliated fork. Upstream attribution, license terms, and the full list of modifications
+are recorded in [NOTICE.md](NOTICE.md).
 
-```bash
-# repo workspace (patch Linux/Fedora)
-git clone https://github.com/0xMinomus/CCode-archive.git ~/Documents/CCode
-cd ~/Documents/CCode
-omp
-```
+## Highlights
 
-Minta agent membaca `AGENTS.md` dan `docs/ARCHITECTURE.md` terlebih dahulu. Contoh: “Perbaiki UI Voice, gunakan komponen menu ZCode yang sudah ada, lalu build dan jalankan pemeriksaan.”
-
-## Struktur
-
-| Lokasi | Isi |
+| | |
 |---|---|
-| `src/renderer/` | Source UI Computer Use Linux, Voice, dan Activity |
-| `src/main/voice.cjs` | IPC Electron, rekaman mikrofon, worker voice |
-| `src/main/activity.cjs` | Modul Activity lokal: prompt/hari (seluruh riwayat), streak, dan rekap tahun |
-| `src/local_only/catalog.py` | Patch katalog provider native: buang keluarga Zhipu, tambah template 9Router |
-| `src/local_only/` | Patch standalone: namespace data, pembersihan akun/cloud, dan branding CCode |
-| `ccode-logo.svg` | Sumber tunggal mark CCode (dipakai patch mark, data URI, dan ikon) |
-| `assets/icons/` | Ikon hasil rasterisasi `ccode-logo.svg` (`make icons`), dipakai paket dan launcher |
-| `services/desktop/` | screen-mcp dan profil `zcode-fast` |
-| `services/voice/` | Whisper worker, kosakata bilingual, venv, model lokal |
-| `services/model-sync/` | Discovery model 9Router + sinkronisasi metadata reasoning, cache, state |
-| `app/` | Aplikasi Electron modifikasi yang bisa dijalankan |
-| `baselines/` | `app.asar` dan backend agent asli yang dipin sebagai sumber build |
-| `scripts/` | Build ASAR, pemeriksaan, apply, backup/restore, integrasi lokal |
-| `runtime/` | Build sementara dan cadangan; jangan commit |
-| `project.json` | Versi upstream, hash baseline, nama asset yang dipatch |
-| `releaseplan.md` | Rencana rilis: jalur source-fork, kewajiban lisensi Apache-2.0, packaging per platform |
-| `docs/` | Arsitektur, pengembangan, operasi, dan keterbatasan |
+| **Zero-account startup** | No login gate, no cloud handshake, no plan prompts. Launch it and work. |
+| **Bring your own provider** | Any OpenAI-, Anthropic-, or Responses-compatible endpoint, plus a ready-made template for a local 9Router-compatible gateway. Keys are stored in your own config. |
+| **Local task engine** | Conversations, tasks, and agent sessions persist in a local SQLite database that you can back up, inspect, or delete. |
+| **Activity dashboard** | Prompts per day, streaks, and a yearly recap, computed read-only from your local session database. |
+| **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
+| **Bilingual voice input** | Local Whisper worker tuned for mixed Indonesian–English speech, with preview-before-send, a 60-second cap, and temporary audio that is deleted after transcription. |
+| **Reasoning metadata that is real** | Reasoning levels come from provider metadata or verified behavior — no cosmetic Low/Max toggles. |
+| **Own identity** | CCode name, mark, launcher, icons, and onboarding, generated from a single brand source ([`ccode-logo.svg`](ccode-logo.svg)). |
+| **Apache-2.0 throughout** | Fork, modify, and redistribute under the same license as upstream, with attribution intact ([LICENSE](LICENSE), [NOTICE.md](NOTICE.md)). |
 
-## Perintah sehari-hari
+## CCode vs ZCode
+
+Side by side, at a glance:
+
+| Aspect | ZCode (upstream) | CCode |
+|---|---|---|
+| **Account & sign-in** | Sign-in to a Z.ai account; account services drive plans, usage, and cloud features | **No account at all** — the login gate is gone and account/cloud/plan services are not registered |
+| **Data location** | Vendor data directories (`~/.zcode`, `~/.config/ZCode`) | Dedicated namespace (`~/.local/share/ccode`); other installations are never read or written |
+| **Providers** | Built-in Zhipu family (Z.ai, BigModel, coding plans) plus BYOK | Zhipu/plan family removed; BYOK for any compatible endpoint, plus a local 9Router template |
+| **Model catalog** | Refreshed from the account endpoint at runtime | Account-driven refresh disabled; the catalog is local and pinned |
+| **Usage analytics** | Cloud usage stats | **Activity**: prompts/day, streaks, yearly recap, computed locally |
+| **Voice input** | — | Local Whisper worker, Indonesian–English mixed speech, preview before send |
+| **Computer Use** | Platform helper apps with their own permission flow | Linux desktop backend over MCP: text-first screen reading, element-based clicks, pointer-takeover guard, portal capture |
+| **Auto-update** | Polls the vendor update feed | Update channel removed; a release never overwrites your build |
+| **Startup network footprint** | Account and business-config calls, catalog refresh, update checks | None of the above; only the provider endpoints you configure, only when you use them |
+| **Performance & resource use** | Account/cloud round-trips during startup and for stats | No account/cloud/update round-trips; Activity is read-only local SQLite. The Computer Use MCP defers model loading to the first observation (~60 MB less per idle session, measured), and an optional Chromium low-memory switch saves ~128 MB PSS when enabled (documented, off by default) |
+| **Disk footprint (measured)** | 195 MB single AppImage (3.14.5) | Deployed application directory 653 MiB unpacked (the Electron/Chromium runtime dominates); the patched bundle is ~166 KB smaller than the upstream baseline. Packaged installers are on the [roadmap](#roadmap) |
+| **Identity** | ZCode branding and vendor endpoints | CCode branding end to end, with the `zcode://` scheme, `.zcode` layout, `ZCODE_*` variables, and `zcode-*` IPC channels retained on purpose for host/agent compatibility |
+| **License** | Apache-2.0 — Copyright 2026 Z.AI Co., Ltd | Apache-2.0, same terms, attribution preserved |
+
+<sub>Measured figures come from the project's reference workstation and are recorded in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). A reproducible head-to-head benchmark suite is on the roadmap.</sub>
+
+## Requirements
+
+- **Platform:** Linux x86-64 is the supported target today. The Electron/Chromium runtime ships with the application,
+  so no separate Node.js installation is needed to run it. Windows and macOS builds are on the [roadmap](#roadmap).
+- **Source builds:** Python 3, GNU Make, and a checkout of this workspace. Regenerating the brand icons needs
+  ImageMagick; nothing else is required to build the patched bundle.
+- **Optional capabilities:** PipeWire (`pw-record`) and FFmpeg for voice input; a desktop portal session with AT-SPI for
+  Computer Use; `gtk-update-icon-cache` for launcher icons on GTK desktops.
+
+## Build and run
 
 ```bash
-make build        # hasil di runtime/build/, belum mengubah app aktif
-make icons        # rasterisasi ulang assets/icons/ dari ccode-logo.svg
-make test         # syntax source + unit test + syntax hasil ASAR
-make dry-run      # lihat integrasi lokal yang akan dipasang
-make apply        # tutup aplikasi dulu; promote build + rename identitas AppDir ke CCode, simpan cadangan
-make install      # pasang launcher/ikon/timer CCode, migrasikan namespace lama, pensiunkan integrasi ZCode-era
-make run          # buka app/ccode lewat scripts/run.sh
-make models       # deteksi/segarkan semua model 9Router (kelompok per namespace)
-make obsidian     # salin README, AGENTS, dan docs/ ke vault Obsidian
-make obsidian-check  # laporkan selisih vault tanpa menulis
+git clone https://github.com/0xMinomus/CCode-archive.git
+cd CCode-archive
 
-python3 scripts/data_backup.py backup  --root ~/.local/share/ccode --destination ~/ccode-backups/$(date +%F)
-python3 scripts/data_backup.py verify  ~/ccode-backups/2026-10-12
-python3 scripts/data_backup.py restore ~/ccode-backups/2026-10-12
+make build      # stage the patched bundle in runtime/build (upstream baseline verified by SHA-256)
+make test       # syntax checks for sources and patched assets, plus the unit test suite
+make apply      # promote the staged build into app/ (close the app first)
+make install    # launcher, icon theme entries, model-sync units, and the CCode data namespace
+make run        # launch
 ```
 
-`make build` menolak baseline berbeda atau anchor upstream yang tidak cocok. Perubahan file di `src/main/` perlu build/apply; worker di `services/voice/` dimuat ulang setelah aplikasi ditutup dan dibuka kembali. `make apply` sekaligus mengganti nama identitas AppDir (`app/zcode` → `app/ccode`, launcher, ikon, `AppRun`), jadi jalankan `make build && make test && make apply` lalu `make run`; `make install` hanya bila ada perubahan integrasi user.
+`make build` verifies the pinned upstream artifacts recorded in [`project.json`](project.json) before patching; a
+mismatch fails the build instead of producing a half-patched application. Packaged installers (`AppImage`, `.deb`,
+`.rpm`, Windows installer) are being prepared — see the [release plan](releaseplan.md).
 
-Data instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis; symlink kompatibilitas lama dibiarkan sampai proses yang memakainya benar-benar berhenti.
+### Everyday commands
 
-Data akun, task, plugin, dan provider tidak disalin ke source workspace.
+```bash
+make models         # discover/refresh local gateway models (grouped per namespace)
+make icons          # re-rasterize assets/icons/ from ccode-logo.svg
+make obsidian       # mirror the docs into an Obsidian vault
+make obsidian-check # report vault drift without writing
+make dry-run        # show what the local integration would install
+```
 
-Baca [panduan pengembangan](docs/DEVELOPMENT.md), [operasi/rollback](docs/OPERATIONS.md), dan [catatan third-party](docs/THIRD_PARTY.md).
+## Project layout
 
-Catatan Obsidian: folder project ini bisa dibuka langsung sebagai vault (`.obsidian/` ada → `make obsidian` hanya menyegarkan `Index.md`, sedangkan `README`, `AGENTS`, dan `docs/` adalah file asli). Untuk vault terpisah, `make obsidian` menyalin dokumen ke `<vault>/ZCode on Steroids/` dengan frontmatter tag `#zcode`; vault dideteksi dari `OBSIDIAN_VAULT_PATH`, konfigurasi MCP omp, atau `--vault`. `make obsidian-check` melaporkan selisih tanpa menulis.
+| Path | Contents |
+|---|---|
+| `src/renderer/` | UI sources: Computer Use settings, voice input, Activity panel |
+| `src/main/` | Electron main-process modules: voice IPC, Activity data, Auto Detect |
+| `src/local_only/` | Product patches: storage namespacing, account/cloud removal, CCode branding, provider catalog |
+| `services/desktop/` | `screen-mcp` desktop backend and its fast profile |
+| `services/voice/` | Whisper worker, bilingual terminology, model |
+| `services/model-sync/` | Gateway model discovery and reasoning-metadata sync |
+| `scripts/` | Build, verification, apply, install, backup/restore, icon generation, docs export |
+| `assets/icons/` | Rasterized CCode icons committed for reproducible builds |
+| `ccode-logo.svg` | Single source of the CCode mark |
+| `docs/` | Architecture, operations, development, models, voice, and third-party notes (Indonesian) |
+| `project.json` | Pinned upstream identities, checksums, and patched asset names |
+| `releaseplan.md` | Release plan: source-fork route, license duties, packaging per platform |
 
-## Batasan yang jujur
+## Repositories
 
-- Bukan port native Linux dari helper macOS/Windows: Computer Use memakai `fedora-desktop`/screen-mcp, dan kualitas model terpisah dari performa backend.
-- Audit menyeluruh atas seluruh trafik keluar belum dilakukan; yang diverifikasi adalah tidak ada lagi channel akun/cloud di aplikasi dan tidak ada error/handler hilang saat startup.
-- Permukaan akun yang tidak lagi punya pemilik (misalnya panel plan di Settings) menampilkan status tidak tersedia, bukan data palsu.
-- Yang sengaja **tidak** diganti nama: env `ZCODE_*`, kanal IPC (`zcode-*`), skema URL `zcode://`, layout penyimpanan `.zcode` di dalam namespace, id provider/plugin/MCP, dan string protokol/transport (`ZCode Protocol`, error transport/runtime). Semua itu kontrak dengan host dan agent yang dipaketkan — menggantinya tidak mengubah apa pun yang terlihat dan berisiko memutus handshake.
-- Mark CCode berasal dari satu file `ccode-logo.svg`; PNG di `assets/icons/` adalah hasil rasterisasi yang di-commit supaya `make build` tidak butuh tool tambahan (ImageMagick hanya perlu saat `make icons`).
-- Rilis sebagai aplikasi mandiri belum jalan: repo ini masih workspace patch (butuh AppImage ZCode 3.14.5 + baseline + venv), Linux-only, dan belum ada artifact siap-unduh. Jalur rilisnya ada di [releaseplan.md](releaseplan.md).
-- Source upstream ZCode publik dan berlisensi **Apache-2.0** (Copyright 2026 Z.AI Co., Ltd), jadi forking diizinkan dengan kewajiban atribusi/NOTICE dan tanpa hak merek; status lengkap di docs/THIRD_PARTY.md.
+| Repository | Contents |
+|---|---|
+| [**CCode**](https://github.com/0xMinomus/CCode) | The fork: `main` mirrors upstream, `ccode-workspace` (default branch) carries this project's docs and workspace, `ccode` will hold the ported source changes |
+| [**CCode-archive**](https://github.com/0xMinomus/CCode-archive) | This patch workspace — current default home of development (private) |
+| [**zai-org/ZCode**](https://github.com/zai-org/ZCode) | Upstream project, Apache-2.0 — Copyright 2026 Z.AI Co., Ltd |
+
+<sub>Do not use the **Sync fork** / **Discard commits** button on the fork page: because the workspace branch has no
+shared history with upstream, that button resets the branch and drops the workspace commits. Sync upstream locally
+instead (`git fetch upstream && git rebase upstream/main` on `main`).</sub>
+
+## Roadmap
+
+- **Packaged releases** — signed AppImage, `.deb`/`.rpm`, portable tarball, and a Windows installer, so using CCode is
+  a download instead of a build.
+- **Source-based fork track** — the `ccode` branch ports the standalone, branding, provider, voice, Activity, and
+  Computer Use work into TypeScript on top of upstream, replacing binary patching.
+- **Cross-platform** — Windows and macOS builds, including native desktop-automation and audio-capture backends.
+- **Benchmarks** — a reproducible suite for cold start, idle memory, and disk footprint, published with each release.
+- **More desktops** — verification across GNOME, KDE, and tiling compositors.
+
+## Security
+
+- **No telemetry surface.** Account, cloud, plan, telemetry, and remote-control services are not registered in the
+  application; update checks against the vendor feed are disabled.
+- **Credentials stay local.** Provider API keys live in your own configuration inside the CCode namespace. Nothing in
+  this repository contains, imports, or transmits user credentials, task history, or provider configuration.
+- **Reviews before release.** Every behavior change runs through `make test` (source syntax, patched-asset syntax, and
+  the unit suite) plus an isolated-root smoke test before it reaches a build.
+- **Reporting a vulnerability.** Please open a private report through the **Security** tab of this repository rather
+  than a public issue, and include reproduction steps and the version you built.
+
+## License
+
+Licensed under the **Apache License 2.0** — see [LICENSE](LICENSE).
+
+CCode is a fork of ZCode (Copyright 2026 Z.AI Co., Ltd); the modifications made here are released under the same
+license, with attribution and a change summary in [NOTICE.md](NOTICE.md). CCode is **not affiliated with, sponsored by,
+or endorsed by Z.AI or Zhipu**, and does not use their names or logos beyond describing the origin of the fork.
+
+Third-party components keep their own terms — see [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md).
