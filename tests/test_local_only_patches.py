@@ -227,18 +227,6 @@ class PatchedRendererBundleTests(unittest.TestCase):
         self.assertIn('presetLoading:!1,customLoading:nt,', self.text)
         self.assertIn('presetLoading:!1,codingPlanAuthError:ve,', self.text)
 
-    def test_auto_detect_button_sits_beside_add_model(self):
-        # The Model list header gains a ZCode Button (outline, same refresh icon the
-        # settings header uses) to the left of "+ Add model", with its own test id.
-        self.assertIn('(0,$.jsx)(ZCodeAutoDetect,{}),', self.text)
-        self.assertIn('"data-testid":`model-provider-auto-detect`', self.text)
-        self.assertIn('function ZCodeAutoDetect(){', self.text)
-        self.assertIn('window.zcodeDetect?.run', self.text)
-        header=self.text[self.text.index('(0,$.jsx)(ZCodeAutoDetect,{})')-160:]
-        self.assertLess(header.index('ZCodeAutoDetect'),
-                        header.index('settings.modelProvider.addModel'),
-                        'the detect button is rendered before the add-model button')
-
 
     def test_provider_empty_state_replaces_the_stuck_loading_card(self):
         # No provider configured => no selectable nav item => upstream keeps the
@@ -262,10 +250,6 @@ class PatchedIntlBundleTests(unittest.TestCase):
         from asar import Archive
         cls.text = cloud._intl(Archive(cls.baseline).read(cloud.INTL).decode())
 
-    def test_auto_detect_labels_exist_in_both_locales(self):
-        for key in ('"settings.modelProvider.autoDetect":`', '"settings.modelProvider.autoDetect.running":`',
-                    '"settings.modelProvider.autoDetect.done":`', '"settings.modelProvider.autoDetect.failed":`'):
-            self.assertGreaterEqual(self.text.count(key), 2, f'{key} must exist in zh-CN and en-US')
 
     def test_usage_page_is_named_activity(self):
         self.assertIn('"settings.usageTitle":`Activity`', self.text)

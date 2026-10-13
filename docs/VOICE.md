@@ -4,6 +4,7 @@ Source UI: `src/renderer/voice-input.js`. Rekaman/IPC: `src/main/voice.cjs`. Tra
 
 - ID adalah bahasa yang diprioritaskan, bukan larangan istilah Inggris. Prompt/hotwords menyediakan vocabulary teknis; normalization hanya memperbaiki variasi yang telah disepakati.
 - EN mengutamakan Inggris; Auto memilih ID/EN berdasarkan deteksi. Jangan mengubah nama aplikasi atau maksud umum dengan penggantian luas.
+- Teks dropdown pengaturan, keterangan bahasa, tooltip, dan pilihan mode kirim selalu berbahasa Inggris. Bahasa antarmuka ini terpisah dari bahasa pengenalan: Indonesian + English tetap memakai nilai `id`, English + Indonesian memakai `en`, dan Auto detect memakai `auto`; default tetap `id`.
 - Pilihan kirim dan bahasa memakai localStorage profil Electron standalone (`~/.local/share/zcode-on-steroids/electron`). Cek teks adalah default; auto-send hanya setelah user memilihnya.
 - Audio tidak dikirim ke provider. Teks yang dikirim ke chat mengikuti model ZCode yang dipilih, seperti teks diketik.
 - Model kecil multilingual tersimpan di `services/voice/model`, venv di `.venv`. Worker hangat bertahan selama app hidup; tutup/buka app untuk memuat kode/model baru.

@@ -2,6 +2,8 @@
 
 Jalankan `omp` dari root project. Mulai dengan meminta pembacaan AGENTS.md, lalu jelaskan perubahan dan hasil yang diinginkan.
 
+Setiap pekerjaan memakai TODO yang diperbarui sepanjang proses; subagent hanya untuk bagian yang benar-benar memerlukannya. Setiap perubahan file project diikuti `make build`, pemeriksaan relevan, dan pembaruan Markdown terkait plus `make obsidian`. Setelah hasil terverifikasi, agent otomatis commit file pekerjaan dan push branch aktif ke remote terkonfigurasi, tanpa force-push atau menyertakan perubahan pengguna yang tidak terkait. Deployment tetap memakai `make apply` saat ZCode sudah ditutup normal; autopush tidak berarti memaksa app/task berhenti atau menjalankan `make install`.
+
 ## UI atau IPC
 
 Edit `src/renderer/voice-input.js`, `src/renderer/linux-computer-use.js`, `src/renderer/activity-panel.js`, `src/main/voice.cjs`, atau `src/main/activity.cjs`. Gunakan `make build && make test`. Hasil masih staged. Tutup ZCode sebelum `make apply`, lalu buka melalui `make run`/launcher. `make install` hanya diperlukan bila path integrasi berubah.

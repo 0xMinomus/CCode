@@ -2,6 +2,27 @@
 
 ## 2026-10-13
 
+### Kebiasaan delivery disimpan di AGENTS.md
+
+- TODO wajib untuk setiap pekerjaan; subagent hanya bila perlu; setiap perubahan file project selalu di-build dan diperiksa; Markdown terkait selalu diperbarui dan disinkronkan ke Obsidian.
+- Commit dan push branch aktif kini otomatis setelah verifikasi, hanya untuk file pekerjaan; secret/artefak ignored/perubahan pengguna yang tidak terkait dikecualikan dan force-push dilarang. Aturan keselamatan apply tetap: ZCode harus ditutup normal, tanpa mematikan task aktif secara paksa.
+- Build ulang dan `make test` lolos (**97 tes**). Percobaan apply ditolak aman karena aplikasi pengguna masih berjalan; resource live tidak diganti.
+
+
+### Sidebar Settings Linux lebih rapat ke atas
+
+- `src/local_only/cloud.py::_renderer`: spacer drag-window di atas **Back to workspace** dikurangi dari 48px menjadi 16px khusus desktop Linux. Tombol kembali dan menu naik 32px; padding tombol, jarak antaritem, urutan menu, footer, serta layout macOS/Windows tetap.
+- Verifikasi aplikasi staged pada namespace terpisah: posisi atas tombol turun dari ~64px menjadi ~32px; strip 16px tetap memiliki `app-region: drag`. Tampilan 1200×800 diperiksa, sidebar compact 900×650 tetap bisa scroll, dan Enter pada tombol kembali membuka workspace. Log bebas `ReferenceError`/`TypeError`; aplikasi ditutup dengan exit code 0. `make build && make test`: **97 tes lolos**.
+
+
+### Auto Detect tetap di tempat + dropdown Voice berbahasa Inggris
+
+- `src/local_only/cloud.py`: status deteksi kini berada di kiri tombol, dengan area flex yang hanya memakai ruang tersisa. Label tombol tetap **Auto Detect** selama proses, ukuran ikon loading sama dengan ikon idle, dan status panjang dipotong dengan teks lengkap pada tooltip. Status memakai `role="status"`; hasil sukses maupun gagal tidak menggeser tombol di dalam header.
+- `src/renderer/voice-input.js`: label, keterangan, tooltip, dan mode kirim pada dropdown Voice menggunakan bahasa Inggris. Nilai bahasa `id`/`en`/`auto`, default Indonesia, penyimpanan preferensi, dan pemanggilan transcriber tidak berubah.
+- Verifikasi pada aplikasi staged di namespace terpisah: gateway asli menghasilkan `Added 12 providers · 433 models` di kiri tombol; geometri tombol idle/running/done identik setelah halaman settle, termasuk viewport 900px. Pesan gagal panjang juga tidak menggeser tombol; tooltip menyimpan pesan utuh. Dropdown diuji untuk ketiga bahasa dan kedua mode kirim; pilihan Indonesia tetap menyimpan `id`. Tidak merekam mikrofon atau mengirim prompt.
+- `make build && make test` lolos: **97 tes**. Dua tes lama yang hanya memeriksa wiring/teks source tombol dan label dihapus; bukti perubahan UI berasal dari interaksi dan pengukuran rendered app, bukan assertion string source.
+
+
 ### Kontrak discovery disederhanakan: otomatis mengisi, eksplisit membangun
 
 - Dua kegagalan beruntun saat pengujian menunjukkan heuristik "provider dihapus user vs file ditulis ulang" tidak bisa diandalkan (insiden 14:02 dan 14:39 menghasilkan file 1-provider/0-model dari penulis yang tidak teridentifikasi — jurnal service sync membuktikan sync sendiri tidak menulis di jendela itu). Alih-alih menambah heuristik, kontraknya dibuat tegas: **run otomatis (timer/path unit) hanya mengisi grup provider yang sudah ada dan tidak pernah membuat grup baru**; pembuatan/pemulihan keluarga provider hanya lewat aksi eksplisit — tombol **Auto Detect** atau `make models` (`--bootstrap`). Konsekuensinya sederhana dan bisa diprediksi: grup yang pengguna hapus tetap terhapus, dan satu klik Auto Detect membangunnya kembali (tanpa perlu membedakan niat dari bentuk file).

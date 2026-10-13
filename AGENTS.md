@@ -11,6 +11,14 @@ This is a local patch workspace for a packaged Electron ZCode 3.14.5 installatio
 - Do not present the MCP bridge as a native Linux port. Computer Use currently uses `fedora-desktop`/screen-mcp; model quality is separate from backend performance.
 - Use existing ZCode React/UI components where possible. Current bundled symbols are pinned to this version; consult ARCHITECTURE.md before using them.
 
+## Kebiasaan kerja wajib
+
+- Selalu buat dan perbarui TODO untuk setiap pekerjaan, termasuk pekerjaan kecil; tandai selesai berdasarkan hasil yang benar-benar diverifikasi.
+- Gunakan subagent hanya bila memang diperlukan untuk bagian independen atau investigasi yang luas. Kerjakan langsung bila perubahan kecil dan terlokalisasi; jangan membuat delegasi hanya untuk formalitas.
+- Untuk setiap pekerjaan yang mengubah file project, selalu jalankan `make build` dan pemeriksaan yang relevan sebelum menyerahkan hasil. Build gagal berarti jangan apply atau publish perubahan yang belum lolos.
+- Selalu perbarui file Markdown yang terkait dalam pekerjaan yang sama, termasuk `docs/CHANGELOG.md`; jalankan `make obsidian` setelahnya.
+- Setelah perubahan selesai dan terverifikasi, otomatis commit file yang termasuk pekerjaan tersebut dan push branch aktif ke remote yang sudah dikonfigurasi, tanpa menunggu pengingat. Jangan ikutkan perubahan pengguna yang tidak terkait, secret, atau artefak ignored; jangan force-push. Bila push ditolak atau autentikasi gagal, pertahankan commit lokal dan laporkan penyebabnya.
+
 ## Dokumentasi wajib
 
 Setiap perubahan perilaku, arsitektur, operasi, atau daftar resource harus langsung diikuti pembaruan file .md yang bersangkutan pada commit/kerja yang sama — tanpa diminta ulang: `docs/CHANGELOG.md` (selalu), lalu `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, `docs/OPERATIONS.md`, `docs/VOICE.md`/`docs/MODELS.md` bila area itu tersentuh, `README.md` bila daftar fitur/struktur berubah, dan `AGENTS.md` bila aturan kerja berubah. Tutup dengan `make obsidian` (dan `make obsidian-check` bila ragu). Jangan menyerahkan pekerjaan dengan dokumentasi tertinggal.
@@ -18,7 +26,7 @@ Setiap perubahan perilaku, arsitektur, operasi, atau daftar resource harus langs
 ## Build and validation
 
 1. Make the smallest coherent source change.
-2. Run `make build` for renderer/main/standalone changes and `make test` for relevant checks. `make test` covers syntax of source and patched assets plus the unit tests, including patch-helper regressions.
+2. Always run `make build` for project file changes and `make test` for relevant checks. `make test` covers syntax of source and patched assets plus the unit tests, including patch-helper regressions.
 3. For voice changes, test bilingual recognition or terminology preservation as appropriate. Synthetic audio is not proof of microphone accuracy.
 4. Inspect a rendered UI when changing layout. Do not send model prompts merely to inspect UI.
 5. Smoke-test the standalone variant in an isolated root: `ZCODE_STANDALONE_ROOT=<dir> scripts/run.sh --remote-debugging-port=<port>`. Expect an open workspace with no login screen, no `Unknown channel`/`No handler registered` lines, and no runtime `ReferenceError`/`TypeError`. Clean that root afterwards.

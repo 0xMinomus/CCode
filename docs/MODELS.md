@@ -18,6 +18,8 @@ Gateway 9Router di `http://127.0.0.1:20128/v1` menerbitkan daftar modelnya di `G
 
 Timer `zcode-on-steroids-model-sync.timer` menjalankan sync untuk namespace standalone dengan env `ZCODE_MODEL_SYNC_CONFIG` dan `ZCODE_MODEL_SYNC_STATE`. Tanpa env tersebut, `sync.py` tetap memakai jalur lama (`~/.zcode/v2/provider_config.json`) supaya timer instalasi lama tidak berubah perilakunya.
 
+Status **Auto Detect** (proses, sukses, atau gagal) tampil di kiri tombol. Label dan ukuran tombol tetap selama deteksi; pesan panjang dipotong sesuai ruang header, dengan pesan lengkap pada tooltip dan status yang diumumkan melalui `role="status"`.
+
 ## Reasoning Vansrouter
 
 `oc/` dipetakan ke katalog OpenCode. Hanya model yang sudah didaftarkan di provider Vansrouter ZCode yang dilengkapi. Level `effort` berasal dari `reasoning_options.values`; pilihan dikirim melalui `reasoning_effort`. Toggle membutuhkan wire format yang diketahui, misalnya `reasoning.enabled` untuk Ling dan `thinking.type` untuk LongCat. Nama model saja tidak membuktikan dukungan semua level.

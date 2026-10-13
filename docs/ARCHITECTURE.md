@@ -13,6 +13,8 @@ Patch renderer:
 
 Simbol versi ini: `Q` = React, `$` = JSX runtime, `X` = Button, `bA/xA/SA` = dropdown root/trigger/content, `TA/EA` = radio group/item, `DA/OA` = label/separator, `Iv` = MCP store, `gv` = settings hook. Simbol dan anchor dapat berubah pada update upstream. Jangan menebak bahwa nama ini stabil antarversi.
 
+Sidebar Settings desktop Linux mempertahankan strip drag-window 16px di bagian atas (bukan spacer upstream 48px), sehingga tombol Back to workspace dan daftar menu naik 32px. Patch anchor unik berada di `cloud._renderer`; layout macOS/Windows, padding menu, dan footer tidak berubah.
+
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 
 1. `storage.py` menetapkan namespace data, profil, database task, database sesi agent, config MCP, dan menghapus migrasi/scan lintas instalasi. Ini juga berisi bootstrap env untuk chunk `out/main`, `out/host`, `out/scheduler`, dan backend agent.
