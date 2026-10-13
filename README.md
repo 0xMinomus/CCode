@@ -61,7 +61,6 @@ Side by side, at a glance:
 | **Auto-update** | Polls the vendor update feed | Update channel removed; a release never overwrites your build |
 | **Startup network footprint** | Account and business-config calls, catalog refresh, update checks | None of the above; only the provider endpoints you configure, only when you use them |
 | **Performance & resource use** | Account/cloud round-trips during startup and for stats | No account/cloud/update round-trips; Activity is read-only local SQLite. The Computer Use MCP defers model loading to the first observation (~60 MB less per idle session, measured), and an optional Chromium low-memory switch saves ~128 MB PSS when enabled (documented, off by default) |
-| **Distribution size** | 195 MB single AppImage (3.14.5) | No packaged installer yet — packaging is on the [roadmap](#roadmap). The payload is the same upstream tree, so expect a comparable size |
 | **Identity** | ZCode branding and vendor endpoints | CCode branding end to end, with the `zcode://` scheme, `.zcode` layout, `ZCODE_*` variables, and `zcode-*` IPC channels retained on purpose for host/agent compatibility |
 | **License** | Apache-2.0 — Copyright 2026 Z.AI Co., Ltd | Apache-2.0, same terms, attribution preserved |
 
