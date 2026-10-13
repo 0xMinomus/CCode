@@ -24,7 +24,7 @@ Setiap perubahan perilaku, arsitektur, operasi, atau daftar resource harus langs
 5. Smoke-test the standalone variant in an isolated root: `ZCODE_STANDALONE_ROOT=<dir> scripts/run.sh --remote-debugging-port=<port>`. Expect an open workspace with no login screen, no `Unknown channel`/`No handler registered` lines, and no runtime `ReferenceError`/`TypeError`. Clean that root afterwards.
 6. Never export the namespace env in a persistent shell. `scripts/data_backup.py` and `scripts/install_local.py` refuse to run when they see `ZCODE_STANDALONE_ROOT` on another process, so a leaked variable looks like a running app. Unset it before apply/install/backup.
 7. Close ZCode before `make apply`; do not forcibly kill an active task. `apply` verifies the staged manifest, rolls back all three resources on failure, and keeps the previous set in `runtime/backups`.
-8. `make install` changes the user's standalone launcher, MCP config inside the namespace, and the standalone systemd user timer. Use it for user-authorized deployment/migration, not automatically for every source edit.
+8. `make install` changes the user's standalone launcher, MCP config inside the namespace, the standalone systemd user timer, and the model-sync path unit that fills 9Router models when the app writes the provider config. Use it for user-authorized deployment/migration, not automatically for every source edit.
 
 There is no need to reinstall dependencies or run vendor setup scripts for routine modifications. No root audio permissions or input-device permission changes are needed for the existing portal backend.
 

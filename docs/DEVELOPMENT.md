@@ -18,6 +18,7 @@ Pemeriksaan smoke minimal setelah `make build && make test`:
 2. Pastikan tidak ada `Unknown channel`, `No handler registered`, `ReferenceError`, atau `TypeError` pada log.
 3. Kirim satu prompt pendek ke provider personal yang sudah dikonfigurasi, lalu restart dan pastikan task masih ada.
 4. Jalankan `python3 scripts/data_backup.py backup|verify|restore` pada root uji.
+5. Untuk perubahan katalog/discovery: tambahkan provider 9Router di root uji, pastikan form model list mulai **kosong**, lalu `make models STANDALONE_ROOT=<root uji>` mengisi provider terkelompok (namespace pengguna memakai unit path yang sama).
 
 Setelah mengubah README, AGENTS, atau `docs/`, jalankan `make obsidian`: bila folder project ini dipakai sebagai vault (`.obsidian/` ada) perintah itu hanya menyegarkan `Index.md`, sedangkan untuk vault terpisah perintah itu menyalin dokumen plus frontmatter tag. `make obsidian-check` memeriksa selisih tanpa menulis.
 
@@ -27,7 +28,7 @@ Setelah mengubah README, AGENTS, atau `docs/`, jalankan `make obsidian`: bila fo
 - Voice: edit `services/voice/worker.py` / `terminology.py`. Restart ZCode untuk melepas worker yang masih menyimpan kode/model lama.
 - Provider katalog: edit `src/local_only/catalog.py` (transform dijalankan atas file katalog terpasang, jadi hasilnya idempotent walau `app/resources` sudah pernah dipatch). Jangan menambah provider akun; tambah template baru di sana dan uji dengan `python3 -m unittest tests.test_catalog -v`.
 - Activity: edit `src/main/activity.cjs` (query lokal) atau `src/renderer/activity-panel.js` (tampilan). Uji agregasi dengan `python3 -m unittest tests.test_activity -v`: test membuat fixture SQLite sendiri dan menjalankannya lewat node/Electron, jadi tidak perlu membuka aplikasi.
-- Model sync: edit `services/model-sync/sync.py`; jalankan unit test lalu `systemctl --user start zcode-on-steroids-model-sync.service` untuk namespace standalone (atau `zcode-vansrouter-model-sync.service` bila memang ingin menyentuh konfigurasi instalasi lama).
+- Model sync: edit `services/model-sync/sync.py`. Langkah discovery 9Router membaca `GET /v1/models` gateway lokal, mengelompokkan per namespace (combo terpisah, ambang 10 model, sisanya `· lainnya`), dan menulis provider + manual rule ke `provider_config.json`; pemicunya unit path standalone pada file itu, kondisi provider kosong/belum dikelompokkan, dan timer 60 detik dengan TTL 12 jam. Uji dengan `python3 -m unittest tests.test_model_sync -v` (fixture gateway, tanpa jaringan); paksa refresh dengan `make models` (atau `systemctl --user start zcode-on-steroids-model-sync.service` untuk namespace standalone; `zcode-vansrouter-model-sync.service` bila memang ingin menyentuh konfigurasi instalasi lama). Jangan menulis `provider_config.json` dari proses lain tanpa melewati lock + backup sync: `commit()` menolak write yang mengurangi inventori model, dan `optionSpecs.reasoningLevel` wajib ada di setiap manual rule.
 
 Venv dan model sudah dipindahkan. Untuk mesin baru, buat kembali venv, pasang dependency yang tercatat, sediakan PyGObject/GStreamer/PipeWire/portal/wl-clipboard untuk desktop dan FFmpeg/pw-record untuk voice. Jangan menyalin venv antarversi Python lalu menganggapnya portabel.
 

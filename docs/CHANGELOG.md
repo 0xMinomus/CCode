@@ -12,6 +12,8 @@
 - Model yang sudah dikenal host tetapi tidak ada di `personalModelIds` (mis. combo yang dimatikan sebelum ini) sekarang dinaikkan kembali sebagai baris **dengan switch off** (`config.enabled:false`) alih-alih menghilang dari daftar: pengguna bisa menyalakannya lagi kapan saja, dan refresh metadata berikutnya tidak mengubah pilihan itu.
 - Provider yang dibuat **sebelum** template dibersihkan masih menyimpan smart rule untuk `combo/coding-harian`; karena katalog tidak lagi mendefinisikan model itu, rule tersebut inert dan host tidak merendernya. Discovery sekarang mengenali rule basi itu (`catalog_model_matches`), menghapusnya, dan menulis manual rule sebagai gantinya sehingga model tetap tersedia (dalam kondisi switch apa pun yang dipilih pengguna). Smart rule yang katalognya masih ada tetap menang dan tidak pernah didampingi manual rule.
 
+- Dokumentasi disinkronkan: `AGENTS.md` (butir `make install` kini menyebut path unit), `README.md` (baris struktur `services/model-sync/`), dan `docs/DEVELOPMENT.md` (alur discovery, `make models`, serta langkah smoke menambah provider di root uji).
+
 ### Insiden saat pengujian: config pengguna sempat terwipe
 
 - Saat menyiapkan verifikasi, `provider_config.json` pengguna ditemukan sudah tergutted (710 byte, 1 provider, 0 model) **sebelum** run sync — file ditulis oleh proses lain (app berjalan lalu ditutup pada rentang itu; log host tidak mencatat baris provider-config di jendela tersebut, jadi penyebabnya tidak bisa dipastikan dari log).

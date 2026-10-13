@@ -32,7 +32,7 @@ Minta agent membaca `AGENTS.md` dan `docs/ARCHITECTURE.md` terlebih dahulu. Cont
 | `src/local_only/` | Patch standalone: namespace data dan pembersihan akun/cloud |
 | `services/desktop/` | screen-mcp dan profil `zcode-fast` |
 | `services/voice/` | Whisper worker, kosakata bilingual, venv, model lokal |
-| `services/model-sync/` | Sinkronisasi metadata reasoning, cache, state |
+| `services/model-sync/` | Discovery model 9Router + sinkronisasi metadata reasoning, cache, state |
 | `app/` | Aplikasi Electron modifikasi yang bisa dijalankan |
 | `baselines/` | `app.asar` dan backend agent asli yang dipin sebagai sumber build |
 | `scripts/` | Build ASAR, pemeriksaan, apply, backup/restore, integrasi lokal |
