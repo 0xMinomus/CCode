@@ -2,6 +2,14 @@
 
 ## 2026-10-14
 
+### Activity: segmen tahun saja, grid Januari–Desember statis, hover tooltip ZCode
+
+- Permintaan lanjutan pengguna: tombol rentang "12 months" dibuang (cukup tahun saja), segmen tahun bertambah otomatis saat tahun baru muncul (2027 nanti, dengan 2026 bergeser ke kiri), jumlah kotak statis Januari–Desember (365 hari, 366 di tahun kabisat), dan hover kotak berwarna memakai desain ZCode, bukan tooltip bawaan browser.
+- Rentang `12m` dan `ZCodeActivityRangeLabel` dihapus. Panel kini hanya mengenal tahun kalender: `ZCodeActivityYears` menggabungkan tahun berjalan dengan tahun yang punya prompt (unik, urut menaik, hanya 4 digit), dan tahun berjalan yang dipilih sebagai default — sekarang 2026 aktif otomatis, dan pada 2027 segmen 2027 muncul di kanan 2026.
+- `ZCodeActivityGrid(counts,year)` selalu membangun satu tahun penuh (1 Jan–31 Des) dengan label bulan Jan–Des dihitung dari hari pertama yang masuk rentang pada tiap kolom; 365 sel, 366 pada tahun kabisat (termasuk 29 Feb), tanpa label hari dan tanpa sel "masa depan" yang hilang — jumlah kotak tidak lagi bergantung pada tanggal hari ini.
+- Hover sel memakai komponen tooltip bundled `uA` (pola `$Cn` di halaman Usage upstream) dengan judul dua baris `{tanggal}\n{n} prompt`; atribut `title` bawaan browser dihapus, sedangkan gaya kotak tetap `hover:scale-110 hover:border-border-hover`.
+- Verifikasi: `make build` + `make test` **139 tes** hijau (tes panel: grid selalu 365 sel 1 Jan–31 Des, 366 sel dengan 29 Feb terisi pada 2024, label Jan–Des menutupi seluruh kolom, segmen tahun menaik + tahun berjalan selalu ada + dedupe, dan sel merender lewat tooltip bundled tanpa `title` native). Smoke di root terpisah dengan fixture 2026 (dan satu hari 2025): segmen hanya `2025`/`2026` dengan **2026 aktif secara default**, kartu berbunyi `23 prompts · 2026`, tepat **365 kotak** berukuran ±13,3 px, label Jan–Des di bawah grid, hover di sel 5 Mar menampilkan tooltip design system (`z-50 ... rounded-lg border border-border bg-tooltip`, `role=tooltip`) berisi `2026-03-05` / `4 prompts` — bukan tooltip browser; sesi `subagent_child` tetap tidak dihitung dan log main bersih (0 `Unknown channel`/`No handler registered`/`ReferenceError`/`TypeError`).
+
 ### Halaman Activity memakai tata letak Usage lama + UI Inggris
 
 - Permintaan pengguna: perbaiki menu usage (**Activity**) supaya memakai tampilan halaman Usage ZCode yang lama — strip metrik dengan pemisah vertikal, kartu aktivitas dengan kontrol segmen dan heatmap berlabel bulan di bawah grid — tetapi fungsinya tetap penghitungan prompt lokal. Seluruh teks antarmuka harus bahasa Inggris.

@@ -214,49 +214,89 @@ class ActivityPanelTests(unittest.TestCase):
     def panel_script(self, body):
         return f"const PANEL_PATH={json.dumps(str(PANEL))};" + PANEL_LOADER + body
 
-    def grid(self, counts, range_, today):
+    def grid(self, counts, year):
         script = self.panel_script(
             f"const counts=new Map(Object.entries({json.dumps(counts)}));"
-            f"const grid=p.ZCodeActivityGrid(counts,{json.dumps(range_)},{json.dumps(today)});"
+            f"const grid=p.ZCodeActivityGrid(counts,{json.dumps(year)});"
             "console.log(JSON.stringify({weeks:grid.weeks.length,months:grid.months,"
-            "days:grid.weeks.flat().filter(Boolean).map(c=>c.day)}))"
+            "days:grid.weeks.flat().filter(Boolean).map(c=>c.day),"
+            "filled:grid.weeks.flat().filter(c=>c&&c.prompts).map(c=>c.day)}))"
         )
         return json.loads(run_node(script))
 
-    def test_twelve_month_window_covers_the_year(self):
-        grid = self.grid({'2026-10-13': 2}, '12m', '2026-10-13')
-        self.assertTrue(50 <= grid['weeks'] <= 54, grid['weeks'])
-        self.assertEqual(grid['days'][-1], '2026-10-13')
-        self.assertIn('2025-10-14', grid['days'])
+    def test_the_grid_is_always_one_calendar_year(self):
+        grid = self.grid({'2026-10-05': 4}, '2026')
+        self.assertEqual(grid['days'][0], '2026-01-01')
+        self.assertEqual(grid['days'][-1], '2026-12-31')
+        self.assertEqual(len(grid['days']), 365, 'a fixed January-December grid')
         self.assertEqual(len(grid['days']), len(set(grid['days'])), 'no duplicate cells')
-        self.assertEqual(grid['months'][0], 'Oct', 'month labels follow the UI language')
+        self.assertTrue(52 <= grid['weeks'] <= 54, grid['weeks'])
+        self.assertEqual(grid['filled'], ['2026-10-05'])
 
     def test_year_window_keeps_leap_day_and_bounds(self):
-        grid = self.grid({}, '2024', '2026-10-13')
+        grid = self.grid({'2024-02-29': 7}, '2024')
         self.assertEqual(grid['days'][0], '2024-01-01')
         self.assertEqual(grid['days'][-1], '2024-12-31')
-        self.assertIn('2024-02-29', grid['days'])
         self.assertEqual(len(grid['days']), 366)
+        self.assertEqual(grid['filled'], ['2024-02-29'])
 
     def test_month_labels_are_english_and_cover_every_column(self):
         script = self.panel_script(
-            "const grid=p.ZCodeActivityGrid(new Map(),'12m','2026-10-13');"
+            "const grid=p.ZCodeActivityGrid(new Map(),'2026');"
             "const spans=p.ZCodeActivityMonthSpans(grid.months);"
-            "const labels=grid.months.filter(Boolean);"
-            "console.log(JSON.stringify({names:p.ZCodeActivityMonthNames,labels,"
-            "spans:spans.map(g=>[g.label,g.span]),covered:spans.reduce((s,g)=>s+g.span,0),"
-            "weeks:grid.weeks.length}))"
+            "console.log(JSON.stringify({names:p.ZCodeActivityMonthNames,"
+            "labels:grid.months.filter(Boolean),spans:spans.map(g=>[g.label,g.span]),"
+            "covered:spans.reduce((s,g)=>s+g.span,0),weeks:grid.weeks.length}))"
         )
         result = json.loads(run_node(script))
         self.assertEqual(result['names'],
                          ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
-        for label in result['labels']:
-            self.assertIn(label, result['names'], label)
-        self.assertEqual(result['labels'][-1], 'Oct', 'the current month ends the window')
+        self.assertEqual(result['labels'], result['names'], 'a year grid labels January through December')
+        self.assertEqual([label for label, _ in result['spans']], result['names'])
         self.assertEqual(result['covered'], result['weeks'], 'every column belongs to a month group')
         for label, span in result['spans']:
             self.assertGreaterEqual(span, 1, label)
-        self.assertEqual(sum(1 for label, _ in result['spans'] if label), len(result['labels']))
+
+    def test_year_segments_follow_history_and_end_on_the_current_year(self):
+        script = self.panel_script(
+            "console.log(JSON.stringify({"
+            "history:p.ZCodeActivityYears([{year:'2025',prompts:2},{year:'2026',prompts:4}],2026),"
+            "currentOnly:p.ZCodeActivityYears([],2027),"
+            "deduped:p.ZCodeActivityYears([{year:'2026'},{year:'2024'},{year:'2026'}],2026),"
+            "noHistory:p.ZCodeActivityYears(undefined,2026)}))"
+        )
+        years = json.loads(run_node(script))
+        self.assertEqual(years['history'], ['2025', '2026'])
+        self.assertEqual(years['history'][-1], '2026', 'the newest year is the last segment')
+        self.assertEqual(years['currentOnly'], ['2027'], 'the current year is always offered')
+        self.assertEqual(years['deduped'], ['2024', '2026'])
+        self.assertEqual(years['noHistory'], ['2026'])
+
+    def test_cells_hover_with_the_bundled_zcode_tooltip(self):
+        stub = (
+            "const jsx=(type,props)=>({type,props});"
+            "const Q={Fragment:'f',useState:()=>[null,()=>{}],useMemo:fn=>fn(),useEffect:()=>{}};"
+            "const Tooltip=props=>props;Tooltip.isTooltip=true;"
+            "const rendered={exports:{}};"
+            "new Function('module','exports','$','Q','uA',fs.readFileSync(PANEL_PATH,'utf8'))"
+            "(rendered,rendered.exports,{jsx,jsxs:jsx},Q,Tooltip);"
+        )
+        script = f"const fs=require('fs');const PANEL_PATH={json.dumps(str(PANEL))};" + stub + (
+            "const solid=rendered.exports.ZCodeActivityCell({cell:{day:'2026-10-05',prompts:4}});"
+            "const empty=rendered.exports.ZCodeActivityCell({cell:{day:'2026-01-02',prompts:0}});"
+            "console.log(JSON.stringify({"
+            "wrapper:solid.type&&solid.type.isTooltip===true,tooltip:solid.props.title,"
+            "boxClass:solid.props.children.props.className,boxTitle:solid.props.children.props.title??null,"
+            "boxStyle:solid.props.children.props.style,emptyTooltip:empty.props.title}))"
+        )
+        result = json.loads(run_node(script))
+        self.assertTrue(result['wrapper'], 'the cell renders through the bundled tooltip component')
+        self.assertEqual(result['tooltip'], '2026-10-05\n4 prompts')
+        self.assertIsNone(result['boxTitle'], 'no native browser tooltip')
+        self.assertIn('aspect-square', result['boxClass'])
+        self.assertIn('hover:border-border-hover', result['boxClass'], 'hover uses the app border token')
+        self.assertEqual(result['boxStyle'], {'backgroundColor': 'var(--color-usage-heatmap-2)'})
+        self.assertEqual(result['emptyTooltip'], '2026-01-02\n0 prompts')
 
     def test_stats_render_prompt_metrics_with_day_units(self):
         script = self.panel_script(
@@ -271,15 +311,13 @@ class ActivityPanelTests(unittest.TestCase):
         self.assertTrue(stats[4][1].startswith('1') and stats[4][1] != '1234',
                         f'large counts are abbreviated: {stats[4][1]}')
 
-    def test_number_and_range_labels_are_english(self):
+    def test_number_labels_are_english(self):
         script = self.panel_script(
             "console.log(JSON.stringify(["
             "p.ZCodeActivityNumber(0,'en-US'),p.ZCodeActivityNumber(24,'en-US'),"
-            "p.ZCodeActivityNumber(1234,'en-US'),p.ZCodeActivityNumber(1200000,'en-US'),"
-            "p.ZCodeActivityRangeLabel('12m'),p.ZCodeActivityRangeLabel('2025')]))"
+            "p.ZCodeActivityNumber(1234,'en-US'),p.ZCodeActivityNumber(1200000,'en-US')]))"
         )
-        self.assertEqual(json.loads(run_node(script)),
-                         ['0', '24', '1.2K', '1.2M', 'Last 12 months', '2025'])
+        self.assertEqual(json.loads(run_node(script)), ['0', '24', '1.2K', '1.2M'])
 
     def test_heat_colors_use_the_upstream_usage_ramp(self):
         script = self.panel_script(

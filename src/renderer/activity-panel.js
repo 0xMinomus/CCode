@@ -1,11 +1,13 @@
 // Local "Activity" page: prompt counts per day, streaks and a contribution-style
 // heatmap, all computed by the main process from the local session database.
 // The layout mirrors the original upstream usage page (metrics strip with dividers,
-// heatmap card with a segmented range control) and reuses its theme tokens
-// `--color-usage-heatmap-0..4`. No cloud, no account, no plan data.
+// heatmap card with a year segment control) and reuses its theme tokens
+// `--color-usage-heatmap-0..4` plus the bundled tooltip component for cell hover.
+// The grid is always one calendar year (Jan-Dec, 365 or 366 cells). No cloud, no
+// account, no plan data.
 function ZCodeActivityPanel(){
  const [state,setState]=Q.useState({status:'loading'});
- const [range,setRange]=Q.useState('12m');
+ const [picked,setPicked]=Q.useState(null);
  Q.useEffect(()=>{
   let live=true;
   (async()=>{
@@ -19,8 +21,9 @@ function ZCodeActivityPanel(){
  const data=state.data??{};
  const days=data.days??[];
  const counts=Q.useMemo(()=>{const map=new Map();for(const row of days)map.set(row.day,row.prompts);return map;},[days]);
- const todayKey=ZCodeActivityDayKey(new Date());
- const grid=Q.useMemo(()=>ZCodeActivityGrid(counts,range,todayKey),[counts,range,todayKey]);
+ const years=ZCodeActivityYears(data.years,new Date().getFullYear());
+ const range=years.includes(picked)?picked:years[years.length-1];
+ const grid=Q.useMemo(()=>ZCodeActivityGrid(counts,range),[counts,range]);
  const rangeTotal=grid.weeks.flat().reduce((sum,cell)=>sum+(cell?.prompts??0),0);
  if(state.status==='loading')return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:'Loading local activity…'});
  if(state.status==='error')return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:state.error});
@@ -39,10 +42,8 @@ function ZCodeActivityPanel(){
      $.jsx('h3',{className:'min-w-0 truncate text-ui-base font-medium text-foreground',children:'Prompt activity'}),
      $.jsxs('div',{className:'min-w-0 truncate text-ui-sm text-foreground-subtle',children:[
       $.jsx('span',{className:'font-medium',children:ZCodeActivityNumber(rangeTotal)}),
-      ` prompt${rangeTotal===1?'':'s'} · `,ZCodeActivityRangeLabel(range)]})]}),
-    $.jsx('div',{className:'flex flex-wrap items-center gap-0.5 rounded-full bg-surface p-0.5','data-testid':'zcode-activity-ranges',children:[
-     ZCodeActivitySegment('12m','12 months',range,setRange),
-     ...(data.years??[]).map(row=>ZCodeActivitySegment(row.year,row.year,range,setRange))]})]}),
+      ` prompt${rangeTotal===1?'':'s'} · `,range]})]}),
+    $.jsx('div',{className:'flex flex-wrap items-center gap-0.5 rounded-full bg-surface p-0.5','data-testid':'zcode-activity-ranges',children:years.map(year=>ZCodeActivitySegment(year,range,setPicked))})]}),
    $.jsxs('div',{children:[
     $.jsx('div',{className:'grid w-full gap-x-0.5',style:heatmapStyle,children:grid.weeks.map((week,index)=>$.jsx('div',{className:'flex min-w-0 flex-col gap-1',children:week.map((cell,row)=>cell
      ?$.jsx(ZCodeActivityCell,{cell},cell.day)
@@ -51,14 +52,14 @@ function ZCodeActivityPanel(){
 }
 function ZCodeActivityCell({cell}){
  const prompts=cell.prompts??0;
- return $.jsx('div',{title:`${cell.day}: ${prompts} prompt${prompts===1?'':'s'}`,
-  className:'aspect-square w-full min-w-0 rounded-[4px] border transition-transform hover:scale-110 hover:border-border-hover '+(prompts?'border-border':'border-transparent'),
-  style:{backgroundColor:ZCodeActivityHeatColor(prompts)}});
+ return $.jsx(uA,{title:`${cell.day}\n${prompts} prompt${prompts===1?'':'s'}`,children:
+  $.jsx('div',{className:'aspect-square w-full min-w-0 rounded-[4px] border transition-transform hover:scale-110 hover:border-border-hover '+(prompts?'border-border':'border-transparent'),
+   style:{backgroundColor:ZCodeActivityHeatColor(prompts)}})});
 }
-function ZCodeActivitySegment(id,label,range,setRange){
- const active=range===id;
- return $.jsx('button',{type:'button',onClick:()=>setRange(id),'data-testid':`zcode-activity-range-${id}`,
-  className:'h-6 flex-none justify-center rounded-full px-2.5 py-0 text-ui-sm font-medium transition-colors '+(active?'bg-background text-foreground':'text-foreground-subtle hover:text-foreground'),children:label},id);
+function ZCodeActivitySegment(year,range,setRange){
+ const active=range===year;
+ return $.jsx('button',{type:'button',onClick:()=>setRange(year),'data-testid':`zcode-activity-range-${year}`,
+  className:'h-6 flex-none justify-center rounded-full px-2.5 py-0 text-ui-sm font-medium transition-colors '+(active?'bg-background text-foreground':'text-foreground-subtle hover:text-foreground'),children:year},year);
 }
 function ZCodeActivityStats(data){
  const day=value=>`${ZCodeActivityNumber(value??0)} d`;
@@ -73,36 +74,38 @@ function ZCodeActivityNumber(value,locale){
  const total=Number(value)||0;
  return new Intl.NumberFormat(locale,{notation:total>=1000?'compact':'standard',maximumFractionDigits:total>=1000?1:0}).format(total);
 }
-function ZCodeActivityRangeLabel(range){
- return range==='12m'?'Last 12 months':String(range);
+function ZCodeActivityYears(rows,currentYear){
+ const years=new Set();
+ for(const row of rows??[])years.add(String(row?.year??row));
+ years.add(String(currentYear));
+ return [...years].filter(year=>/^\d{4}$/.test(year)).sort();
 }
 function ZCodeActivityDayKey(date){
  const pad=n=>String(n).padStart(2,'0');
  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
 }
-function ZCodeActivityGrid(counts,range,todayKey){
+function ZCodeActivityGrid(counts,year){
  const weeks=[],months=[],parse=key=>{const[y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d);};
- let rangeStart,rangeEnd;
- if(range==='12m'){rangeEnd=parse(todayKey);rangeStart=new Date(rangeEnd);rangeStart.setDate(rangeStart.getDate()-364);}
- else{rangeStart=new Date(Number(range),0,1);rangeEnd=new Date(Number(range),11,31);}
+ const number=Number(year);
+ const rangeStart=new Date(number,0,1),rangeEnd=new Date(number,11,31);
  const start=new Date(rangeStart);
  start.setDate(start.getDate()-start.getDay());
- const key=ZCodeActivityDayKey(new Date());
  let cursor=new Date(start),lastMonth=-1,index=0;
  while(cursor<=rangeEnd){
-  const week=[],firstKey=ZCodeActivityDayKey(cursor);
+  const week=[];
   for(let day=0;day<7;day++){
    const cellKey=ZCodeActivityDayKey(cursor);
-   const inside=cursor>=rangeStart&&cursor<=rangeEnd&&cellKey<=key;
+   const inside=cursor>=rangeStart&&cursor<=rangeEnd;
    week.push(inside?{day:cellKey,prompts:counts.get(cellKey)??0}:null);
    cursor.setDate(cursor.getDate()+1);
   }
-  const monthLabel=parse(firstKey).getMonth();
+  const firstDay=week.find(Boolean);
+  const monthLabel=firstDay?parse(firstDay.day).getMonth():lastMonth;
   months.push(monthLabel!==lastMonth?ZCodeActivityMonthNames[monthLabel]:'');
   lastMonth=monthLabel;
   weeks.push(week);
   index+=1;
-  if(index>60)break;
+  if(index>55)break;
  }
  return {weeks,months};
 }
@@ -119,4 +122,4 @@ function ZCodeActivityHeatColor(prompts){
  const level=!prompts?0:prompts<3?1:prompts<6?2:prompts<10?3:4;
  return `var(--color-usage-heatmap-${level})`;
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={ZCodeActivityPanel,ZCodeActivityCell,ZCodeActivityGrid,ZCodeActivityDayKey,ZCodeActivityHeatColor,ZCodeActivityMonthSpans,ZCodeActivityMonthNames,ZCodeActivityNumber,ZCodeActivityRangeLabel,ZCodeActivitySegment,ZCodeActivityStats};
+if(typeof module!=='undefined'&&module.exports)module.exports={ZCodeActivityPanel,ZCodeActivityCell,ZCodeActivityGrid,ZCodeActivityDayKey,ZCodeActivityHeatColor,ZCodeActivityMonthSpans,ZCodeActivityMonthNames,ZCodeActivityNumber,ZCodeActivitySegment,ZCodeActivityStats,ZCodeActivityYears};
