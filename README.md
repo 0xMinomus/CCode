@@ -40,6 +40,7 @@ Minta agent membaca `AGENTS.md` dan `docs/ARCHITECTURE.md` terlebih dahulu. Cont
 | `scripts/` | Build ASAR, pemeriksaan, apply, backup/restore, integrasi lokal |
 | `runtime/` | Build sementara dan cadangan; jangan commit |
 | `project.json` | Versi upstream, hash baseline, nama asset yang dipatch |
+| `releaseplan.md` | Rencana rilis: jalur source-fork, kewajiban lisensi Apache-2.0, packaging per platform |
 | `docs/` | Arsitektur, pengembangan, operasi, dan keterbatasan |
 
 ## Perintah sehari-hari
@@ -78,4 +79,5 @@ Catatan Obsidian: folder project ini bisa dibuka langsung sebagai vault (`.obsid
 - Permukaan akun yang tidak lagi punya pemilik (misalnya panel plan di Settings) menampilkan status tidak tersedia, bukan data palsu.
 - Yang sengaja **tidak** diganti nama: env `ZCODE_*`, kanal IPC (`zcode-*`), skema URL `zcode://`, layout penyimpanan `.zcode` di dalam namespace, id provider/plugin/MCP, dan string protokol/transport (`ZCode Protocol`, error transport/runtime). Semua itu kontrak dengan host dan agent yang dipaketkan — menggantinya tidak mengubah apa pun yang terlihat dan berisiko memutus handshake.
 - Mark CCode berasal dari satu file `ccode-logo.svg`; PNG di `assets/icons/` adalah hasil rasterisasi yang di-commit supaya `make build` tidak butuh tool tambahan (ImageMagick hanya perlu saat `make icons`).
-- Lisensi redistribusi paket installer dan komponen pihak ketiga belum diselesaikan; lihat docs/THIRD_PARTY.md.
+- Rilis sebagai aplikasi mandiri belum jalan: repo ini masih workspace patch (butuh AppImage ZCode 3.14.5 + baseline + venv), Linux-only, dan belum ada artifact siap-unduh. Jalur rilisnya ada di [releaseplan.md](releaseplan.md).
+- Source upstream ZCode publik dan berlisensi **Apache-2.0** (Copyright 2026 Z.AI Co., Ltd), jadi forking diizinkan dengan kewajiban atribusi/NOTICE dan tanpa hak merek; status lengkap di docs/THIRD_PARTY.md.
