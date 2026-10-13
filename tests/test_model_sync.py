@@ -286,7 +286,7 @@ class DiscoveryTests(unittest.TestCase):
    for provider in gutted['config']['providerConfigRules']['providerRules']:
     provider['config']['personalModelIds']=[]; provider['config']['modelOrder']=[]
    written=sync.commit(target,target.read_bytes(),gutted,state_root,None,['x'])
-   self.assertFalse(written,'a destructive write is refused')
+   self.assertEqual(written,'refused','a destructive write is refused')
    self.assertEqual(json.loads(target.read_text()),full,'the file is left untouched')
    self.assertFalse(list(state_root.glob('backups/*')) if (state_root/'backups').exists() else [],'no backup for a refused write')
 

@@ -71,6 +71,81 @@ function sessionDbPath() {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Auto Detect: run the standalone model discovery for the local 9Router gateway
+// on demand (the button beside "+ Add model" in Model settings). The sync script
+// talks to the user's own gateway; nothing leaves the machine.
+const { spawn } = require('node:child_process');
+const DETECT_TIMEOUT_MS = 120000;
+const GATEWAY_BASE_URL = 'http://127.0.0.1:20128/v1';
+let detection = null;
+
+function projectRoot() { return path.resolve(__dirname, '..', '..', '..'); }
+
+function namespacePaths() {
+  const root = process.env.ZCODE_STANDALONE_ROOT?.trim();
+  if (!root) return null;
+  return {
+    root,
+    config: path.join(root, 'data', '.zcode', 'v2', 'provider_config.json'),
+    state: path.join(root, 'model-sync'),
+  };
+}
+
+function detectionSummary(configPath) {
+  const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const providers = data?.config?.providerConfigRules?.providerRules ?? [];
+  const rules = data?.config?.modelConfigRules?.manualProviderModelRules ?? [];
+  const family = providers.filter(provider =>
+    String(provider?.providerId ?? '').startsWith('9router') || provider?.config?.api?.baseUrl === GATEWAY_BASE_URL);
+  return {
+    providers: family.length,
+    models: family.reduce((sum, provider) => sum + (provider?.config?.personalModelIds?.length ?? 0), 0),
+    rules: rules.length,
+    names: family.map(provider => provider?.providerName ?? provider?.providerId ?? ''),
+  };
+}
+
+function detectionOutcome(log, code) {
+  if (!/Gateway models: \d+/.test(log)) return { ok: false, error: 'The 9Router gateway did not answer. Is it running?' };
+  if (/Refusing to drop/.test(log)) return { ok: false, error: 'Refused to write a configuration that would remove existing models.' };
+  if (/Config changed concurrently/.test(log)) return { ok: false, error: 'ZCode was saving settings at the same time. Try Auto Detect again.' };
+  if (code !== 0) return { ok: false, error: `Model discovery failed (exit ${code}).` };
+  return { ok: true };
+}
+
+function runDetection() {
+  if (detection) return detection;
+  detection = (async () => {
+    const paths = namespacePaths();
+    if (!paths) return { ok: false, error: 'The standalone namespace is not available in this window.' };
+    const script = path.join(projectRoot(), 'services', 'model-sync', 'sync.py');
+    if (!fs.existsSync(script)) return { ok: false, error: `Model sync script is missing: ${script}` };
+    const started = Date.now();
+    const result = await new Promise(resolve => {
+      const child = spawn('/usr/bin/python3', [script, '--discover', '--bootstrap'], {
+        env: { ...process.env, ZCODE_STANDALONE_ROOT: paths.root, ZCODE_MODEL_SYNC_CONFIG: paths.config, ZCODE_MODEL_SYNC_STATE: paths.state },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let text = '';
+      const timer = setTimeout(() => child.kill('SIGTERM'), DETECT_TIMEOUT_MS);
+      child.stdout.on('data', chunk => { text += chunk; });
+      child.stderr.on('data', chunk => { text += chunk; });
+      child.on('error', error => { clearTimeout(timer); resolve({ code: null, text: `${text}${error?.message ?? error}` }); });
+      child.on('close', code => { clearTimeout(timer); resolve({ code, text }); });
+    });
+    const seconds = Math.round((Date.now() - started) / 1000);
+    const log = result.text.trim();
+    const outcome = detectionOutcome(log, result.code);
+    if (!outcome.ok) return { ok: false, seconds, error: outcome.error, log: log.slice(-300) };
+    let summary = null;
+    try { summary = detectionSummary(paths.config); } catch { /* the summary is optional */ }
+    const skipped = /Skipped models without limits: (\d+)/.exec(log);
+    return { ok: true, seconds, skipped: skipped ? Number(skipped[1]) : null, ...(summary ?? {}), log: log.slice(-400) };
+  })().finally(() => { detection = null; });
+  return detection;
+}
+
 function readTimestamps(dbPath) {
   const { DatabaseSync, backup } = require('node:sqlite');
   const query = db => db.prepare(PROMPT_QUERY).all().map(row => row.created);
@@ -126,6 +201,14 @@ exports.register = ({ app, ipcMain }) => {
       return { available: false, error: `Activity could not read local history: ${error?.message ?? error}` };
     }
   });
+  ipcMain.handle('zcode-detect:run', async event => {
+    if (!trusted(event)) throw Error('Auto Detect is only available in the local ZCode window.');
+    try {
+      return await runDetection();
+    } catch (error) {
+      return { ok: false, error: `Auto Detect failed: ${error?.message ?? error}` };
+    }
+  });
   app.on('before-quit', () => { cache = { at: 0, value: null }; });
 };
 
@@ -136,3 +219,7 @@ exports.shiftDay = shiftDay;
 exports.sessionDbPath = sessionDbPath;
 exports.collect = collect;
 exports.promptQuery = PROMPT_QUERY;
+exports.runDetection = runDetection;
+exports.detectionOutcome = detectionOutcome;
+exports.detectionSummary = detectionSummary;
+exports.namespacePaths = namespacePaths;

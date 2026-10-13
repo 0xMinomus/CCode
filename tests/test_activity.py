@@ -87,6 +87,53 @@ def fixture_db(path):
     return today
 
 
+class AutoDetectTests(unittest.TestCase):
+    def test_detection_summary_counts_only_the_gateway_family(self):
+        with tempfile.TemporaryDirectory() as folder:
+            config = pathlib.Path(folder) / 'provider_config.json'
+            config.write_text(json.dumps({'config': {
+                'providerConfigRules': {'providerRules': [
+                    {'providerId': '9router', 'providerName': '9Router',
+                     'config': {'api': {'baseUrl': 'http://127.0.0.1:20128/v1'}, 'personalModelIds': ['combo/a', 'combo/b']}},
+                    {'providerId': '9router-cmc', 'providerName': '9Router · cmc',
+                     'config': {'api': {'baseUrl': 'http://127.0.0.1:20128/v1'}, 'personalModelIds': ['cmc/x']}},
+                    {'providerId': 'vansrouter', 'providerName': 'Vansrouter',
+                     'config': {'api': {'baseUrl': 'https://elsewhere.example/v1'}, 'personalModelIds': ['other/y']}},
+                ]},
+                'modelConfigRules': {'manualProviderModelRules': [{'modelId': 'combo/a'}]},
+            }}))
+            summary = json.loads(run_node(
+                f"const a=require({json.dumps(str(MODULE))});"
+                f"console.log(JSON.stringify(a.detectionSummary({json.dumps(str(config))})))"))
+        self.assertEqual(summary['providers'], 2, 'only the local gateway family counts')
+        self.assertEqual(summary['models'], 3)
+        self.assertEqual(summary['rules'], 1)
+        self.assertEqual(summary['names'], ['9Router', '9Router · cmc'])
+
+    def test_detection_outcome_explains_failures(self):
+        cases = [
+            ('Model discovery unavailable; keeping current config: URLError', 0, False, 'gateway'),
+            ('Gateway models: 441\nRefusing to drop 12 of 433 enabled models; config left untouched', 0, False, 'Refused'),
+            ('Gateway models: 441\nConfig changed concurrently; retry on next pass', 0, False, 'Try Auto Detect again'),
+            ('Gateway models: 441\nUpdated provider config: 12 entry(ies)', 0, True, None),
+        ]
+        for log, code, expected_ok, fragment in cases:
+            outcome = json.loads(run_node(
+                f"const a=require({json.dumps(str(MODULE))});"
+                f"console.log(JSON.stringify(a.detectionOutcome({json.dumps(log)},{code})))"))
+            self.assertEqual(outcome['ok'], expected_ok, log)
+            if fragment:
+                self.assertIn(fragment, outcome['error'])
+
+    def test_namespace_paths_come_from_the_standalone_root(self):
+        paths = json.loads(run_node(
+            f"const a=require({json.dumps(str(MODULE))});"
+            "console.log(JSON.stringify(a.namespacePaths()))",
+            extra_env={'ZCODE_STANDALONE_ROOT': '/tmp/ns-root'}))
+        self.assertEqual(paths['config'], '/tmp/ns-root/data/.zcode/v2/provider_config.json')
+        self.assertEqual(paths['state'], '/tmp/ns-root/model-sync')
+
+
 class ActivitySummaryTests(unittest.TestCase):
     def test_summarize_counts_streak_and_window(self):
         script = (

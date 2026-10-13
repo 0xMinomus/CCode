@@ -23,7 +23,7 @@ const zcodeVoiceRequire=zcodeVoiceCreateRequire(import.meta.url);
 if(process.platform==="linux"){zcodeVoiceRequire(process.resourcesPath+"/voice/main.cjs").register({app:zcodeVoiceApp,ipcMain:zcodeVoiceIpcMain});}
 zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcodeVoiceApp,ipcMain:zcodeVoiceIpcMain});
 '''
- preload=archive.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("zcodeVoice",{start:(options)=>ipcRenderer.invoke("zcode-voice:start",options),stop:()=>ipcRenderer.invoke("zcode-voice:stop"),cancel:()=>ipcRenderer.invoke("zcode-voice:cancel")});contextBridge.exposeInMainWorld("zcodeActivity",{summary:(options)=>ipcRenderer.invoke("zcode-activity:summary",options)});})();\n'''
+ preload=archive.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("zcodeVoice",{start:(options)=>ipcRenderer.invoke("zcode-voice:start",options),stop:()=>ipcRenderer.invoke("zcode-voice:stop"),cancel:()=>ipcRenderer.invoke("zcode-voice:cancel")});contextBridge.exposeInMainWorld("zcodeActivity",{summary:(options)=>ipcRenderer.invoke("zcode-activity:summary",options)});contextBridge.exposeInMainWorld("zcodeDetect",{run:()=>ipcRenderer.invoke("zcode-detect:run")});})();\n'''
  replacements={renderer:s.encode(),manifest['main_asset']:main.encode(),manifest['preload_asset']:preload.encode()}
  storage.patch_archive(archive,replacements,renderer)
  cloud.patch_archive(archive,replacements,renderer)

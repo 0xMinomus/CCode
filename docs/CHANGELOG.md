@@ -2,6 +2,13 @@
 
 ## 2026-10-13
 
+### Tombol Auto Detect di Model settings
+
+- Permintaan pengguna: pengisian otomatis yang tak terlihat terasa tidak otomatis lagi, jadi disediakan tombol eksplisit. Di header **Model list** pada form provider kini ada tombol **Auto Detect** di sebelah kiri **+ Add model** (komponen `Button` ZCode, varian `outline` + ikon refresh yang sama dipakai header settings, `data-testid="model-provider-auto-detect"`, label dua bahasa dari patch IntlProvider).
+- Alurnya: pengguna menambahkan provider 9Router (form mulai kosong: `No models are configured`), mengisi API key, lalu menekan Auto Detect. Renderer memanggil IPC `zcode-detect:run`; modul main lokal (`activity/main.cjs`, pola dan validasi frame sama seperti Activity) menjalankan `sync.py --discover --bootstrap` untuk namespace yang sedang dipakai, menghitung hasilnya, dan mengembalikan ringkasan. Tombol menampilkan spinner selama proses, lalu teks status seperti `Added 12 providers · 433 models` (atau alasan kegagalan: gateway tidak menjawab, config ditolak, ZCode sedang menyimpan settings). Setelah itu UI memuat ulang sendiri (host memantau config tiap ~1 detik + `providerSettingsService.refresh`).
+- Sync kini mencoba ulang otomatis bila app menulis `provider_config.json` di tengah proses (`commit()` mengembalikan status `concurrent`, `run_once()` diulang sampai 3×), karena alur nyatanya adalah "ketik API key lalu langsung klik" — dan penulisan app itu memang bersamaan. Tanpa ini tombol melaporkan "0 models" walau gateway menjawab.
+- Verifikasi: root terpisah — provider 9Router baru (model list kosong) → isi API key → klik Auto Detect → status `Added 12 providers · 433 models`, nav provider langsung berisi 12 grup dan pane 9Router berisi 5 combo; log host bersih. `make test` **99 tes** hijau (tes baru: tombol+posisinya, label dua bahasa, ringkasan deteksi, klasifikasi pesan gagal).
+
 ### Discovery menghormati penghapusan grup + tidak lagi mem-blacklist saat churn
 
 - Laporan lapangan: setelah pengguna menghapus grup provider 9Router di UI (`deletePersonalProvider` berulang), unit path membangun ulang grup-grup itu dalam hitungan detik — sync melawan pengguna. Sekarang provider yang pernah dibuat sync dicatat di `discovery.providers`; begitu hilang dari config, id-nya masuk `discovery.removedProviders` dan **tidak** dibuat ulang. Pencatatan itu terjadi langsung saat file berubah (tanpa panggilan gateway), dan `make models` (`--bootstrap`) adalah cara eksplisit untuk meminta keluarga provider dibangun ulang (daftar hapus dilupakan).

@@ -47,6 +47,18 @@ BUILTIN_REFRESH_SYNC = 'refresh(t={}){if(this.#o)return Promise.resolve("dispose
 PROVIDER_EMPTY_STATE = '''
 function ZCodeProviderEmptyState(){const{intl:e}=q();return $.jsx("div",{className:"flex min-h-[14rem] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-6 text-center","data-provider-empty-state":`true`,children:[$.jsx("p",{className:"text-ui-base font-medium text-foreground",children:e.formatMessage({id:`settings.modelProvider.empty`})}),$.jsx("p",{className:"text-ui-sm text-foreground-subtlest",children:e.formatMessage({id:`settings.modelProvider.addProviderDescription`})})]})}
 '''
+# "Auto Detect" sits beside "+ Add model" in the Model list header: it runs the
+# local model-sync discovery (IPC zcode-detect:run) and reports what it added. The
+# button reuses the same Button variant/refresh icon as the settings header so it
+# stays one family with the rest of Model settings.
+ADD_MODEL_BUTTON = ('(0,$.jsxs)(X,{type:`button`,variant:`secondary`,size:`default`,className:`rounded-lg`,'
+                    '"data-testid":Kee,onClick:E,children:[(0,$.jsx)(qc,{"data-icon":`inline-start`,"aria-hidden":`true`}),'
+                    'f.formatMessage({id:`settings.modelProvider.addModel`})]})')
+ADD_MODEL_BUTTON_WITH_DETECT = ('(0,$.jsxs)("div",{className:"flex flex-wrap items-center justify-end gap-2",children:['
+                                '(0,$.jsx)(ZCodeAutoDetect,{}),' + ADD_MODEL_BUTTON + ']})')
+AUTO_DETECT_BUTTON = '''
+function ZCodeAutoDetect(){const{intl:e}=q(),{providerSettingsService:t}=Dg(),[n,r]=Q.useState(null);const i=n?.kind===`running`;async function a(){r({kind:`running`});try{const s=await (typeof window.zcodeDetect?.run===`function`?window.zcodeDetect.run():Promise.resolve({ok:!1,error:`Auto Detect is unavailable in this window.`}));if(!s?.ok){r({kind:`failed`,error:s?.error||`Unknown error`});return}r({kind:`done`,providers:s.providers??0,models:s.models??0,skipped:s.skipped??null});try{await t?.refresh?.(`auto-detect`)}catch{}}catch(s){r({kind:`failed`,error:String(s?.message??s)})}}return $.jsxs("span",{className:"flex items-center gap-2","data-provider-auto-detect":`true`,children:[$.jsxs(X,{type:`button`,variant:`outline`,size:`default`,className:`rounded-lg`,"data-testid":`model-provider-auto-detect`,disabled:i,onClick:a,children:[i?$.jsx(Ec,{className:`size-4 animate-spin`,"aria-hidden":`true`}):$.jsx(Yc,{"data-icon":`inline-start`,"aria-hidden":`true`}),e.formatMessage({id:i?`settings.modelProvider.autoDetect.running`:`settings.modelProvider.autoDetect`})]}),n?.kind===`done`?$.jsx("span",{className:"text-ui-sm text-foreground-subtle","data-provider-auto-detect-status":`done`,children:e.formatMessage({id:`settings.modelProvider.autoDetect.done`},{providers:String(n.providers),models:String(n.models)})}):n?.kind===`failed`?$.jsx("span",{className:"text-ui-sm text-destructive","data-provider-auto-detect-status":`failed`,children:e.formatMessage({id:`settings.modelProvider.autoDetect.failed`},{reason:n.error??``})}):null]})}
+'''
 
 
 def guard_main(text):
@@ -337,7 +349,11 @@ def _renderer(text):
     # the template picker path untouched for when providers do exist.
     text = replace_once(text, 'ie?(0,$.jsx)(OCn,{templates:m,creating:oe,',
                         '!ie&&(p?.length??0)===0?(0,$.jsx)(ZCodeProviderEmptyState,{}):ie?(0,$.jsx)(OCn,{templates:m,creating:oe,')
+    # "Auto Detect" beside "+ Add model": the model list header gains a button that
+    # runs the local gateway discovery on demand.
+    text = replace_once(text, ADD_MODEL_BUTTON, ADD_MODEL_BUTTON_WITH_DETECT)
     text += PROVIDER_EMPTY_STATE
+    text += AUTO_DETECT_BUTTON
     # The status hook polls the removed channel once per second, so it is inert.
     text = replace_once(text, 'function o4({enabled:e=!0,intervalMs:t=1e3}={}){let n=Wo(),[r,i]=(0,Q.useState)({status:`idle`});return(0,Q.useEffect)(()=>{if(!e||!n){i({status:`idle`});return}',
                         'function o4({enabled:e=!0,intervalMs:t=1e3}={}){let n=Wo(),[r,i]=(0,Q.useState)({status:`idle`});return(0,Q.useEffect)(()=>{if(!0){i({status:`idle`});return}')
@@ -430,6 +446,19 @@ def _main(text):
 
 def _intl(text):
     """Rename the account-era labels: local Activity page, no upgrade wording."""
+    # Auto Detect button in Model settings (injected by the renderer patch), both locales.
+    text = replace_once(text, '"settings.modelProvider.addModel":`添加模型`',
+                        '"settings.modelProvider.addModel":`添加模型`,'
+                        '"settings.modelProvider.autoDetect":`自动检测`,'
+                        '"settings.modelProvider.autoDetect.running":`正在检测模型…`,'
+                        '"settings.modelProvider.autoDetect.done":`已添加 {providers} 个供应商 · {models} 个模型`,'
+                        '"settings.modelProvider.autoDetect.failed":`检测失败：{reason}`')
+    text = replace_once(text, '"settings.modelProvider.addModel":`Add model`',
+                        '"settings.modelProvider.addModel":`Add model`,'
+                        '"settings.modelProvider.autoDetect":`Auto Detect`,'
+                        '"settings.modelProvider.autoDetect.running":`Detecting models…`,'
+                        '"settings.modelProvider.autoDetect.done":`Added {providers} providers · {models} models`,'
+                        '"settings.modelProvider.autoDetect.failed":`Detection failed: {reason}`')
     text = replace_once(text, '"chat.error.noAvailableModel":`No model available. Upgrade or set a custom model.`',
                         '"chat.error.noAvailableModel":`No model available. Set a custom model.`')
     text = replace_once(text, '"chat.error.noAvailableModel":`当前没有可用模型。请开通编程套餐或配置自定义模型。`',

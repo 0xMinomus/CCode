@@ -18,7 +18,7 @@ Pemeriksaan smoke minimal setelah `make build && make test`:
 2. Pastikan tidak ada `Unknown channel`, `No handler registered`, `ReferenceError`, atau `TypeError` pada log.
 3. Kirim satu prompt pendek ke provider personal yang sudah dikonfigurasi, lalu restart dan pastikan task masih ada.
 4. Jalankan `python3 scripts/data_backup.py backup|verify|restore` pada root uji.
-5. Untuk perubahan katalog/discovery: tambahkan provider 9Router di root uji, pastikan form model list mulai **kosong**, lalu `make models STANDALONE_ROOT=<root uji>` mengisi provider terkelompok (namespace pengguna memakai unit path yang sama).
+5. Untuk perubahan katalog/discovery: tambahkan provider 9Router di root uji, pastikan form model list mulai **kosong**, lalu tekan tombol **Auto Detect** (jalur pengguna) atau `make models STANDALONE_ROOT=<root uji>` untuk mengisi provider terkelompok.
 
 Setelah mengubah README, AGENTS, atau `docs/`, jalankan `make obsidian`: bila folder project ini dipakai sebagai vault (`.obsidian/` ada) perintah itu hanya menyegarkan `Index.md`, sedangkan untuk vault terpisah perintah itu menyalin dokumen plus frontmatter tag. `make obsidian-check` memeriksa selisih tanpa menulis.
 

@@ -427,23 +427,29 @@ def model_inventory(data):
             for model_id in ((provider.get('config') or {}).get('personalModelIds') or [])}
 
 def commit(config, raw, out, state_root, namespace, changes):
-    """Write the merged config once, with backup and an in-flight-save recheck."""
+    """Write the merged config once, with backup and an in-flight-save recheck.
+
+    Returns True when the file was written, False when there was nothing to do, and
+    "concurrent" when another writer (the app saving settings) moved the file first:
+    the caller retries from a fresh read instead of dropping the update.
+    """
     if not changes:return False
     if config.read_bytes()!=raw:
-        print('Config changed concurrently; retry on next timer run');return False
+        print('Config changed concurrently; retrying from a fresh read');return 'concurrent'
     # Safety net for any writer bug (ours or the app's): this sync only ever adds
     # models, so a result that drops part of the inventory is refused and the file
     # is left untouched.
     before,after=model_inventory(json.loads(raw)),model_inventory(out)
     if len(before)>=5 and len(after)<len(before):
         print(f'Refusing to drop {len(before)-len(after)} of {len(before)} enabled models; config left untouched')
-        return False
+        return 'refused'
     backups=state_root/'backups';backups.mkdir(exist_ok=True,mode=0o700)
     if namespace:private_dir(backups)
     name='provider_config-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f')+'.json'
     backup=backups/name;backup.write_bytes(raw);backup.chmod(0o600)
     # Recheck after backup so an in-flight UI save does not get overwritten.
-    if config.read_bytes()!=raw:return False
+    if config.read_bytes()!=raw:
+        print('Config changed concurrently; retrying from a fresh read');return 'concurrent'
     atomic(config,out)
     for old in sorted(backups.glob('provider_config-*.json'))[:-10]:old.unlink()
     return True
@@ -466,57 +472,70 @@ def main(argv=None):
         with os.fdopen(fd,'a') as lock:
             try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
             except BlockingIOError:return
-            if not config.exists():return
-            raw=config.read_bytes();data=json.loads(raw)
-            state=load(state_root/'state.json',{'managed':{}})
-            pristine=copy.deepcopy(state)
-            discovery=state.setdefault('discovery',{})
-            changes=[];models=None
-            providers=((data.get('config') or {}).get('providerConfigRules') or {}).get('providerRules') or []
-            family=[provider for provider in providers
-                    if str(provider.get('providerId','')).startswith(DISCOVERY_FAMILY_PREFIX)
-                    or (((provider.get('config') or {}).get('api') or {}).get('baseUrl')==GATEWAY_BASE_URL)]
-            due=time.time()-float(discovery.get('fetchedAt') or 0)>=DISCOVERY_TTL_SECONDS
-            cooling=time.time()-float(discovery.get('failedAt') or 0)<DISCOVERY_FAILURE_BACKOFF
-            # A provider just added from the UI has nothing to select yet, and a
-            # provider we have never grouped is new as well: fill both right away
-            # instead of waiting for the TTL.
-            # Record groups the user removed from the UI right away (no gateway call):
-            # the next discovery run would otherwise re-create them.
-            created={str(item) for item in (discovery.get('providers') or [])}
-            present={str(provider.get('providerId')) for provider in providers}
-            if not args.bootstrap and created-present:
-                discovery['removedProviders']=sorted({*(discovery.get('removedProviders') or []),*(created-present)})
-                discovery['providers']=sorted(created&present)
-            grouped=discovery.get('groups') or {}
-            needs_fill=any(not ((provider.get('config') or {}).get('personalModelIds'))
-                           or str(provider.get('providerId')) not in grouped for provider in family)
-            if args.bootstrap and not family:due=True
-            if args.discover or ((due or needs_fill) and family and not cooling):
-                try:
-                    models=gateway_models()
-                    discovery['fetchedAt']=time.time()
-                    discovery.pop('failedAt',None)
-                    print('Gateway models:',len(models))
-                except Exception as error:
-                    models=None
-                    discovery['failedAt']=time.time()
-                    print('Model discovery unavailable; keeping current config:',type(error).__name__)
-            elif not family and not args.bootstrap and not discovery.get('hintShown'):
-                discovery['hintShown']=True
-                print('No 9Router provider yet; add one in Model settings or run with --bootstrap')
-            catalog=refresh_catalog(state_root)
-            out,newstate,changes=enrich(data,catalog,state)
-            if models:
-                out,newstate,found,status=discovery_merge(out,models,newstate,catalog,bootstrap=bool(args.bootstrap),
-                                                            catalog_matches=catalog_model_matches())
-                if status=='ok':
-                    print('Discovered groups:',', '.join(f'{key}={value}' for key,value in sorted(newstate['discovery'].get('groups',{}).items())))
-                    skipped=newstate['discovery'].get('skipped') or []
-                    if skipped:print('Skipped models without limits:',len(skipped))
-                changes=changes+found
-            if commit(config,raw,out,state_root,namespace,changes):
-                print('Updated provider config:',len(changes),'entry(ies)')
-            if newstate!=pristine:atomic(state_root/'state.json',newstate)
+            for attempt in range(3):
+                status=run_once(args,config,state_root,namespace)
+                if status!='concurrent':break
+                time.sleep(0.4)
+
+
+
+def run_once(args, config, state_root, namespace):
+    """One discover-enrich-commit pass; "concurrent" tells the caller to retry."""
+    if not config.exists():return 'missing'
+    raw=config.read_bytes();data=json.loads(raw)
+    state=load(state_root/'state.json',{'managed':{}})
+    pristine=copy.deepcopy(state)
+    discovery=state.setdefault('discovery',{})
+    changes=[];models=None
+    providers=((data.get('config') or {}).get('providerConfigRules') or {}).get('providerRules') or []
+    family=[provider for provider in providers
+            if str(provider.get('providerId','')).startswith(DISCOVERY_FAMILY_PREFIX)
+            or (((provider.get('config') or {}).get('api') or {}).get('baseUrl')==GATEWAY_BASE_URL)]
+    due=time.time()-float(discovery.get('fetchedAt') or 0)>=DISCOVERY_TTL_SECONDS
+    cooling=time.time()-float(discovery.get('failedAt') or 0)<DISCOVERY_FAILURE_BACKOFF
+    # A provider just added from the UI has nothing to select yet, and a
+    # provider we have never grouped is new as well: fill both right away
+    # instead of waiting for the TTL.
+    # Record groups the user removed from the UI right away (no gateway call):
+    # the next discovery run would otherwise re-create them.
+    created={str(item) for item in (discovery.get('providers') or [])}
+    present={str(provider.get('providerId')) for provider in providers}
+    if not args.bootstrap and created-present:
+        discovery['removedProviders']=sorted({*(discovery.get('removedProviders') or []),*(created-present)})
+        discovery['providers']=sorted(created&present)
+    grouped=discovery.get('groups') or {}
+    needs_fill=any(not ((provider.get('config') or {}).get('personalModelIds'))
+                   or str(provider.get('providerId')) not in grouped for provider in family)
+    if args.bootstrap and not family:due=True
+    if args.discover or ((due or needs_fill) and family and not cooling):
+        try:
+            models=gateway_models()
+            discovery['fetchedAt']=time.time()
+            discovery.pop('failedAt',None)
+            print('Gateway models:',len(models))
+        except Exception as error:
+            models=None
+            discovery['failedAt']=time.time()
+            print('Model discovery unavailable; keeping current config:',type(error).__name__)
+    elif not family and not args.bootstrap and not discovery.get('hintShown'):
+        discovery['hintShown']=True
+        print('No 9Router provider yet; add one in Model settings or run with --bootstrap')
+    catalog=refresh_catalog(state_root)
+    out,newstate,changes=enrich(data,catalog,state)
+    if models:
+        out,newstate,found,status=discovery_merge(out,models,newstate,catalog,bootstrap=bool(args.bootstrap),
+                                                  catalog_matches=catalog_model_matches())
+        if status=='ok':
+            print('Discovered groups:',', '.join(f'{key}={value}' for key,value in sorted(newstate['discovery'].get('groups',{}).items())))
+            skipped=newstate['discovery'].get('skipped') or []
+            if skipped:print('Skipped models without limits:',len(skipped))
+        changes=changes+found
+    status=commit(config,raw,out,state_root,namespace,changes)
+    if status is True:print('Updated provider config:',len(changes),'entry(ies)')
+    elif status=='concurrent':print('Config changed concurrently; retry on next pass')
+    if newstate!=pristine:atomic(state_root/'state.json',newstate)
+    return status if changes else 'no-change'
+
+
 
 if __name__=='__main__':main()
