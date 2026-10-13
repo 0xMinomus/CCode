@@ -1,6 +1,8 @@
 // Local "Activity" page: prompt counts per day, streaks and a contribution-style
 // heatmap, all computed by the main process from the local session database.
-// No cloud, no account, no plan data.
+// The layout mirrors the original upstream usage page (metrics strip with dividers,
+// heatmap card with a segmented range control) and reuses its theme tokens
+// `--color-usage-heatmap-0..4`. No cloud, no account, no plan data.
 function ZCodeActivityPanel(){
  const [state,setState]=Q.useState({status:'loading'});
  const [range,setRange]=Q.useState('12m');
@@ -20,46 +22,59 @@ function ZCodeActivityPanel(){
  const todayKey=ZCodeActivityDayKey(new Date());
  const grid=Q.useMemo(()=>ZCodeActivityGrid(counts,range,todayKey),[counts,range,todayKey]);
  const rangeTotal=grid.weeks.flat().reduce((sum,cell)=>sum+(cell?.prompts??0),0);
- if(state.status==='loading')return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:'Menghitung aktivitas lokal…'});
+ if(state.status==='loading')return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:'Loading local activity…'});
  if(state.status==='error')return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:state.error});
- if(data.available===false)return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:data.error||'Aktivitas lokal belum tersedia.'});
- const card=(label,value)=>$.jsxs('div',{className:'flex flex-col gap-1 rounded-xl border border-border p-4',children:[
-  $.jsx('span',{className:'text-ui-xs text-foreground-subtle',children:label}),
-  $.jsx('span',{className:'text-2xl font-semibold tracking-tight text-foreground',children:value})]},label);
- const rangeLabel=range==='12m'?'12 bulan terakhir':`tahun ${range}`;
- const intensity=ZCodeActivityIntensity;
- return $.jsxs('div',{className:'flex flex-col gap-6','data-testid':'zcode-activity-panel',children:[
-  $.jsxs('div',{className:'flex flex-col gap-1',children:[
-   $.jsx('h2',{className:'text-2xl font-semibold tracking-tight text-foreground',children:'Activity'}),
-   $.jsx('p',{className:'text-ui-base text-foreground-subtle',children:'Prompt yang Anda kirim ke agent, dihitung dari riwayat lokal aplikasi ini.'})]}),
-  $.jsxs('div',{className:'grid grid-cols-2 gap-3 lg:grid-cols-4',children:[
-   card('Prompt hari ini',data.today??0),
-   card('Streak saat ini',`${data.currentStreak??0} hari`),
-   card('Streak terpanjang',`${data.longestStreak??0} hari`),
-   card('Total prompt',data.total??0)]}),
-  $.jsxs('section',{className:'flex flex-col gap-3 rounded-xl border border-border bg-surface p-4','data-testid':'zcode-activity-heatmap',children:[
-   $.jsxs('div',{className:'flex flex-wrap items-center justify-between gap-2',children:[
-    $.jsxs('span',{className:'text-ui-base text-foreground',children:[
-     $.jsx('span',{className:'font-semibold',children:rangeTotal.toLocaleString()}),' prompt · ',rangeLabel]}),
-    $.jsxs('div',{className:'flex flex-wrap items-center gap-1',children:[
-     ZCodeActivityPill('12m','12 bulan',range,setRange),
-     ...(data.years??[]).map(row=>ZCodeActivityPill(row.year,row.year,range,setRange))]})]}),
-   $.jsx('div',{className:'overflow-x-auto',children:$.jsxs('div',{className:'flex gap-2',children:[
-    $.jsxs('div',{className:'flex flex-col pt-[18px] text-ui-xs text-foreground-subtle',style:{gap:'2px'},children:ZCodeActivityDayLabels.map((label,index)=>$.jsx('span',{className:'h-[11px] leading-[11px]',children:label},index))}),
-    $.jsxs('div',{className:'flex flex-col',style:{gap:'2px'},children:[
-     $.jsx('div',{className:'flex text-ui-xs text-foreground-subtle',style:{gap:'2px',height:'16px'},children:grid.months.map((label,index)=>$.jsx('span',{className:'shrink-0 overflow-visible whitespace-nowrap',style:{width:'11px'},children:label},index))}),
-     $.jsx('div',{className:'flex',style:{gap:'2px'},children:grid.weeks.map((week,index)=>$.jsx('div',{className:'flex flex-col',style:{gap:'2px'},children:week.map((cell,row)=>cell
-      ?$.jsx('div',{title:`${cell.day}: ${cell.prompts} prompt`,className:'h-[11px] w-[11px] rounded-[2px] '+intensity(cell.prompts)},cell.day)
-      :$.jsx('div',{className:'h-[11px] w-[11px] rounded-[2px] bg-transparent'},`${index}-${row}`))},index))})]})]})}),
-   $.jsxs('div',{className:'flex items-center justify-end gap-1 text-ui-xs text-foreground-subtle',children:[
-    'Less',
-    ...[0,1,3,6,10].map(level=>$.jsx('div',{className:'h-[11px] w-[11px] rounded-[2px] '+intensity(level)},level)),
-    'More']})]})]});
+ if(data.available===false)return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:data.error||'Local activity is not available yet.'});
+ const heatmapStyle={gridTemplateColumns:`repeat(${grid.weeks.length}, minmax(0, 1fr))`};
+ return $.jsxs('div',{className:'space-y-4','data-testid':'zcode-activity-panel',children:[
+  $.jsxs('div',{className:'flex flex-col overflow-hidden rounded-xl bg-surface sm:flex-row sm:items-center','data-testid':'zcode-activity-metrics',children:ZCodeActivityStats(data).map((stat,index)=>$.jsxs(Q.Fragment,{children:[
+   index>0?$.jsx('div',{'aria-hidden':'true',className:'hidden h-7 w-px bg-border sm:block'},`divider-${stat.label}`):null,
+   $.jsxs('div',{className:'min-w-0 flex-1 px-4 py-3 text-center',children:[
+    $.jsx('div',{className:'truncate text-ui-lg font-medium text-foreground',children:stat.value}),
+    $.jsxs('div',{className:'mt-1 flex min-w-0 items-center justify-center gap-1 text-ui-base text-foreground-subtle',children:[
+     $.jsx('span',{className:'min-w-0 truncate',children:stat.label})]})]},stat.label)]},stat.label))}),
+  $.jsxs('div',{className:'rounded-xl bg-surface px-3 py-3','data-testid':'zcode-activity-heatmap',children:[
+   $.jsxs('div',{className:'mb-3 flex items-center justify-between gap-3',children:[
+    $.jsxs('div',{className:'flex min-w-0 flex-col',children:[
+     $.jsx('h3',{className:'min-w-0 truncate text-ui-base font-medium text-foreground',children:'Prompt activity'}),
+     $.jsxs('div',{className:'min-w-0 truncate text-ui-sm text-foreground-subtle',children:[
+      $.jsx('span',{className:'font-medium',children:ZCodeActivityNumber(rangeTotal)}),
+      ` prompt${rangeTotal===1?'':'s'} · `,ZCodeActivityRangeLabel(range)]})]}),
+    $.jsx('div',{className:'flex flex-wrap items-center gap-0.5 rounded-full bg-surface p-0.5','data-testid':'zcode-activity-ranges',children:[
+     ZCodeActivitySegment('12m','12 months',range,setRange),
+     ...(data.years??[]).map(row=>ZCodeActivitySegment(row.year,row.year,range,setRange))]})]}),
+   $.jsxs('div',{children:[
+    $.jsx('div',{className:'grid w-full gap-x-0.5',style:heatmapStyle,children:grid.weeks.map((week,index)=>$.jsx('div',{className:'flex min-w-0 flex-col gap-1',children:week.map((cell,row)=>cell
+     ?$.jsx(ZCodeActivityCell,{cell},cell.day)
+     :$.jsx('div',{className:'aspect-square w-full min-w-0'},`${index}-${row}`))},index))}),
+    $.jsx('div',{className:'mt-3 grid w-full gap-x-0.5',style:heatmapStyle,children:ZCodeActivityMonthSpans(grid.months).map(group=>$.jsx('div',{'data-usage-heatmap-month-label':'true',className:'min-w-0 truncate text-ui-sm text-foreground-subtle',style:{gridColumn:`span ${group.span}`},children:group.label},group.key))})]})]})]});
 }
-function ZCodeActivityPill(id,label,range,setRange){
+function ZCodeActivityCell({cell}){
+ const prompts=cell.prompts??0;
+ return $.jsx('div',{title:`${cell.day}: ${prompts} prompt${prompts===1?'':'s'}`,
+  className:'aspect-square w-full min-w-0 rounded-[4px] border transition-transform hover:scale-110 hover:border-border-hover '+(prompts?'border-border':'border-transparent'),
+  style:{backgroundColor:ZCodeActivityHeatColor(prompts)}});
+}
+function ZCodeActivitySegment(id,label,range,setRange){
  const active=range===id;
  return $.jsx('button',{type:'button',onClick:()=>setRange(id),'data-testid':`zcode-activity-range-${id}`,
-  className:'rounded-full border px-2.5 py-0.5 text-ui-xs transition-colors '+(active?'border-primary bg-primary text-primary-foreground':'border-border text-foreground-subtle hover:bg-surface-hover'),children:label},id);
+  className:'h-6 flex-none justify-center rounded-full px-2.5 py-0 text-ui-sm font-medium transition-colors '+(active?'bg-background text-foreground':'text-foreground-subtle hover:text-foreground'),children:label},id);
+}
+function ZCodeActivityStats(data){
+ const day=value=>`${ZCodeActivityNumber(value??0)} d`;
+ return [
+  {label:'Prompts today',value:ZCodeActivityNumber(data.today??0)},
+  {label:'Current streak',value:day(data.currentStreak)},
+  {label:'Longest streak',value:day(data.longestStreak)},
+  {label:'Active days',value:ZCodeActivityNumber(data.activeDays??0)},
+  {label:'Total prompts',value:ZCodeActivityNumber(data.total??0)}];
+}
+function ZCodeActivityNumber(value,locale){
+ const total=Number(value)||0;
+ return new Intl.NumberFormat(locale,{notation:total>=1000?'compact':'standard',maximumFractionDigits:total>=1000?1:0}).format(total);
+}
+function ZCodeActivityRangeLabel(range){
+ return range==='12m'?'Last 12 months':String(range);
 }
 function ZCodeActivityDayKey(date){
  const pad=n=>String(n).padStart(2,'0');
@@ -91,13 +106,17 @@ function ZCodeActivityGrid(counts,range,todayKey){
  }
  return {weeks,months};
 }
-const ZCodeActivityMonthNames=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-const ZCodeActivityDayLabels=['','Mon','','Wed','','Fri',''];
-function ZCodeActivityIntensity(prompts){
- if(!prompts)return 'bg-foreground/5';
- if(prompts<3)return 'bg-primary/25';
- if(prompts<6)return 'bg-primary/45';
- if(prompts<10)return 'bg-primary/70';
- return 'bg-primary';
+function ZCodeActivityMonthSpans(months){
+ const groups=[];
+ for(const label of months){
+  if(label||groups.length===0)groups.push({key:`${groups.length}-${label}`,label,span:1});
+  else groups[groups.length-1].span+=1;
+ }
+ return groups;
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={ZCodeActivityPanel,ZCodeActivityGrid,ZCodeActivityDayKey,ZCodeActivityIntensity,ZCodeActivityDayLabels,ZCodeActivityMonthNames};
+const ZCodeActivityMonthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function ZCodeActivityHeatColor(prompts){
+ const level=!prompts?0:prompts<3?1:prompts<6?2:prompts<10?3:4;
+ return `var(--color-usage-heatmap-${level})`;
+}
+if(typeof module!=='undefined'&&module.exports)module.exports={ZCodeActivityPanel,ZCodeActivityCell,ZCodeActivityGrid,ZCodeActivityDayKey,ZCodeActivityHeatColor,ZCodeActivityMonthSpans,ZCodeActivityMonthNames,ZCodeActivityNumber,ZCodeActivityRangeLabel,ZCodeActivitySegment,ZCodeActivityStats};

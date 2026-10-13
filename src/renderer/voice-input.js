@@ -9,28 +9,28 @@ function ZCodeVoiceInput({disabled=false}){
   try{
    if(status==='idle'){
     const region=event.currentTarget.closest('.chat-composer-region');target.current=region?.querySelector('[contenteditable="true"]');
-    if(!target.current)throw Error('Buka kotak chat terlebih dahulu.');
+    if(!target.current)throw Error('Open the chat box first.');
     await api.start({language});if(!live.current){await api.cancel();return;}
-    setStatus('recording');timer.current=setTimeout(()=>{api.cancel().catch(()=>{});if(live.current){setStatus('idle');setError('Batas rekaman 60 detik. Coba perintah lebih singkat.');}},59000);
+    setStatus('recording');timer.current=setTimeout(()=>{api.cancel().catch(()=>{});if(live.current){setStatus('idle');setError('Recording stops at 60 seconds. Try a shorter command.');}},59000);
    }else if(status==='recording'){
     clearTimeout(timer.current);setStatus('transcribing');const result=await api.stop();if(!live.current)return;
-    const text=(result.text||'').trim();if(!text){setError('Ucapan belum terbaca. Coba lagi dan cek mikrofon Fedora.');return;}
-    const editor=target.current;if(!editor?.isConnected)throw Error('Kotak chat berubah. Rekam lagi pada chat yang ingin dipakai.');
+    const text=(result.text||'').trim();if(!text){setError('No speech was recognized. Try again and check the Fedora microphone.');return;}
+    const editor=target.current;if(!editor?.isConnected)throw Error('The chat box changed. Record again in the chat you want to use.');
     editor.focus();const range=document.createRange();range.selectNodeContents(editor);range.collapse(false);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
     const value=(editor.textContent.trim()?' ':'')+text;
-    if(!document.execCommand('insertText',false,value))throw Error('Tidak bisa memasukkan teks suara.');
-    if(auto){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const region=editor.closest('.chat-composer-region');const send=[...region.querySelectorAll('button')].find(b=>/^(Send|Kirim)$/.test(b.getAttribute('aria-label')||''));if(send&&!send.disabled)send.click();else setError('Teks siap. Tombol kirim belum tersedia; kirim setelah siap.');}
+    if(!document.execCommand('insertText',false,value))throw Error('The voice text could not be inserted.');
+    if(auto){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const region=editor.closest('.chat-composer-region');const send=[...region.querySelectorAll('button')].find(b=>/^Send$/.test(b.getAttribute('aria-label')||''));if(send&&!send.disabled)send.click();else setError('Text is ready. The send button is unavailable; send it yourself.');}
    }
   }catch(e){if(live.current){setError(String(e.message||e));setStatus('idle');}}
   finally{inFlight.current=false;if(live.current&&status==='recording')setStatus('idle');}
  }
  if(!api)return null;
- const label=status==='recording'?'Stop rekaman':status==='transcribing'?'Memproses suara…':'Voice command';
+ const label=status==='recording'?'Stop recording':status==='transcribing'?'Transcribing…':'Voice command';
  const languageLabel=language==='id'?'ID + EN':language==='en'?'EN + ID':'Auto';
  const modeLabel=auto?'Send':'Review';
  const option=(value,title,description)=>$.jsx(EA,{value,className:'py-2',children:$.jsxs('div',{className:'flex flex-col gap-0.5',children:[$.jsx('span',{className:'text-ui-base',children:title}),$.jsx('span',{className:'text-ui-xs text-foreground-subtle',children:description})]})},value);
  return $.jsxs('div',{className:'relative flex shrink-0 items-center gap-0.5',children:[
- $.jsxs(X,{type:'button',variant:'ghost',size:'default','data-testid':'zcode-voice-button','aria-label':label,title:label,disabled:disabled||status==='transcribing',onClick:toggle,className:'h-8 rounded-lg px-2.5 gap-2 text-ui-base '+(status==='recording'?'bg-destructive/10 text-destructive':''),children:[$.jsx('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.5,className:'shrink-0','aria-hidden':true,children:$.jsx('path',{d:status==='recording'?'M7 7h10v10H7z':'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0V5zm-3 6v1a6 6 0 0 0 12 0v-1M12 18v4M8 22h8'})}),$.jsx('span',{children:status==='recording'?'Stop':status==='transcribing'?'Memproses…':'Voice'})]}),
+ $.jsxs(X,{type:'button',variant:'ghost',size:'default','data-testid':'zcode-voice-button','aria-label':label,title:label,disabled:disabled||status==='transcribing',onClick:toggle,className:'h-8 rounded-lg px-2.5 gap-2 text-ui-base '+(status==='recording'?'bg-destructive/10 text-destructive':''),children:[$.jsx('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.5,className:'shrink-0','aria-hidden':true,children:$.jsx('path',{d:status==='recording'?'M7 7h10v10H7z':'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0V5zm-3 6v1a6 6 0 0 0 12 0v-1M12 18v4M8 22h8'})}),$.jsx('span',{children:status==='recording'?'Stop':status==='transcribing'?'Transcribing…':'Voice'})]}),
  $.jsxs(bA,{children:[
  $.jsx(xA,{asChild:true,children:$.jsxs(X,{type:'button',variant:'ghost',size:'default','aria-label':'Voice settings','data-testid':'zcode-voice-settings',title:'Speech language and send mode',disabled:status!=='idle',className:'h-8 rounded-lg px-2 gap-1.5 text-ui-base text-foreground-subtle',children:[$.jsx('span',{children:languageLabel}),$.jsx('span',{className:'text-foreground-subtlest',children:'·'}),$.jsx('span',{children:modeLabel}),$.jsx(Rs,{className:'size-3.5 shrink-0'})]})}),
  $.jsxs(SA,{side:'top',align:'start',sideOffset:8,className:'min-w-64',children:[

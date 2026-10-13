@@ -210,7 +210,7 @@ PANEL_LOADER = ("const fs=require('fs');const mod={exports:{}};"
                 "const p=mod.exports;")
 
 
-class ActivityHeatmapTests(unittest.TestCase):
+class ActivityPanelTests(unittest.TestCase):
     def panel_script(self, body):
         return f"const PANEL_PATH={json.dumps(str(PANEL))};" + PANEL_LOADER + body
 
@@ -229,7 +229,7 @@ class ActivityHeatmapTests(unittest.TestCase):
         self.assertEqual(grid['days'][-1], '2026-10-13')
         self.assertIn('2025-10-14', grid['days'])
         self.assertEqual(len(grid['days']), len(set(grid['days'])), 'no duplicate cells')
-        self.assertIn('Okt', grid['months'])
+        self.assertEqual(grid['months'][0], 'Oct', 'month labels follow the UI language')
 
     def test_year_window_keeps_leap_day_and_bounds(self):
         grid = self.grid({}, '2024', '2026-10-13')
@@ -238,12 +238,55 @@ class ActivityHeatmapTests(unittest.TestCase):
         self.assertIn('2024-02-29', grid['days'])
         self.assertEqual(len(grid['days']), 366)
 
-    def test_intensity_levels_use_the_zcode_accent(self):
+    def test_month_labels_are_english_and_cover_every_column(self):
         script = self.panel_script(
-            "console.log(JSON.stringify([0,1,3,6,10].map(p.ZCodeActivityIntensity)))"
+            "const grid=p.ZCodeActivityGrid(new Map(),'12m','2026-10-13');"
+            "const spans=p.ZCodeActivityMonthSpans(grid.months);"
+            "const labels=grid.months.filter(Boolean);"
+            "console.log(JSON.stringify({names:p.ZCodeActivityMonthNames,labels,"
+            "spans:spans.map(g=>[g.label,g.span]),covered:spans.reduce((s,g)=>s+g.span,0),"
+            "weeks:grid.weeks.length}))"
+        )
+        result = json.loads(run_node(script))
+        self.assertEqual(result['names'],
+                         ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+        for label in result['labels']:
+            self.assertIn(label, result['names'], label)
+        self.assertEqual(result['labels'][-1], 'Oct', 'the current month ends the window')
+        self.assertEqual(result['covered'], result['weeks'], 'every column belongs to a month group')
+        for label, span in result['spans']:
+            self.assertGreaterEqual(span, 1, label)
+        self.assertEqual(sum(1 for label, _ in result['spans'] if label), len(result['labels']))
+
+    def test_stats_render_prompt_metrics_with_day_units(self):
+        script = self.panel_script(
+            "console.log(JSON.stringify(p.ZCodeActivityStats("
+            "{today:2,currentStreak:3,longestStreak:5,activeDays:7,total:1234})"
+            ".map(s=>[s.label,s.value])))"
+        )
+        stats = json.loads(run_node(script))
+        self.assertEqual([row[0] for row in stats],
+                         ['Prompts today', 'Current streak', 'Longest streak', 'Active days', 'Total prompts'])
+        self.assertEqual([row[1] for row in stats[:4]], ['2', '3 d', '5 d', '7'])
+        self.assertTrue(stats[4][1].startswith('1') and stats[4][1] != '1234',
+                        f'large counts are abbreviated: {stats[4][1]}')
+
+    def test_number_and_range_labels_are_english(self):
+        script = self.panel_script(
+            "console.log(JSON.stringify(["
+            "p.ZCodeActivityNumber(0,'en-US'),p.ZCodeActivityNumber(24,'en-US'),"
+            "p.ZCodeActivityNumber(1234,'en-US'),p.ZCodeActivityNumber(1200000,'en-US'),"
+            "p.ZCodeActivityRangeLabel('12m'),p.ZCodeActivityRangeLabel('2025')]))"
         )
         self.assertEqual(json.loads(run_node(script)),
-                         ['bg-foreground/5', 'bg-primary/25', 'bg-primary/45', 'bg-primary/70', 'bg-primary'])
+                         ['0', '24', '1.2K', '1.2M', 'Last 12 months', '2025'])
+
+    def test_heat_colors_use_the_upstream_usage_ramp(self):
+        script = self.panel_script(
+            "console.log(JSON.stringify([0,1,3,6,10].map(p.ZCodeActivityHeatColor)))"
+        )
+        self.assertEqual(json.loads(run_node(script)),
+                         [f'var(--color-usage-heatmap-{level})' for level in range(5)])
 
 
 if __name__ == '__main__':

@@ -38,7 +38,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Zero-account startup** | No login gate, no cloud handshake, no plan prompts. Launch it and work. |
 | **Bring your own provider** | Any OpenAI-, Anthropic-, or Responses-compatible endpoint, plus a ready-made template for a local 9Router-compatible gateway. Keys are stored in your own config. |
 | **Local task engine** | Conversations, tasks, and agent sessions persist in a local SQLite database that you can back up, inspect, or delete. |
-| **Activity dashboard** | Prompts per day, streaks, and a yearly recap, computed read-only from your local session database. |
+| **Activity dashboard** | Prompt metrics, streaks, and a month-labelled heatmap for the last 12 months or any year with history, computed read-only from your local session database. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
 | **Bilingual voice input** | Local Whisper worker tuned for mixed Indonesian–English speech, with preview-before-send, a 60-second cap, and temporary audio that is deleted after transcription. |
 | **Reasoning metadata that is real** | Reasoning levels come from provider metadata or verified behavior — no cosmetic Low/Max toggles. |
@@ -55,7 +55,7 @@ Side by side, at a glance:
 | **Data location** | Vendor data directories (`~/.zcode`, `~/.config/ZCode`) | Dedicated namespace (`~/.local/share/ccode`); other installations are never read or written |
 | **Providers** | Built-in Zhipu family (Z.ai, BigModel, coding plans) plus BYOK | Zhipu/plan family removed; BYOK for any compatible endpoint, plus a local 9Router template |
 | **Model catalog** | Refreshed from the account endpoint at runtime | Account-driven refresh disabled; the catalog is local and pinned |
-| **Usage analytics** | Cloud usage stats | **Activity**: prompts/day, streaks, yearly recap, computed locally |
+| **Usage analytics** | Cloud usage stats | **Activity**: prompt counts, streaks, and a month-labelled heatmap computed locally, laid out like the original usage page |
 | **Voice input** | — | Local Whisper worker, Indonesian–English mixed speech, preview before send |
 | **Computer Use** | Platform helper apps with their own permission flow | Linux desktop backend over MCP: text-first screen reading, element-based clicks, pointer-takeover guard, portal capture |
 | **Auto-update** | Polls the vendor update feed | Update channel removed; a release never overwrites your build |

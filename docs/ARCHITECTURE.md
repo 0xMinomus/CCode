@@ -15,6 +15,12 @@ Simbol versi ini: `Q` = React, `$` = JSX runtime, `X` = Button, `bA/xA/SA` = dro
 
 Sidebar Settings desktop Linux mempertahankan strip drag-window 16px di bagian atas (bukan spacer upstream 48px), sehingga tombol Back to workspace dan daftar menu naik 32px. Patch anchor unik berada di `cloud._renderer`; layout macOS/Windows, padding menu, dan footer tidak berubah.
 
+### Halaman Activity
+
+`src/renderer/activity-panel.js` memakai tata letak halaman Usage upstream yang lama (komponen `Bwn`/`vwn`/`p7` di baseline): strip lima metrik (`flex flex-col overflow-hidden rounded-xl bg-surface sm:flex-row sm:items-center` dengan pemisah `hidden h-7 w-px bg-border sm:block`, nilai `text-ui-lg font-medium` di atas label `text-ui-base text-foreground-subtle`), lalu kartu `rounded-xl bg-surface px-3 py-3` berisi judul + kontrol segmen (`flex flex-wrap items-center gap-0.5 rounded-full bg-surface p-0.5`, segmen aktif `bg-background text-foreground`, tidak aktif `text-foreground-subtle`), grid heatmap `style={{gridTemplateColumns:'repeat(N, minmax(0, 1fr))'}}` dengan sel `aspect-square w-full min-w-0 rounded-[4px] border` berwarna `var(--color-usage-heatmap-0..4)`, dan label bulan di bawah grid.
+
+CSS renderer adalah hasil build Tailwind statis dari upstream: kelas yang tidak dipakai di sana (mis. `grid-cols-5`, `divide-x`, `h-[11px]`, `bg-foreground/5`, `bg-primary/25`) tidak punya aturan sama sekali, jadi utilitas seperti itu tidak berefek walau ditulis di JSX. Saat mengubah panel ini, pakai kelas/token yang benar-benar ada di `out/renderer/assets/styles-*.css` baseline, atau gaya inline untuk geometri dan warna. Seluruh teks panel ditulis langsung dalam bahasa Inggris (tidak lewat hook intl) supaya locale zh-CN tidak menggantinya; label dan istilah mengikuti kunci `settings.usage.*` upstream bila padanannya ada.
+
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 
 1. `storage.py` menetapkan namespace data, profil, database task, database sesi agent, config MCP, dan menghapus migrasi/scan lintas instalasi. Ini juga berisi bootstrap env untuk chunk `out/main`, `out/host`, `out/scheduler`, dan backend agent.
