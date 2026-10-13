@@ -20,7 +20,7 @@
 
 - Pengguna menanyakan baris "Disk footprint" di README: apakah CCode lebih berat dari ZCode? Ternyata baris itu membandingkan dua hal berbeda — 195 MB itu berkas AppImage upstream (squashfs terkompresi), sedangkan 653 MiB itu direktori CCode yang sudah diekstrak.
 - Diukur langsung: AppImage 3.14.5 diekstrak (`--appimage-extract`) = **683.835.082 B / 654 MiB / 624 berkas**; direktori CCode terpasang = **682.637.475 B / 653 MiB / 624 berkas** → CCode **~1,1 MiB lebih kecil**, bukan lebih berat. Selisih terbesar: aset ikon CCode 218.316 B (1024 px launcher), 218.316 B (`icon_windows.png`), 170.502 B (`icon.png`), 124.923 B (`icon_512x512.png`) = −732 KB total, plus `app.asar` −169.756 B karena permukaan akun/cloud dibuang. Jumlah berkas sama (624 vs 624), jadi tidak ada berkas hilang di proses patch.
-- README diperbaiki: satu baris menyesatkan diganti dua baris — **Distribution size** (AppImage vs paket yang belum ada) dan **On-disk footprint (unpacked, measured)**, plus catatan bahwa AppImage = squashfs terkompresi sehingga 195 MB mengembang jadi ~654 MiB bila diekstrak.
+- README diperbaiki: baris menyesatkan diganti baris **Distribution size** (AppImage upstream vs paket CCode yang belum ada). Baris **On-disk footprint** sempat ditambahkan lengkap dengan angka hasil ukur, lalu **dihapus atas permintaan pemilik** karena selisih ~1 MiB dinilai noise untuk pembaca; angkanya tetap tercatat di entri ini sebagai bukti verifikasi.
 
 ### README profesional (EN) + LICENSE/NOTICE
 
