@@ -147,6 +147,21 @@ def install_observation_policy(ns):
     ns["_maybe_shot"] = maybe_shot
 
 
+def install_lazy_warmup(ns):
+    """Skip the OCR/OmniParser model load at MCP startup unless explicitly asked.
+
+    server.main() starts grounding.warmup() on a background thread to hide the model load
+    from the first annotate(). The sessions are built on demand anyway (double-checked locks
+    in ocr_boxes/_omni_session), so warming is a pure prefetch: it costs ~60 MB for every MCP
+    session that never perceives anything. Set ZCODE_CUA_WARMUP=1 to restore the prefetch for
+    latency-sensitive use.
+    """
+    if os.environ.get("ZCODE_CUA_WARMUP") == "1":
+        return
+    grounding = ns["grounding"]
+    grounding.warmup = lambda *a, **k: None
+
+
 def install(ns):
     from gi.repository import Gio
 
@@ -264,6 +279,7 @@ def install(ns):
 
     install_pointer_policy(ns)
     install_observation_policy(ns)
+    install_lazy_warmup(ns)
 
     def apps(query):
         q=query.casefold().strip();matches=[]

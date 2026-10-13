@@ -47,6 +47,7 @@ Yang tidak dilakukan: membiarkan agent terus mengklik sementara pengguna aktif m
 | `ZCODE_CUA_TAKEOVER_MS` | 2500 | Lama pengendalian berkelanjutan sebelum dianggap pengambilalihan |
 | `ZCODE_CUA_POLL_S` | 0.1 | Jeda antar sampel kursor saat divergensi |
 | `ZCODE_CUA_SKIP_UNCHANGED_SHOT` | 1 | Set `0` untuk selalu mengirim gambar pasca-aksi |
+| `ZCODE_CUA_WARMUP` | (kosong) | Set `1` untuk memuat model OCR/OmniParser saat MCP start lagi (~60 MB prefetch) |
 | `MCP_SCREEN_WAIT_MODE` | (profil menetapkan `hybrid`) | Setel `poll` untuk kembali ke perilaku lama |
 
 Perubahan ini berlaku saat MCP desktop dimuat ulang (chat baru atau ZCode dibuka ulang). Env di atas dibaca oleh profil, jadi tidak perlu `make install`.

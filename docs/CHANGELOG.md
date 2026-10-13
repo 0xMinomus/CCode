@@ -2,6 +2,15 @@
 
 ## 2026-10-13
 
+### Harness lebih ringan: flag memori terukur, warmup malas, sisa kode dibuang
+
+- `scripts/run.sh` menyalakan `--enable-low-end-device-mode` secara default (`ZCODE_MEMORY_FLAGS=0` mematikannya). Diukur pada root terisolasi saat idle dengan PSS: **876 MB → 748 MB** (15%, dua kali baseline 876,0 dan 873,9 MB), sementara DOM identik (judul, 19 tombol, 24 div, teks onboarding sama) dan log bebas `Unknown channel`/`No handler registered`/`ReferenceError`/`TypeError`.
+- Flag lain diuji dan ditolak karena tidak terbukti atau berisiko: `--js-flags=--max-old-space-size=512` hanya 2 MB dan menahan pertumbuhan heap berisiko OOM, `--process-per-site` tidak memberi keuntungan, sedangkan `--disable-features=...` bisa menimpa daftar milik aplikasi sendiri.
+- MCP desktop tidak lagi memuat model OCR/OmniParser saat start. `grounding.warmup` hanya prefetch (sesi dibangun lazy lewat double-checked lock di `ocr_boxes`/`_omni_session`), jadi melewatinya menghemat sekitar 60 MB per sesi MCP yang tidak berobservasi; `ZCODE_CUA_WARMUP=1` mengembalikan prefetch.
+- Sisa yang dibuang: dua salinan pra-patch yang tidak dirujuk siapa pun (`services/desktop/server.py.before-zcode-fast`, `services/voice/worker.py.before-bilingual`; isinya tetap ada di riwayat git) dan satu import mati (`hashlib` di `services/model-sync/sync.py`). Scratch `runtime/check` (19 MB, dibuat ulang oleh `scripts/check.py`) dan seluruh root uji `/tmp/zroot-*` dihapus.
+- Yang diperiksa dan ternyata bukan beban: cache Chromium di namespace standalone hanya 6,9 MB (tidak ada `Cache`/`Code Cache`/`GPUCache` yang menumpuk), CPU idle seluruh pohon proses sekitar 1%, dan timer model-sync 0,17 sampai 0,25 detik CPU dengan 60 MB transient per menit.
+- Batas: angka berasal dari peluncuran terisolasi tanpa task, bukan sesi kerja panjang; memori saat tugas berjalan (renderer + MCP + task) belum diukur. `tests/test_desktop_profile.py` bertambah 2 tes untuk kebijakan warmup (116 → 118 tes).
+
 ### Computer Use Linux: jalur teks, klik per elemen, dan pointer yang tidak mudah menghentikan task
 
 - `services/desktop/zcode_fast_profile.py` diperluas tanpa menyentuh file vendor. Permukaan tool naik dari 10 menjadi 15: ditambah `screen_read_text`, `screen_wait_text`, `screen_verify`, `screen_sense`, dan `screen_focus`; tool yang menulis lebih jauh (`screen_read_page`, `screen_read_selection`, `screen_tour`, `screen_reload`) tetap tidak diekspos.

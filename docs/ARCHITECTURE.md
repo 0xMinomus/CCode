@@ -42,6 +42,14 @@ Yang ditetapkan profil:
 
 Rincian dan batasnya ada di [COMPUTER_USE_IMPROVEMENTS.md](COMPUTER_USE_IMPROVEMENTS.md).
 
+### Memori dan CPU
+
+`scripts/run.sh` menyalakan `--enable-low-end-device-mode` secara default (`ZCODE_MEMORY_FLAGS=0` untuk mematikannya). Diukur pada root terisolasi saat idle: pohon proses turun dari ~876 MB ke ~748 MB PSS (15%) dengan DOM yang identik dan log bebas `Unknown channel`/`ReferenceError`/`TypeError`. Flag ini hanya mengecilkan cache renderer dan buffering gambar, jadi tidak ada fungsi aplikasi yang hilang.
+
+Server MCP desktop tidak lagi memuat model OCR/OmniParser saat start; sesi dibangun saat observasi pertama (knob `ZCODE_CUA_WARMUP=1` mengembalikan prefetch). Penghematannya sekitar 60 MB untuk setiap sesi MCP yang tidak mengambil gambar.
+
+CPU saat idle terukur rendah (sekitar 1% untuk seluruh pohon proses setelah startup); timer model-sync memakai 0,17 sampai 0,25 detik CPU dan 60 MB transient sekali per menit.
+
 ## Voice
 
 Preload mengekspos `window.zcodeVoice.start/stop/cancel`. IPC `zcode-voice:*` hanya menerima main frame lokal `out/renderer/index.html`. `src/main/voice.cjs`, yang disalin ke `app/resources/voice/main.cjs`, menemukan root project melalui `project.json`, lalu memakai `services/voice`.

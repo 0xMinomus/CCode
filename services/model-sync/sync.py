@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Enrich explicitly registered Vansrouter models; preserve manual field overrides."""
-import contextlib, copy, datetime, fcntl, hashlib, json, os, pathlib, sys, tempfile, time, urllib.request
+import contextlib, copy, datetime, fcntl, json, os, pathlib, sys, tempfile, time, urllib.request
 ROOT=pathlib.Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT.parents[1]/'scripts'))
 from data_backup import namespace_lock, namespace_root, private_dir, safe_path

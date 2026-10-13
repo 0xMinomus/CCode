@@ -88,6 +88,7 @@ def _build_ns(positions):
         'INSTRUCTIONS': 'base',
         '_txt': lambda text: {'type': 'text', 'text': text},
         '_maybe_shot': maybe_shot,
+        'grounding': types.SimpleNamespace(warmup=lambda: None, warmed=False),
         'inp': _FakeInput(),
         'state': types.SimpleNamespace(SESSION={'cmd_node': 7}),
         'capture': _FakeCapture(positions),
@@ -191,6 +192,25 @@ class ObservationPolicy(unittest.TestCase):
             self.assertTrue(any(item.get('type') == 'image' for item in self._run(content)))
         finally:
             os.environ.pop('ZCODE_CUA_SKIP_UNCHANGED_SHOT', None)
+
+
+class LazyWarmup(unittest.TestCase):
+    def test_install_replaces_the_prefetch_with_a_noop(self):
+        ns = _build_ns([])
+        before = ns['grounding'].warmup
+        profile.install_lazy_warmup(ns)
+        self.assertIsNot(ns['grounding'].warmup, before)
+        ns['grounding'].warmup()  # must be callable and harmless
+
+    def test_env_keeps_the_prefetch(self):
+        os.environ['ZCODE_CUA_WARMUP'] = '1'
+        try:
+            ns = _build_ns([])
+            before = ns['grounding'].warmup
+            profile.install_lazy_warmup(ns)
+            self.assertIs(ns['grounding'].warmup, before)
+        finally:
+            os.environ.pop('ZCODE_CUA_WARMUP', None)
 
 
 class ToolSurface(unittest.TestCase):

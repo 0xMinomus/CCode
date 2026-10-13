@@ -24,6 +24,15 @@ Pemeriksaan smoke minimal setelah `make build && make test`:
 
 Setelah mengubah README, AGENTS, atau `docs/`, jalankan `make obsidian`: bila folder project ini dipakai sebagai vault (`.obsidian/` ada) perintah itu hanya menyegarkan `Index.md`, sedangkan untuk vault terpisah perintah itu menyalin dokumen plus frontmatter tag. `make obsidian-check` memeriksa selisih tanpa menulis.
 
+## Memori dan CPU
+
+Ukur dengan root terisolasi, bukan aplikasi pengguna: jalankan `ZCODE_STANDALONE_ROOT=/tmp/zroot scripts/run.sh --remote-debugging-port=9224`, tunggu target halaman lewat `curl -sf http://127.0.0.1:9224/json/list`, lalu jumlahkan `Pss` dari `/proc/<pid>/smaps_rollup` untuk setiap proses yang environ-nya memuat root itu. RSS biasa menghitung halaman bersama berkali-kali, jadi PSS yang dipakai sebagai angka.
+
+Catatan saat mengukur: proses anak Electron menulis ulang argv menjadi `/proc/self/exe`, sehingga pencocokan `cmdline` saja akan melewatkan renderer; cocokkan lewat environ atau pohon proses. Bersihkan root uji dengan mematikan proses yang environ-nya memuat root tersebut.
+
+Knob yang tersedia: `ZCODE_MEMORY_FLAGS=0` (matikan `--enable-low-end-device-mode`), `ZCODE_CUA_WARMUP=1` (kembalikan prefetch model OCR di MCP desktop), `MCP_SCREEN_AMBIENT=0` dan `MCP_SCREEN_NO_NUDGE=1` (matikan sinyal ambient dan sentakan pointer). Jangan menaikkan batas heap V8 (`--js-flags=--max-old-space-size`) tanpa bukti: pengukuran menunjukkan tambahannya hanya ~2 MB dan menahan pertumbuhan heap berisiko OOM pada task panjang.
+
+
 ## Backend
 
 - Desktop: edit `services/desktop/zcode_fast_profile.py`; itu batas edit project untuk backend desktop dan file vendor (`server.py`, `capture.py`, `input.py`, `grounding.py`) tidak diubah dari sini. Profil dimuat server saat MCP_SCREEN_PROFILE=zcode-fast, jadi aturan lupa-build tidak berlaku: perubahannya aktif begitu MCP desktop dimuat ulang (chat baru atau aplikasi dibuka ulang). Uji profil dengan `python3 -m unittest tests.test_desktop_profile -v` (memakai server/input/capture palsu, tanpa portal). Verifikasi bahwa profil benar-benar terpasang pada namespace server asli: `cd services/desktop && MCP_SCREEN_PROFILE=zcode-fast .venv/bin/python -c "import sys;sys.path.insert(0,'.');import server,input;print(getattr(input.guard_user,'policy',None),getattr(server._maybe_shot,'policy',None),len(server.TOOLS))"`. Smoke permukaan tool tanpa portal: kirim `initialize` + `tools/list` (atau `tools/call screen_sense`) ke `services/desktop/bin/screen-mcp` lewat stdio. Knob perilaku (`ZCODE_CUA_*`, `MCP_SCREEN_WAIT_MODE`, `MCP_SCREEN_AMBIENT`, `MCP_SCREEN_NO_NUDGE`) didokumentasikan di [COMPUTER_USE_IMPROVEMENTS.md](COMPUTER_USE_IMPROVEMENTS.md); jangan mengaktifkan portal atau menyentuh pointer pengguna hanya untuk menguji perubahan.
