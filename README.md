@@ -9,10 +9,10 @@ Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh
 | Repo | Isi | URL |
 |---|---|---|
 | **CCode** (fork) | Fork resmi dari upstream dan rumah rilis: branch `main` mengikuti upstream, `ccode` untuk hasil porting, `ccode-workspace` snapshot workspace patch ini | https://github.com/0xMinomus/CCode |
-| **CCode-archive** | Repo workspace patch (dokumen ini): source patch Linux/Fedora, build/apply, services, docs | https://github.com/0xMinomus/CCode-archive |
+| **CCode-archive** | Repo workspace patch (dokumen ini): source patch Linux/Fedora, build/apply, services, docs — saat ini **privat** | https://github.com/0xMinomus/CCode-archive |
 | **zai-org/ZCode** | Upstream asli ZCode — Apache-2.0, `Copyright 2026 Z.AI Co., Ltd`; sumber fork | https://github.com/zai-org/ZCode |
 
-Rilis nanti dibangun dari fork (build dari sumber), bukan dari patch binary di repo workspace ini; jalurnya ada di [releaseplan.md](releaseplan.md).
+Versi publik dari dokumen ini ada di branch `ccode-workspace` pada fork **CCode**. Rilis nanti dibangun dari fork (build dari sumber), bukan dari patch binary di repo workspace; jalurnya ada di [releaseplan.md](releaseplan.md). Kalau workspace ini dibuka untuk publik, jalankan dulu pembersihan F0 di dokumen itu (buang jalur machine-specific di `project.json`).
 
 ## Cara kerja singkat
 

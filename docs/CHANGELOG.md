@@ -21,7 +21,8 @@
 - Repo workspace ini di-rename `0xMinomus/CCode` → **`0xMinomus/CCode-archive`**, dan **`0xMinomus/CCode`** dibuat sebagai fork dari `zai-org/ZCode` (Apache-2.0) lewat `gh repo fork`. Fork membawa history upstream; snapshot workspace ini didorong sebagai branch `ccode-workspace` supaya spesifikasi perilaku tetap bisa dirujuk dari repo rilis.
 - Remote lokal dirapikan (`origin` = workspace, `fork` = repo fork, `upstream` = `zai-org/ZCode`), dan integritas diverifikasi: tree hash branch yang didorong identik dengan HEAD lokal, jadi tidak ada file yang hilang/berubah saat pindah.
 - Catatan URL: karena nama `CCode` dipakai ulang oleh fork, redirect URL lama tidak lagi menunjuk arsip — semua dokumen memakai URL eksplisit (`CCode-archive` vs `CCode`).
-- Dokumen yang diperbarui: README (seksi **Repositori** + perintah clone), AGENTS (aturan repo/fork), `docs/THIRD_PARTY.md` (provenance), `releaseplan.md` §4 (status fork & strategi branch).
+- Dokumen yang diperbarui: README (seksi **Repositori** + perintah clone), AGENTS (aturan repo/fork + daftar remote), `docs/THIRD_PARTY.md` (provenance), `releaseplan.md` §4 (status fork, strategi branch, visibilitas). Verifikasi pindah: tree sama di lokal/`origin`/`fork` (147 file, commit `bb823ee`), `git fsck` bersih.
+- Terverifikasi lewat API: `0xMinomus/CCode` = `fork: true`, parent/source `zai-org/ZCode`, `main` fork **identik SHA** dengan `main` upstream (`aac4755`), branch `ccode-workspace` memuat snapshot workspace. Fork publik, workspace `CCode-archive` masih privat (pembersihan F0 diperlukan sebelum dibuka).
 
 ### Rencana rilis + status lisensi upstream
 
