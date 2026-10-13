@@ -59,6 +59,12 @@ ADD_MODEL_BUTTON_WITH_DETECT = ('(0,$.jsxs)("div",{className:"flex min-w-0 flex-
 AUTO_DETECT_BUTTON = '''
 function ZCodeAutoDetect(){const{intl:e}=q(),{providerSettingsService:t}=Dg(),[n,r]=Q.useState(null);const i=n?.kind===`running`;async function a(){r({kind:`running`});try{const s=await (typeof window.zcodeDetect?.run===`function`?window.zcodeDetect.run():Promise.resolve({ok:!1,error:`Auto Detect is unavailable in this window.`}));if(!s?.ok){r({kind:`failed`,error:s?.error||`Unknown error`});return}r({kind:`done`,providers:s.providers??0,models:s.models??0,skipped:s.skipped??null});try{await t?.refresh?.(`auto-detect`)}catch{}}catch(s){r({kind:`failed`,error:String(s?.message??s)})}}const s=i?e.formatMessage({id:`settings.modelProvider.autoDetect.running`}):n?.kind===`done`?e.formatMessage({id:`settings.modelProvider.autoDetect.done`},{providers:String(n.providers),models:String(n.models)}):n?.kind===`failed`?e.formatMessage({id:`settings.modelProvider.autoDetect.failed`},{reason:n.error??``}):``;return $.jsxs("span",{className:"flex min-w-0 flex-1 items-center justify-end gap-2","data-provider-auto-detect":`true`,children:[$.jsx("span",{role:`status`,className:"min-w-0 truncate text-right text-ui-sm "+(n?.kind===`failed`?"text-destructive":"text-foreground-subtle"),"data-provider-auto-detect-status":n?.kind,title:s,children:s}),$.jsxs(X,{type:`button`,variant:`outline`,size:`default`,className:`shrink-0 rounded-lg`,"data-testid":`model-provider-auto-detect`,disabled:i,onClick:a,children:[i?$.jsx(Ec,{className:`size-3.5 animate-spin`,"data-icon":`inline-start`,"aria-hidden":`true`}):$.jsx(Yc,{"data-icon":`inline-start`,"aria-hidden":`true`}),e.formatMessage({id:`settings.modelProvider.autoDetect`})]})]})}
 '''
+# An empty chat renders a large faded ZCode mark behind the draft greeting. The requested
+# look is a plain background, so the decorative node is replaced with `null`: React renders
+# a null child as nothing and the greeting text underneath keeps its own layout.
+DRAFT_GREETING_MARK = ('(0,$.jsx)(`div`,{"aria-hidden":`true`,className:Z(`pointer-events-none absolute left-1/2 '
+                       'top-1/2 aspect-[5/4] w-[min(72vw,25rem)] -mt-10`,`-translate-x-1/2 -translate-y-1/2 '
+                       'text-foreground-subtlest`),children:(0,$.jsx)(Qgt,{className:`h-full w-full`})})')
 
 
 def guard_main(text):
@@ -352,6 +358,8 @@ def _renderer(text):
     # "Auto Detect" beside "+ Add model": the model list header gains a button that
     # runs the local gateway discovery on demand.
     text = replace_once(text, ADD_MODEL_BUTTON, ADD_MODEL_BUTTON_WITH_DETECT)
+    # Plain chat background: the faded mark behind the draft greeting is dropped.
+    text = replace_once(text, DRAFT_GREETING_MARK, 'null')
     text += PROVIDER_EMPTY_STATE
     text += AUTO_DETECT_BUTTON
     # The status hook polls the removed channel once per second, so it is inert.

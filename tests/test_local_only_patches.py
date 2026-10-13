@@ -188,6 +188,13 @@ class PatchedRendererBundleTests(unittest.TestCase):
         from asar import Archive
         cls.text = cloud._renderer(Archive(cls.baseline).read('out/renderer/assets/styles-C4MhEMbW.js').decode())
 
+    def test_draft_greeting_background_is_plain(self):
+        # The faded ZCode mark behind the draft greeting is replaced by a null child;
+        # the greeting paragraph itself must stay in place.
+        self.assertNotIn('children:(0,$.jsx)(Qgt,{className:`h-full w-full`})', self.text)
+        self.assertIn('"data-v4-draft-greeting":`true`', self.text)
+        self.assertIn('function Qgt({className:e})', self.text, 'the mark component stays defined for other callers')
+
     def test_paid_plan_badge_is_disabled(self):
         self.assertIn('function S6t({item:e}){let{intl:t}=q();return null;', self.text)
 

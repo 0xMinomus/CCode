@@ -2,6 +2,12 @@
 
 ## 2026-10-13
 
+### Latar chat polos: watermark Z di belakang draft dihapus
+
+- Permintaan pengguna: hilangkan huruf/logo Z yang muncul samar di latar chat dan pakai warna polos. Node dekoratifnya (`pointer-events-none absolute left-1/2 top-1/2 aspect-[5/4] ...` berisi komponen mark `Qgt`) diganti `null` di `src/local_only/cloud.py::_renderer`, jadi React merender tidak ada apa pun sementara paragraf sapaan tetap utuh.
+- Anchor-nya unik di chunk `styles-C4MhEMbW.js` dan diverifikasi lewat tes baru `test_draft_greeting_background_is_plain` (menjalankan `_renderer` atas baseline pinned): pemakaian mark hilang, `data-v4-draft-greeting` tetap ada, dan definisi `Qgt` dibiarkan supaya pemakai lain tidak ikut rusak.
+- Verifikasi artefak staged: `aspect-[5/4]` tidak lagi muncul di chunk renderer, sapaan tetap ada, dan `make test` lolos **119 tes**. Perubahan berlaku setelah `make apply` (aplikasi perlu ditutup lebih dulu; apply menolak selama ZCode berjalan).
+
 ### Revert flag memori Chromium, optimasi lain tetap
 
 - `scripts/run.sh` dikembalikan ke `exec` biasa tanpa flag Chromium. Alasannya: `--enable-low-end-device-mode` menyentuh perilaku render/hover UI, dan permintaan pengguna adalah menjaga UI/UX tetap seperti upstream tanpa kehilangan apa pun. Penghematannya (~128 MB PSS) dicatat sebagai opsi manual, bukan default.
