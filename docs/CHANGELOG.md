@@ -2,6 +2,12 @@
 
 ## 2026-10-13
 
+### Kontrak discovery disederhanakan: otomatis mengisi, eksplisit membangun
+
+- Dua kegagalan beruntun saat pengujian menunjukkan heuristik "provider dihapus user vs file ditulis ulang" tidak bisa diandalkan (insiden 14:02 dan 14:39 menghasilkan file 1-provider/0-model dari penulis yang tidak teridentifikasi — jurnal service sync membuktikan sync sendiri tidak menulis di jendela itu). Alih-alih menambah heuristik, kontraknya dibuat tegas: **run otomatis (timer/path unit) hanya mengisi grup provider yang sudah ada dan tidak pernah membuat grup baru**; pembuatan/pemulihan keluarga provider hanya lewat aksi eksplisit — tombol **Auto Detect** atau `make models` (`--bootstrap`). Konsekuensinya sederhana dan bisa diprediksi: grup yang pengguna hapus tetap terhapus, dan satu klik Auto Detect membangunnya kembali (tanpa perlu membedakan niat dari bentuk file).
+- Aturan lama dibuang: `removedProviders`, `DISCOVERY_PROVIDER_DELETE_LIMIT`, dan pencatatan penghapusan provider di `main()` (semuanya tak lagi dipakai). Pengaman yang tetap ada: `commit()` menolak write yang mengurangi inventori model, hilangnya model massal diperlakukan sebagai penulisan ulang (diisi ulang, bukan di-blacklist), dan `optionSpecs.reasoningLevel` selalu ditulis.
+- Pemulihan: config pengguna yang sempat terwipe dibangun ulang lewat `make models` → **12 provider / 433 model**; state lama (`providers`/`removedProviders`/`hintShown`) dibersihkan. `make test` **99 tes** hijau.
+
 ### Tombol Auto Detect di Model settings
 
 - Permintaan pengguna: pengisian otomatis yang tak terlihat terasa tidak otomatis lagi, jadi disediakan tombol eksplisit. Di header **Model list** pada form provider kini ada tombol **Auto Detect** di sebelah kiri **+ Add model** (komponen `Button` ZCode, varian `outline` + ikon refresh yang sama dipakai header settings, `data-testid="model-provider-auto-detect"`, label dua bahasa dari patch IntlProvider).

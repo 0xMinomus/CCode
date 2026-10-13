@@ -229,23 +229,10 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
     discovery=newstate.setdefault('discovery',{})
     owned=discovery.setdefault('rules',{})
     removed=set(discovery.get('removed',[]))
-    # Providers this sync created before. One that the user deleted from the UI must
-    # stay deleted: re-creating it would fight the user every time the app writes the
-    # file. `--bootstrap` (make models) is the explicit way to ask for them back.
-    owned_providers=[str(item) for item in (discovery.get('providers') or [])]
-    removed_providers=set(discovery.get('removedProviders') or [])
-    present_providers={str(provider.get('providerId')) for provider in providers}
-    if bootstrap:
-        # Explicit "make models": forget past deletions and rebuild the family.
-        removed_providers=set()
-        owned_providers=[provider_id for provider_id in owned_providers if provider_id in present_providers]
-    else:
-        for provider_id in list(owned_providers):
-            if provider_id not in present_providers:
-                removed_providers.add(provider_id)
-                for key in [item for item in list(owned) if item.startswith(provider_id+'/')]:owned.pop(key,None)
-        owned_providers=[provider_id for provider_id in owned_providers
-                         if provider_id in present_providers and provider_id not in removed_providers]
+    # Automatic runs fill the groups that exist; only an explicit request (the Auto
+    # Detect button, `make models` → bootstrap) creates or rebuilds the family, so a
+    # group the user deleted in the UI stays deleted until they ask for it again.
+    allow_new=bool(bootstrap)
 
     def is_family(provider):
         return str(provider.get('providerId','')).startswith(DISCOVERY_FAMILY_PREFIX) or \
@@ -307,15 +294,14 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
 
     for group_key,entries in planned:
         provider_id,name=discovery_provider(group_key)
-        if provider_id in removed_providers:continue          # the user deleted this group
         provider=next((item for item in providers if item.get('providerId')==provider_id),None)
         if provider is None:
+            if not allow_new:continue          # automatic runs never create groups
             provider={'providerId':provider_id,'providerName':name,'enabled':True,
                       'config':{'group':'standard-personal','access':copy.deepcopy(access),
                                 'api':{'type':'openai-chat-completions','baseUrl':base_url},
                                 'personalModelIds':[],'modelOrder':[]}}
             providers.append(provider);changes.append('provider:'+provider_id)
-            if provider_id not in owned_providers:owned_providers.append(provider_id)
         pc=provider.setdefault('config',{})
         pc.setdefault('group','standard-personal')
         pc.setdefault('api',{'type':'openai-chat-completions','baseUrl':base_url})
@@ -387,8 +373,6 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
                 if refreshed!=current_config:
                     rule['config']=refreshed;owned[key]=copy.deepcopy(config);changes.append(model_id)
     discovery['removed']=sorted(removed)
-    discovery['providers']=sorted(set(owned_providers))
-    discovery['removedProviders']=sorted(removed_providers)
     discovery['skipped']=sorted(set(rejected))
     discovery['groups']={discovery_provider(group_key)[0]:len(entries) for group_key,entries in planned}
     provider_order=cfg.setdefault('providerOrder',[])
@@ -496,13 +480,6 @@ def run_once(args, config, state_root, namespace):
     # A provider just added from the UI has nothing to select yet, and a
     # provider we have never grouped is new as well: fill both right away
     # instead of waiting for the TTL.
-    # Record groups the user removed from the UI right away (no gateway call):
-    # the next discovery run would otherwise re-create them.
-    created={str(item) for item in (discovery.get('providers') or [])}
-    present={str(provider.get('providerId')) for provider in providers}
-    if not args.bootstrap and created-present:
-        discovery['removedProviders']=sorted({*(discovery.get('removedProviders') or []),*(created-present)})
-        discovery['providers']=sorted(created&present)
     grouped=discovery.get('groups') or {}
     needs_fill=any(not ((provider.get('config') or {}).get('personalModelIds'))
                    or str(provider.get('providerId')) not in grouped for provider in family)

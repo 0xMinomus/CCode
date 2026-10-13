@@ -199,48 +199,60 @@ class DiscoveryTests(unittest.TestCase):
         else:os.environ[key]=value
     written=json.loads(config_path.read_text())
     providers={item['providerId']:item for item in written['config']['providerConfigRules']['providerRules']}
-    self.assertEqual(sorted(providers),['9router','9router-cmc','9router-lainnya'])
+    self.assertEqual(sorted(providers),['9router'],'the 60s timer fills the existing group only')
     self.assertEqual(len(providers['9router']['config']['personalModelIds']),1,'the combo group is filled')
-    self.assertEqual(len(providers['9router-cmc']['config']['personalModelIds']),12)
 
- def test_removed_group_is_recorded_without_touching_the_gateway(self):
+ def test_empty_provider_is_filled_before_the_ttl_elapses(self):
+  # A provider just added from the UI has an empty model list; the 60s timer must
+  # fill it immediately instead of waiting out the 12h discovery TTL.
   with tempfile.TemporaryDirectory() as folder:
     root=pathlib.Path(folder);state_root=root/'model-sync';state_root.mkdir(parents=True)
     config_path=root/'data/.zcode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
     (state_root/'catalog.json').write_text('{"opencode":{"models":{}}}')
     data=family_config()
     data['config']['providerConfigRules']['providerRules'].append({'providerId':'9router','providerName':'9Router','enabled':True,
-      'config':{'group':'standard-personal','access':{'type':'api-key','apiKey':'local-gateway'},'api':{'type':'openai-chat-completions','baseUrl':sync.GATEWAY_BASE_URL},
-                'personalModelIds':['combo/a'],'modelOrder':['combo/a']}})
+      'config':{'group':'standard-personal','access':{'type':'api-key','apiKey':'local-gateway'},
+                'api':{'type':'openai-chat-completions','baseUrl':sync.GATEWAY_BASE_URL},'personalModelIds':[],'modelOrder':[]}})
     config_path.write_text(json.dumps(data))
-    (state_root/'state.json').write_text(json.dumps({'managed':{},'discovery':{'fetchedAt':time.time(),'groups':{'9router':1},'providers':['9router','9router-oc']}}))
+    (state_root/'state.json').write_text(json.dumps({'managed':{},'discovery':{'fetchedAt':time.time()-60,'groups':{}}}))
     saved=(os.environ.get('ZCODE_MODEL_SYNC_CONFIG'),os.environ.get('ZCODE_MODEL_SYNC_STATE'),os.environ.get('ZCODE_STANDALONE_ROOT'))
     os.environ.update({'ZCODE_MODEL_SYNC_CONFIG':str(config_path),'ZCODE_MODEL_SYNC_STATE':str(state_root),'ZCODE_STANDALONE_ROOT':str(root)})
     real=sync.gateway_models
-    sync.gateway_models=lambda *a,**k:(_ for _ in ()).throw(OSError('must not be called'))
+    sync.gateway_models=lambda *a,**k:gateway_fixture()
     try:sync.main([])
     finally:
       sync.gateway_models=real
       for key,value in zip(('ZCODE_MODEL_SYNC_CONFIG','ZCODE_MODEL_SYNC_STATE','ZCODE_STANDALONE_ROOT'),saved):
         if value is None:os.environ.pop(key,None)
         else:os.environ[key]=value
-    state=json.loads((state_root/'state.json').read_text())
-    self.assertEqual(state['discovery']['removedProviders'],['9router-oc'],'the deleted group is remembered without a gateway call')
-    self.assertEqual(state['discovery']['providers'],['9router'])
-    self.assertEqual(json.loads(config_path.read_text()),data,'the config itself is untouched')
+    written=json.loads(config_path.read_text())
+    providers={item['providerId']:item for item in written['config']['providerConfigRules']['providerRules']}
+    self.assertEqual(sorted(providers),['9router'],'an automatic run fills existing groups, never creates them')
+    self.assertEqual(len(providers['9router']['config']['personalModelIds']),1,'the combo group is filled')
 
- def test_deleted_provider_is_not_recreated(self):
+ def test_auto_run_fills_only_the_groups_that_exist(self):
+  # A rewritten file (or a user cleanup) leaves one group: automatic runs fill that
+  # group and never resurrect the others; the explicit path does rebuild them.
+  out,state,_,_=sync.discovery_merge(family_config(),gateway_fixture(),{},bootstrap=True)
+  single=copy.deepcopy(out)
+  single['config']['providerConfigRules']['providerRules']=[item for item in single['config']['providerConfigRules']['providerRules'] if item['providerId']=='9router']
+  single['config']['modelConfigRules']['manualProviderModelRules']=[rule for rule in single['config']['modelConfigRules']['manualProviderModelRules'] if rule['providerId']=='9router']
+  merged,_,_,_=sync.discovery_merge(single,gateway_fixture(),state,bootstrap=False)
+  ids=[item['providerId'] for item in merged['config']['providerConfigRules']['providerRules']]
+  self.assertEqual(ids,['9router'],'auto fills existing groups only')
+  combo=merged['config']['providerConfigRules']['providerRules'][0]
+  self.assertEqual(combo['config']['personalModelIds'],['combo/coding-harian'],'the existing group is still filled')
+
+ def test_auto_runs_never_create_groups_and_bootstrap_does(self):
   out,state,_,_=sync.discovery_merge(family_config(),gateway_fixture(),{},bootstrap=True)
   kept=[item for item in out['config']['providerConfigRules']['providerRules'] if item['providerId']!='9router-cmc']
   out['config']['providerConfigRules']['providerRules']=kept   # user deletes that group in the UI
-  merged,newstate,_,_=sync.discovery_merge(out,gateway_fixture(),state,bootstrap=False)
+  merged,_,_,_=sync.discovery_merge(out,gateway_fixture(),state,bootstrap=False)
   ids=[item['providerId'] for item in merged['config']['providerConfigRules']['providerRules']]
-  self.assertNotIn('9router-cmc',ids,'a group the user deleted stays deleted')
-  self.assertIn('9router-cmc',newstate['discovery']['removedProviders'])
-  again,_,_,_=sync.discovery_merge(merged,gateway_fixture(),newstate,bootstrap=False)
-  self.assertNotIn('9router-cmc',[item['providerId'] for item in again['config']['providerConfigRules']['providerRules']])
-  back,_,_,_=sync.discovery_merge(again,gateway_fixture(),newstate,bootstrap=True)
-  self.assertIn('9router-cmc',[item['providerId'] for item in back['config']['providerConfigRules']['providerRules']],'--bootstrap asks for them back')
+  self.assertNotIn('9router-cmc',ids,'an automatic run leaves the deleted group alone')
+  back,_,_,_=sync.discovery_merge(merged,gateway_fixture(),state,bootstrap=True)
+  self.assertIn('9router-cmc',[item['providerId'] for item in back['config']['providerConfigRules']['providerRules']],
+                'the Auto Detect path (bootstrap) rebuilds the family')
 
  def test_emptied_provider_is_refilled_not_blacklisted(self):
   # One provider losing every model is a rewrite of that list, not five user
