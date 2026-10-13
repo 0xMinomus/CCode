@@ -7,8 +7,10 @@ Ini **workspace patch atas aplikasi Electron yang sudah dikemas**, bukan seluruh
 ## Cara kerja singkat
 
 - Data aplikasi berada di `~/.local/share/zcode-on-steroids` (`data/`, `electron/`, `model-sync/`). Instalasi lama di `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis.
+- Provider native **9Router** (`http://127.0.0.1:20128/v1`, combo `combo/coding-harian`) tersedia lewat "Add provider" seperti provider bawaan lain; keluarga akun Zhipu (Z.ai, BigModel, plan) sudah dihapus dari katalog.
 - Login akun ZCode tidak dipakai. Provider model diatur di Settings dan membawa autentikasinya sendiri; layanan akun/cloud (marketing, client config/scenes, usage stats, coding plan, OAuth, telemetri, remote control) tidak lagi terdaftar di host.
-- Fitur lokal tetap: Computer Use `fedora-desktop`, Voice bilingual, engine task + SQLite lokal, MCP, reasoning sesuai metadata provider, dan guard izin desktop.
+- Fitur lokal tetap: Computer Use `fedora-desktop`, Voice bilingual, Activity (prompt/hari + streak dari riwayat lokal), engine task + SQLite lokal, MCP, reasoning sesuai metadata provider, dan guard izin desktop.
+- Fitur akun/langganan (login, plan/upgrade, coding plan, web/mobile remote control, plugin ber-`requiresPaidPlan`) dihapus dari build, bukan disembunyikan; halaman Usage stats berganti menjadi Activity yang seluruhnya lokal.
 
 ## Mulai dengan ohmypi
 
@@ -23,8 +25,10 @@ Minta agent membaca `AGENTS.md` dan `docs/ARCHITECTURE.md` terlebih dahulu. Cont
 
 | Lokasi | Isi |
 |---|---|
-| `src/renderer/` | Source UI Computer Use Linux dan Voice |
+| `src/renderer/` | Source UI Computer Use Linux, Voice, dan Activity |
 | `src/main/voice.cjs` | IPC Electron, rekaman mikrofon, worker voice |
+| `src/main/activity.cjs` | Modul Activity lokal: prompt/hari (seluruh riwayat), streak, dan rekap tahun |
+| `src/local_only/catalog.py` | Patch katalog provider native: buang keluarga Zhipu, tambah template 9Router |
 | `src/local_only/` | Patch standalone: namespace data dan pembersihan akun/cloud |
 | `services/desktop/` | screen-mcp dan profil `zcode-fast` |
 | `services/voice/` | Whisper worker, kosakata bilingual, venv, model lokal |

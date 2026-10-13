@@ -4,7 +4,7 @@ Jalankan `omp` dari root project. Mulai dengan meminta pembacaan AGENTS.md, lalu
 
 ## UI atau IPC
 
-Edit `src/renderer/voice-input.js`, `src/renderer/linux-computer-use.js`, atau `src/main/voice.cjs`. Gunakan `make build && make test`. Hasil masih staged. Tutup ZCode sebelum `make apply`, lalu buka melalui `make run`/launcher. `make install` hanya diperlukan bila path integrasi berubah.
+Edit `src/renderer/voice-input.js`, `src/renderer/linux-computer-use.js`, `src/renderer/activity-panel.js`, `src/main/voice.cjs`, atau `src/main/activity.cjs`. Gunakan `make build && make test`. Hasil masih staged. Tutup ZCode sebelum `make apply`, lalu buka melalui `make run`/launcher. `make install` hanya diperlukan bila path integrasi berubah.
 
 Untuk preview terisolasi, jalankan `app/zcode` dengan `ZCODE_DESKTOP_APPLICATION_NAME`, `ZCODE_DESKTOP_USER_DATA_DIR`, dan `ZCODE_DATA_BASE_DIR` menunjuk profil di `runtime/preview`. Sejak patch standalone, cara paling sederhana adalah menetapkan `ZCODE_STANDALONE_ROOT` ke direktori uji lalu memakai `scripts/run.sh`; bootstrap env akan mengisi seluruh namespace (data, profil, database task/sesi, config MCP) dari root tersebut.
 
@@ -25,6 +25,8 @@ Setelah mengubah README, AGENTS, atau `docs/`, jalankan `make obsidian`: bila fo
 
 - Desktop: edit `services/desktop/zcode_fast_profile.py`; source vendor juga tersedia untuk investigasi. Mulai chat baru setelah restart ZCode agar daftar tool baru dimuat.
 - Voice: edit `services/voice/worker.py` / `terminology.py`. Restart ZCode untuk melepas worker yang masih menyimpan kode/model lama.
+- Provider katalog: edit `src/local_only/catalog.py` (transform dijalankan atas file katalog terpasang, jadi hasilnya idempotent walau `app/resources` sudah pernah dipatch). Jangan menambah provider akun; tambah template baru di sana dan uji dengan `python3 -m unittest tests.test_catalog -v`.
+- Activity: edit `src/main/activity.cjs` (query lokal) atau `src/renderer/activity-panel.js` (tampilan). Uji agregasi dengan `python3 -m unittest tests.test_activity -v`: test membuat fixture SQLite sendiri dan menjalankannya lewat node/Electron, jadi tidak perlu membuka aplikasi.
 - Model sync: edit `services/model-sync/sync.py`; jalankan unit test lalu `systemctl --user start zcode-on-steroids-model-sync.service` untuk namespace standalone (atau `zcode-vansrouter-model-sync.service` bila memang ingin menyentuh konfigurasi instalasi lama).
 
 Venv dan model sudah dipindahkan. Untuk mesin baru, buat kembali venv, pasang dependency yang tercatat, sediakan PyGObject/GStreamer/PipeWire/portal/wl-clipboard untuk desktop dan FFmpeg/pw-record untuk voice. Jangan menyalin venv antarversi Python lalu menganggapnya portabel.

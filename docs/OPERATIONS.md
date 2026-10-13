@@ -25,7 +25,11 @@ Snapshot memakai SQLite backup API, menolak symlink dan path traversal, dan meny
 
 ## Rollback
 
-Build baru tidak aktif sampai `make apply`. Apply menolak jika executable project masih berjalan dan menyimpan resource sebelumnya (`app.asar`, `glm/zcode.cjs`, `voice/main.cjs`) di `runtime/backups`. Untuk rollback patch, tutup aplikasi lalu salin ketiga file dari cadangan tersebut, atau pulihkan namespace lewat `data_backup.py restore`. Baseline asli dapat dipakai untuk investigasi, tetapi mengembalikannya langsung akan menghapus UI custom.
+Build baru tidak aktif sampai `make apply`. Apply menolak jika executable project masih berjalan dan menyimpan resource sebelumnya (`app.asar`, `glm/zcode.cjs`, `voice/main.cjs`, `activity/main.cjs`, `config/provider/zcode-builtin.json`) di `runtime/backups`, beserta cache katalog per-endpoint di `runtime/backups/<stamp>/derived/`. Untuk rollback patch, tutup aplikasi lalu salin kembali kelima file dan cache tersebut, atau pulihkan namespace lewat `data_backup.py restore`. Baseline asli dapat dipakai untuk investigasi, tetapi mengembalikannya langsung akan menghapus UI custom.
+
+Apply menyisakan **dua** cadangan terbaru (`BACKUP_RETENTION` di `scripts/apply_build.py`); cadangan lebih tua dihapus otomatis, begitu pula marker `zcode-builtin-refresh.json` di namespace (`zcode-builtin.json` tidak pernah disentuh). Rollback hanya mungkin dari dua promote terakhir, jadi promote besar sebaiknya diikuti verifikasi cepat sebelum promote berikutnya.
+
+Ukuran yang perlu dijaga: `app/resources` (aset live), `runtime/build` (staged), `runtime/backups` (dua cadangan), `runtime/cutover-backups` (snapshot migrasi, salinan `app/` sudah dibuang saat pembersihan 2026-10-13), dan `runtime/no-login` (fixture uji; salinan `app/`-nya reproducible dan tidak disimpan). Snapshot namespace lama tetap di `~/.local/share/zcode-on-steroids-backups`.
 
 Integrasi lama dapat dipulihkan dengan menyalin kembali launcher/unit dari `<namespace>/integration-backups`; timer lama tetap berjalan sendiri karena tidak pernah dimatikan.
 

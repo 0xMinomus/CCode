@@ -11,6 +11,10 @@ This is a local patch workspace for a packaged Electron ZCode 3.14.5 installatio
 - Do not present the MCP bridge as a native Linux port. Computer Use currently uses `fedora-desktop`/screen-mcp; model quality is separate from backend performance.
 - Use existing ZCode React/UI components where possible. Current bundled symbols are pinned to this version; consult ARCHITECTURE.md before using them.
 
+## Dokumentasi wajib
+
+Setiap perubahan perilaku, arsitektur, operasi, atau daftar resource harus langsung diikuti pembaruan file .md yang bersangkutan pada commit/kerja yang sama — tanpa diminta ulang: `docs/CHANGELOG.md` (selalu), lalu `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, `docs/OPERATIONS.md`, `docs/VOICE.md`/`docs/MODELS.md` bila area itu tersentuh, `README.md` bila daftar fitur/struktur berubah, dan `AGENTS.md` bila aturan kerja berubah. Tutup dengan `make obsidian` (dan `make obsidian-check` bila ragu). Jangan menyerahkan pekerjaan dengan dokumentasi tertinggal.
+
 ## Build and validation
 
 1. Make the smallest coherent source change.

@@ -28,7 +28,8 @@ class Archive:
    entry['offset']=str(offset);entry['size']=len(data);offset+=len(data);payloads.append(data)
    if 'integrity' in entry:
     block=entry['integrity'].get('blockSize',4194304)
-    entry['integrity']={'algorithm':'SHA256','hash':hashlib.sha256(data).hexdigest(),'blockSize':block,'blocks':[hashlib.sha256(data[i:i+block]).hexdigest() for i in range(0,len(data),block)]}
+    blocks=[hashlib.sha256(data[i:i+block]).hexdigest() for i in range(0,len(data),block)] or [hashlib.sha256(b'').hexdigest()]
+    entry['integrity']={'algorithm':'SHA256','hash':hashlib.sha256(data).hexdigest(),'blockSize':block,'blocks':blocks}
   encoded=json.dumps(header,separators=(',',':')).encode();pad=(-len(encoded))%4;size=4+len(encoded)+pad
   destination=pathlib.Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
   fd,temp=tempfile.mkstemp(prefix='.'+destination.name,dir=destination.parent)
