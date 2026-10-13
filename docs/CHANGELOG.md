@@ -16,6 +16,10 @@
 - Verifikasi: `make build` + `make test` lolos **134 tes** (termasuk `tests/test_branding.py` baru: lexer/rename/guard/scaled path, dan `tests/test_apply_build.py` yang kini membuat AppDir minimal untuk menguji rename identitas). Smoke test di root terisolasi (`/tmp/ccode-*`): judul window `CCode`, tidak ada layar login, **0** `Unknown channel`, **0** `No handler registered`, **0** `ReferenceError`/`TypeError`; DOM onboarding merender mark CCode (`svg path` = path CCode, 0 path legacy) dan `<img alt="CCode">` memakai data URI CCode; splash `#loading` juga memakai mark baru. `make apply` dijalankan (identitas AppDir diganti), `make install` dijalankan (namespace 149 MB dipindahkan ke `~/.local/share/ccode`, unit lama dipensiunkan, `ccode-model-sync.timer`/`.path` aktif dan service-nya selesai tanpa error).
 - Dokumen yang diperbarui: README, AGENTS, ARCHITECTURE (bagian **Branding** baru), DEVELOPMENT (bagian Branding dan ikon), OPERATIONS (install/migrasi/rollback), MODELS, VOICE, THIRD_PARTY, COMPUTER_USE_IMPROVEMENTS.
 
+### Peringatan tombol Sync fork di README
+
+- Ditambahkan ke bagian **Repositori** README: tombol `Sync fork`/`Discard commits` di halaman fork akan me-reset `ccode-workspace` ke `main` upstream (membuang commit workspace) karena history-nya tidak berhubungan dengan upstream; sinkronisasi upstream harus lewat rebase lokal, dan pemulihannya `git push --force-with-lease fork main:ccode-workspace`.
+
 ### Halaman depan fork memakai dokumen CCode
 
 - Default branch `0xMinomus/CCode` dipindah dari `main` (upstream) ke `ccode-workspace`, supaya README CCode yang tampil di halaman depan repo, sementara label *forked from zai-org/ZCode* tetap. Terverifikasi lewat API: `default_branch = ccode-workspace`, `fork: true`, `parent: zai-org/ZCode`, README default branch berjudul `# CCode`, dan `main` fork masih **identik SHA** dengan `main` upstream (`aac4755`).
