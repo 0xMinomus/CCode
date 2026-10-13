@@ -82,13 +82,11 @@ class DiscoveryTests(unittest.TestCase):
   rule['config']['properties']['contextWindow']=123456
   merged,newstate,changes,_=sync.discovery_merge(out,gateway_fixture(),state,bootstrap=True)
   merged_cmc=next(item for item in merged['config']['providerConfigRules']['providerRules'] if item['providerId']=='9router-cmc')
-  self.assertIn('cmc/model-01',merged_cmc['config']['personalModelIds'],'a hidden model is listed again')
-  listed_off=next(item for item in merged['config']['modelConfigRules']['manualProviderModelRules'] if item['modelId']=='cmc/model-01')
-  self.assertFalse(listed_off['config']['enabled'],'but it stays switched off')
+  self.assertIn('cmc/model-01',merged_cmc['config']['personalModelIds'],'an unlisted model is listed again')
   self.assertNotIn('cmc/model-02',merged_cmc['config']['modelOrder'],'deleted model is not resurrected')
   self.assertEqual(newstate['discovery']['removed'],['cmc/model-02'])
   self.assertEqual(next(item for item in merged['config']['modelConfigRules']['manualProviderModelRules'] if item['modelId']=='cmc/model-00')['config']['properties']['contextWindow'],123456,'hand-edited rule is never overwritten')
-  self.assertEqual(changes,['cmc/model-01'],'only the hidden model is surfaced; the hand-edited rule is untouched')
+  self.assertEqual(changes,['listed:cmc/model-01'],'only the unlisted model is surfaced; the hand-edited rule is untouched')
 
  def test_merge_never_touches_other_providers(self):
   data=family_config()
@@ -145,9 +143,9 @@ class DiscoveryTests(unittest.TestCase):
   kept=next(rule for rule in refreshed['config']['modelConfigRules']['manualProviderModelRules'] if rule['modelId']=='cmc/model-03')
   self.assertFalse(kept['config']['enabled'])
 
- def test_known_but_hidden_model_is_surfaced_as_switched_off(self):
-  # A model in modelOrder that the host does not list (not in personalModelIds) must
-  # become a visible, switched-off row instead of disappearing (schema: enabled:false).
+ def test_known_but_unlisted_model_is_listed_again(self):
+  # A model the host still knows but which is missing from the provider lists is
+  # re-listed; the row shows up again with whatever switch its rule carries.
   out,state,_,_=sync.discovery_merge(family_config(),gateway_fixture(),{},bootstrap=True)
   cmc=next(item for item in out['config']['providerConfigRules']['providerRules'] if item['providerId']=='9router-cmc')
   cmc['config']['personalModelIds'].remove('cmc/model-04')
@@ -155,7 +153,7 @@ class DiscoveryTests(unittest.TestCase):
   merged_cmc=next(item for item in merged['config']['providerConfigRules']['providerRules'] if item['providerId']=='9router-cmc')
   self.assertIn('cmc/model-04',merged_cmc['config']['personalModelIds'],'the row is listed again')
   rule=next(item for item in merged['config']['modelConfigRules']['manualProviderModelRules'] if item['modelId']=='cmc/model-04')
-  self.assertFalse(rule['config']['enabled'],'but it stays switched off')
+  self.assertNotEqual(rule['config'].get('enabled'),False,'no switch was set, so it stays on')
 
  def test_stale_catalog_rule_is_replaced_by_a_manual_rule(self):
   # A stored smart rule for a model the catalog no longer defines is inert (the host
@@ -204,6 +202,56 @@ class DiscoveryTests(unittest.TestCase):
     self.assertEqual(sorted(providers),['9router','9router-cmc','9router-lainnya'])
     self.assertEqual(len(providers['9router']['config']['personalModelIds']),1,'the combo group is filled')
     self.assertEqual(len(providers['9router-cmc']['config']['personalModelIds']),12)
+
+ def test_removed_group_is_recorded_without_touching_the_gateway(self):
+  with tempfile.TemporaryDirectory() as folder:
+    root=pathlib.Path(folder);state_root=root/'model-sync';state_root.mkdir(parents=True)
+    config_path=root/'data/.zcode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
+    (state_root/'catalog.json').write_text('{"opencode":{"models":{}}}')
+    data=family_config()
+    data['config']['providerConfigRules']['providerRules'].append({'providerId':'9router','providerName':'9Router','enabled':True,
+      'config':{'group':'standard-personal','access':{'type':'api-key','apiKey':'local-gateway'},'api':{'type':'openai-chat-completions','baseUrl':sync.GATEWAY_BASE_URL},
+                'personalModelIds':['combo/a'],'modelOrder':['combo/a']}})
+    config_path.write_text(json.dumps(data))
+    (state_root/'state.json').write_text(json.dumps({'managed':{},'discovery':{'fetchedAt':time.time(),'groups':{'9router':1},'providers':['9router','9router-oc']}}))
+    saved=(os.environ.get('ZCODE_MODEL_SYNC_CONFIG'),os.environ.get('ZCODE_MODEL_SYNC_STATE'),os.environ.get('ZCODE_STANDALONE_ROOT'))
+    os.environ.update({'ZCODE_MODEL_SYNC_CONFIG':str(config_path),'ZCODE_MODEL_SYNC_STATE':str(state_root),'ZCODE_STANDALONE_ROOT':str(root)})
+    real=sync.gateway_models
+    sync.gateway_models=lambda *a,**k:(_ for _ in ()).throw(OSError('must not be called'))
+    try:sync.main([])
+    finally:
+      sync.gateway_models=real
+      for key,value in zip(('ZCODE_MODEL_SYNC_CONFIG','ZCODE_MODEL_SYNC_STATE','ZCODE_STANDALONE_ROOT'),saved):
+        if value is None:os.environ.pop(key,None)
+        else:os.environ[key]=value
+    state=json.loads((state_root/'state.json').read_text())
+    self.assertEqual(state['discovery']['removedProviders'],['9router-oc'],'the deleted group is remembered without a gateway call')
+    self.assertEqual(state['discovery']['providers'],['9router'])
+    self.assertEqual(json.loads(config_path.read_text()),data,'the config itself is untouched')
+
+ def test_deleted_provider_is_not_recreated(self):
+  out,state,_,_=sync.discovery_merge(family_config(),gateway_fixture(),{},bootstrap=True)
+  kept=[item for item in out['config']['providerConfigRules']['providerRules'] if item['providerId']!='9router-cmc']
+  out['config']['providerConfigRules']['providerRules']=kept   # user deletes that group in the UI
+  merged,newstate,_,_=sync.discovery_merge(out,gateway_fixture(),state,bootstrap=False)
+  ids=[item['providerId'] for item in merged['config']['providerConfigRules']['providerRules']]
+  self.assertNotIn('9router-cmc',ids,'a group the user deleted stays deleted')
+  self.assertIn('9router-cmc',newstate['discovery']['removedProviders'])
+  again,_,_,_=sync.discovery_merge(merged,gateway_fixture(),newstate,bootstrap=False)
+  self.assertNotIn('9router-cmc',[item['providerId'] for item in again['config']['providerConfigRules']['providerRules']])
+  back,_,_,_=sync.discovery_merge(again,gateway_fixture(),newstate,bootstrap=True)
+  self.assertIn('9router-cmc',[item['providerId'] for item in back['config']['providerConfigRules']['providerRules']],'--bootstrap asks for them back')
+
+ def test_emptied_provider_is_refilled_not_blacklisted(self):
+  # One provider losing every model is a rewrite of that list, not five user
+  # deletions: blacklisting them would hide real models forever.
+  out,state,_,_=sync.discovery_merge(family_config(),gateway_fixture(),{},bootstrap=True)
+  cmc=next(item for item in out['config']['providerConfigRules']['providerRules'] if item['providerId']=='9router-cmc')
+  cmc['config']['personalModelIds']=[]; cmc['config']['modelOrder']=[]
+  merged,newstate,_,_=sync.discovery_merge(out,gateway_fixture(),state,bootstrap=False)
+  merged_cmc=next(item for item in merged['config']['providerConfigRules']['providerRules'] if item['providerId']=='9router-cmc')
+  self.assertEqual(len(merged_cmc['config']['personalModelIds']),12)
+  self.assertEqual(newstate['discovery'].get('removed') or [],[])
 
  def test_mass_disappearance_refills_instead_of_blacklisting(self):
   # A whole provider losing its models is an external rewrite, not 12 individual

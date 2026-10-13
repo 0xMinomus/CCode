@@ -229,6 +229,23 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
     discovery=newstate.setdefault('discovery',{})
     owned=discovery.setdefault('rules',{})
     removed=set(discovery.get('removed',[]))
+    # Providers this sync created before. One that the user deleted from the UI must
+    # stay deleted: re-creating it would fight the user every time the app writes the
+    # file. `--bootstrap` (make models) is the explicit way to ask for them back.
+    owned_providers=[str(item) for item in (discovery.get('providers') or [])]
+    removed_providers=set(discovery.get('removedProviders') or [])
+    present_providers={str(provider.get('providerId')) for provider in providers}
+    if bootstrap:
+        # Explicit "make models": forget past deletions and rebuild the family.
+        removed_providers=set()
+        owned_providers=[provider_id for provider_id in owned_providers if provider_id in present_providers]
+    else:
+        for provider_id in list(owned_providers):
+            if provider_id not in present_providers:
+                removed_providers.add(provider_id)
+                for key in [item for item in list(owned) if item.startswith(provider_id+'/')]:owned.pop(key,None)
+        owned_providers=[provider_id for provider_id in owned_providers
+                         if provider_id in present_providers and provider_id not in removed_providers]
 
     def is_family(provider):
         return str(provider.get('providerId','')).startswith(DISCOVERY_FAMILY_PREFIX) or \
@@ -263,7 +280,8 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
         missing=[item for item in owned_keys if item.split('/',1)[1] not in present]
         if missing:vanished[provider_id]=(missing,present)
     total_vanished=sum(len(missing) for missing,_ in vanished.values())
-    if total_vanished<=DISCOVERY_DELETE_LIMIT and not any(present for _,present in vanished.values() if not present):
+    emptied=[provider_id for provider_id,(_,present) in vanished.items() if not present]
+    if 0<total_vanished<=DISCOVERY_DELETE_LIMIT and not emptied:
         for provider_id,(missing,_present) in vanished.items():
             for item in missing:removed.add(item.split('/',1)[1])
     elif total_vanished:
@@ -289,6 +307,7 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
 
     for group_key,entries in planned:
         provider_id,name=discovery_provider(group_key)
+        if provider_id in removed_providers:continue          # the user deleted this group
         provider=next((item for item in providers if item.get('providerId')==provider_id),None)
         if provider is None:
             provider={'providerId':provider_id,'providerName':name,'enabled':True,
@@ -296,6 +315,7 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
                                 'api':{'type':'openai-chat-completions','baseUrl':base_url},
                                 'personalModelIds':[],'modelOrder':[]}}
             providers.append(provider);changes.append('provider:'+provider_id)
+            if provider_id not in owned_providers:owned_providers.append(provider_id)
         pc=provider.setdefault('config',{})
         pc.setdefault('group','standard-personal')
         pc.setdefault('api',{'type':'openai-chat-completions','baseUrl':base_url})
@@ -313,15 +333,22 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
                 # The user re-added a model they had deleted: hand it back to discovery.
                 if model_id in enabled:removed.discard(model_id)
                 continue
-            new_model=model_id not in known
-            # The host lists what is in personalModelIds and keeps the per-model switch
-            # as config.enabled. A model it still knows (present in modelOrder, or with
-            # a rule) but missing from that list would render nowhere, so it is
-            # surfaced as a switched-off row the user can turn back on.
-            hidden=(not new_model) and model_id in order and model_id not in enabled
-            if (new_model or hidden) and model_id not in enabled:enabled.append(model_id)
-            rule=next((item for item in rules if item.get('providerId')==provider_id and item.get('modelId')==model_id),None)
             key=provider_id+'/'+model_id
+            new_model=model_id not in known
+            if new_model:
+                new_config=copy.deepcopy(config)
+                rules.append({'providerId':provider_id,'modelId':model_id,'config':new_config})
+                if model_id not in order:order.append(model_id)
+                if model_id not in enabled:enabled.append(model_id)
+                owned[key]=copy.deepcopy(new_config);changes.append(model_id)
+                continue
+            # A model the host still knows (rule present) but which is missing from the
+            # provider's lists is re-listed: its rule keeps the on/off switch, so a
+            # model the user switched off comes back off, and a list rewritten elsewhere
+            # is repaired instead of leaving models unusable.
+            if model_id not in order:order.append(model_id);changes.append('order:'+model_id)
+            if model_id not in enabled:enabled.append(model_id);changes.append('listed:'+model_id)
+            rule=next((item for item in rules if item.get('providerId')==provider_id and item.get('modelId')==model_id),None)
             if is_smart(provider_id,model_id):
                 # The catalog already describes this model: keep it selectable but
                 # never write a second (manual) rule for it. A manual rule we wrote
@@ -341,19 +368,16 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
                 if model_id not in order:order.append(model_id)
                 owned[key]=copy.deepcopy(new_config);changes.append(model_id)
                 continue
-            if model_id not in order:order.append(model_id)
             if rule is None:
-                new_config=copy.deepcopy(config)
-                if hidden:new_config['enabled']=False
-                rules.append({'providerId':provider_id,'modelId':model_id,'config':new_config})
-                owned[key]=copy.deepcopy(new_config);changes.append(model_id)
+                # known only because a rule exists for it elsewhere: recreate the rule
+                rules.append({'providerId':provider_id,'modelId':model_id,'config':copy.deepcopy(config)})
+                owned[key]=copy.deepcopy(config);changes.append(model_id)
                 continue
             # The host stores the per-model on/off switch as config.enabled on the
             # rule, so metadata refreshes must carry that user choice over instead
             # of overwriting or dropping it.
             current_config=rule.get('config') or {}
             user_flags={name:value for name,value in current_config.items() if name=='enabled'}
-            if hidden and 'enabled' not in user_flags:user_flags={'enabled':False}
             metadata={name:value for name,value in current_config.items() if name!='enabled'}
             previous=owned.get(key)
             if previous is None:
@@ -363,6 +387,8 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
                 if refreshed!=current_config:
                     rule['config']=refreshed;owned[key]=copy.deepcopy(config);changes.append(model_id)
     discovery['removed']=sorted(removed)
+    discovery['providers']=sorted(set(owned_providers))
+    discovery['removedProviders']=sorted(removed_providers)
     discovery['skipped']=sorted(set(rejected))
     discovery['groups']={discovery_provider(group_key)[0]:len(entries) for group_key,entries in planned}
     provider_order=cfg.setdefault('providerOrder',[])
@@ -455,6 +481,13 @@ def main(argv=None):
             # A provider just added from the UI has nothing to select yet, and a
             # provider we have never grouped is new as well: fill both right away
             # instead of waiting for the TTL.
+            # Record groups the user removed from the UI right away (no gateway call):
+            # the next discovery run would otherwise re-create them.
+            created={str(item) for item in (discovery.get('providers') or [])}
+            present={str(provider.get('providerId')) for provider in providers}
+            if not args.bootstrap and created-present:
+                discovery['removedProviders']=sorted({*(discovery.get('removedProviders') or []),*(created-present)})
+                discovery['providers']=sorted(created&present)
             grouped=discovery.get('groups') or {}
             needs_fill=any(not ((provider.get('config') or {}).get('personalModelIds'))
                            or str(provider.get('providerId')) not in grouped for provider in family)

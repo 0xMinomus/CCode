@@ -2,6 +2,12 @@
 
 ## 2026-10-13
 
+### Discovery menghormati penghapusan grup + tidak lagi mem-blacklist saat churn
+
+- Laporan lapangan: setelah pengguna menghapus grup provider 9Router di UI (`deletePersonalProvider` berulang), unit path membangun ulang grup-grup itu dalam hitungan detik — sync melawan pengguna. Sekarang provider yang pernah dibuat sync dicatat di `discovery.providers`; begitu hilang dari config, id-nya masuk `discovery.removedProviders` dan **tidak** dibuat ulang. Pencatatan itu terjadi langsung saat file berubah (tanpa panggilan gateway), dan `make models` (`--bootstrap`) adalah cara eksplisit untuk meminta keluarga provider dibangun ulang (daftar hapus dilupakan).
+- Bug heuristik ikut ketahuan pada insiden yang sama: kondisi "provider dikosongkan" tidak pernah terdeteksi sehingga lima combo (`combo/*`) sempat di-blacklist sebagai "dihapus user" padahal daftarnya hanya ditulis ulang. Perbaikannya: penghapusan model hanya diingat bila jumlahnya kecil (≤5 per run) **dan** tidak ada provider yang daftarnya jadi kosong; daftar yang dikosongkan/ditulis ulang diisi ulang, dan model yang dikenal host tetapi tidak terdaftar di `personalModelIds`/`modelOrder` kini didaftarkan kembali (switch on/off mengikuti flag rule-nya) alih-alih hilang.
+- Verifikasi: pada config pengguna — hapus `9router-oc` → sync tidak membangkitkannya dan `removedProviders` mencatatnya; `make models` mengembalikan 12 provider / 433 model; hapus `9router-llm7` → tercatat tanpa panggilan gateway dan tetap terhapus; state combo yang salah di-blacklist dibersihkan. `make test` **94 tes** hijau (4 tes baru: grup terhapus tidak dibuat ulang, pencatatan tanpa gateway, daftar kosong diisi ulang, model tak terdaftar didaftarkan kembali).
+
 ### Template 9Router tanpa model tersemai + discovery instan
 
 - Keluhan lanjutan: seharusnya siapa pun yang menambahkan provider 9Router langsung melihat semua model yang dimilikinya, dan **sebelum API key diisi model list harus kosong** — sebelumnya `combo/coding-harian` sudah muncul karena template katalog menyemainya (`builtinModelIds` + satu model rule combo).
