@@ -32,7 +32,7 @@ Anchor cloud terikat versi upstream dan sengaja gagal bila tidak unik. Jangan me
 
 UI mengatur MCP bernama `fedora-desktop`. `services/desktop/server.py` memuat `zcode_fast_profile.py` saat `MCP_SCREEN_PROFILE=zcode-fast`. Profil menawarkan 10 tool inti, default screenshot setelah aksi/batch, dan peluncur Gio untuk aplikasi terpasang. Capture/input menggunakan portal Fedora/PipeWire. OCR tidak wajib untuk model Vision. Kontrol mouse pengguna tetap menghentikan aksi agent.
 
-Riset penggantian dengan Codex ada di [COMPUTER_USE_PLAN.md](COMPUTER_USE_PLAN.md). Ini belum mengubah arsitektur aktif: paket Codex lokal membawa SDK desktop Linux (`@oai/sky`, X11) tetapi produk hanya mengaktifkan permukaan browser, sedangkan sesi di mesin ini Wayland. Gate cakupan target, approval/stop, provider, benchmark, serta rollback harus lolos sebelum backend lama dihapus.
+Riset penggantian dengan Codex ada di [COMPUTER_USE_PLAN.md](COMPUTER_USE_PLAN.md). Hasil probe cakupan: actuator desktop Codex (`@oai/sky`) berbasis X11/EWMH, sedangkan desktop mesin ini Wayland tanpa sesi Xorg, sehingga jalur itu tidak dapat dipakai dan backend portal tetap satu-satunya jalur desktop. Jangan hapus backend lama tanpa pengganti yang benar-benar melihat jendela Wayland.
 
 ## Voice
 
