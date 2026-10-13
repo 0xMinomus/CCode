@@ -193,6 +193,13 @@ def install_icons():
     scalable.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(branding.LOGO_SOURCE, scalable)
     written.append(scalable)
+    # A cache generated before these files existed keeps the shell on its fallback
+    # icon, so refresh it here instead of leaving a manual gtk-update-icon-cache step.
+    if shutil.which('gtk-update-icon-cache'):
+        refreshed = subprocess.run(['gtk-update-icon-cache', '--force', '--ignore-theme-index', str(theme)],
+                                   capture_output=True, text=True)
+        if refreshed.returncode != 0:
+            print('Icon cache not refreshed:', (refreshed.stderr or refreshed.stdout).strip())
     return written
 
 
