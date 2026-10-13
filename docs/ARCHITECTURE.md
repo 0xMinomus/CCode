@@ -30,7 +30,17 @@ Anchor cloud terikat versi upstream dan sengaja gagal bila tidak unik. Jangan me
 
 ## Desktop
 
-UI mengatur MCP bernama `fedora-desktop`. `services/desktop/server.py` memuat `zcode_fast_profile.py` saat `MCP_SCREEN_PROFILE=zcode-fast`. Profil menawarkan 10 tool inti, default screenshot setelah aksi/batch, dan peluncur Gio untuk aplikasi terpasang. Capture/input menggunakan portal Fedora/PipeWire. OCR tidak wajib untuk model Vision. Kontrol mouse pengguna tetap menghentikan aksi agent.
+UI mengatur MCP bernama `fedora-desktop`. `services/desktop/server.py` memuat `zcode_fast_profile.py` saat `MCP_SCREEN_PROFILE=zcode-fast`. Profil itu batas edit project untuk backend desktop: file vendor (`server.py`, `capture.py`, `input.py`, `grounding.py`) dibiarkan apa adanya.
+
+Yang ditetapkan profil:
+
+- Permukaan tool 15 buah: tool screenshot/aksi yang lama plus `screen_read_text`, `screen_wait_text`, `screen_verify`, `screen_sense`, dan `screen_focus`. Empat tool yang menulis lebih jauh ke desktop (`screen_read_page`, `screen_read_selection`, `screen_tour`, `screen_reload`) tidak diekspos.
+- Jalur murah lebih dulu: `screen_read_text` mengembalikan teks plus id elemen dan koordinat desktop tanpa gambar, dan klik memakai `element=<id>` sehingga server menyelesaikan koordinatnya. Deskripsi `screen_screenshot` menyebut Set-of-Marks (`annotate`), cache elemen (`use_cache`), dan crop `region` untuk teks kecil.
+- Aksi mengembalikan screenshot + baris SENSE secara default; gambar dilewati bila SENSE menyatakan frame tidak berubah, supaya aksi no-op tidak membayar token gambar.
+- Tunggu perubahan memakai mode `hybrid` (event damage dengan lantai poll), bukan polling tiap 60 ms.
+- Kebijakan pointer menggantikan guard takeover: gerakan kursor yang berhenti dianggap idle dan aksi tetap jalan; pengendalian kursor berkelanjutan selama `ZCODE_CUA_TAKEOVER_MS` tetap dianggap pengambilalihan dan membatalkan aksi dengan pesan `STOPPED`. `force=true` tetap tersedia dan tetap dilarang dipakai untuk melawan pengguna. Capture dan input memakai portal Fedora/PipeWire; pengendalian kursor yang berkelanjutan oleh pengguna menghentikan aksi agent.
+
+Rincian dan batasnya ada di [COMPUTER_USE_IMPROVEMENTS.md](COMPUTER_USE_IMPROVEMENTS.md).
 
 ## Voice
 

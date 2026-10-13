@@ -2,6 +2,15 @@
 
 ## 2026-10-13
 
+### Computer Use Linux: jalur teks, klik per elemen, dan pointer yang tidak mudah menghentikan task
+
+- `services/desktop/zcode_fast_profile.py` diperluas tanpa menyentuh file vendor. Permukaan tool naik dari 10 menjadi 15: ditambah `screen_read_text`, `screen_wait_text`, `screen_verify`, `screen_sense`, dan `screen_focus`; tool yang menulis lebih jauh (`screen_read_page`, `screen_read_selection`, `screen_tour`, `screen_reload`) tetap tidak diekspos.
+- Model sekarang diarahkan ke jalur murah dan akurat: `screen_read_text` untuk melihat keadaan sebagai teks plus id elemen, klik dengan `element=<id>` (server menyelesaikan koordinat dan menolak id dari view lama), Set-of-Marks lewat `annotate=true`, cache elemen `use_cache`, dan crop `region` untuk teks kecil.
+- Gambar pasca-aksi dilewati bila SENSE menyatakan frame tidak berubah; teks aksi dan petunjuk no-op tetap dikirim, jadi aksi no-op tidak lagi membayar token gambar. Mode tunggu perubahan menjadi `hybrid` (event damage dengan lantai poll).
+- Kebijakan pointer: guard takeover dibungkus hysteresis berbasis jendela sampel. Kursor yang berhenti di tempat lain dianggap idle dan aksi tetap berjalan; pengendalian berkelanjutan selama `ZCODE_CUA_TAKEOVER_MS` (default 2500 ms) tetap membatalkan aksi dengan pesan `STOPPED`, dan `force=true` tetap tidak boleh dipakai melawan pengguna.
+- Verifikasi: 19 tes baru di `tests/test_desktop_profile.py` (jendela pointer, pemasangan kebijakan, permukaan tool, default pasca-aksi, aturan lewati gambar) hijau lewat `make test`. Tes menangkap satu bug nyata (`except ... as` yang ter-unbind, membuat reraise gagal). Server asli via `services/desktop/bin/screen-mcp`: `initialize` + `tools/list` mengembalikan 15 tool dengan deskripsi baru, `tools/call screen_sense` dan `desktop_open_app` (nama tidak ada) berjalan tanpa portal; import nyata menunjukkan `policy=zcode-fast-hysteresis`, `shot policy=zcode-fast-noop-skip`, `WAIT_MODE=hybrid`.
+- Batas: belum diuji pada desktop nyata (butuh portal dan pointer pengguna), jadi capture/OCR nyata dan efek kecepatannya belum diukur. Rincian, env knob, dan sisa pekerjaan di `docs/COMPUTER_USE_IMPROVEMENTS.md`.
+
 ### Kebiasaan delivery disimpan di AGENTS.md
 
 - TODO wajib untuk setiap pekerjaan; subagent hanya bila perlu; setiap perubahan file project selalu di-build dan diperiksa; Markdown terkait selalu diperbarui dan disinkronkan ke Obsidian.
