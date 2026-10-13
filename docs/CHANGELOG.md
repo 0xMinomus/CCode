@@ -16,6 +16,11 @@
 - Verifikasi: `make build` + `make test` lolos **134 tes** (termasuk `tests/test_branding.py` baru: lexer/rename/guard/scaled path, dan `tests/test_apply_build.py` yang kini membuat AppDir minimal untuk menguji rename identitas). Smoke test di root terisolasi (`/tmp/ccode-*`): judul window `CCode`, tidak ada layar login, **0** `Unknown channel`, **0** `No handler registered`, **0** `ReferenceError`/`TypeError`; DOM onboarding merender mark CCode (`svg path` = path CCode, 0 path legacy) dan `<img alt="CCode">` memakai data URI CCode; splash `#loading` juga memakai mark baru. `make apply` dijalankan (identitas AppDir diganti), `make install` dijalankan (namespace 149 MB dipindahkan ke `~/.local/share/ccode`, unit lama dipensiunkan, `ccode-model-sync.timer`/`.path` aktif dan service-nya selesai tanpa error).
 - Dokumen yang diperbarui: README, AGENTS, ARCHITECTURE (bagian **Branding** baru), DEVELOPMENT (bagian Branding dan ikon), OPERATIONS (install/migrasi/rollback), MODELS, VOICE, THIRD_PARTY, COMPUTER_USE_IMPROVEMENTS.
 
+### Halaman depan fork memakai dokumen CCode
+
+- Default branch `0xMinomus/CCode` dipindah dari `main` (upstream) ke `ccode-workspace`, supaya README CCode yang tampil di halaman depan repo, sementara label *forked from zai-org/ZCode* tetap. Terverifikasi lewat API: `default_branch = ccode-workspace`, `fork: true`, `parent: zai-org/ZCode`, README default branch berjudul `# CCode`, dan `main` fork masih **identik SHA** dengan `main` upstream (`aac4755`).
+- Konsekuensi yang dicatat di dokumen: tombol **Sync fork** GitHub hanya berlaku untuk default branch, jadi sinkronisasi upstream dilakukan lokal (`git fetch upstream && git rebase upstream/main`); default branch dipindah ke `ccode` begitu porting mendarat.
+
 ### Fork resmi: CCode (fork) + CCode-archive (workspace)
 
 - Repo workspace ini di-rename `0xMinomus/CCode` → **`0xMinomus/CCode-archive`**, dan **`0xMinomus/CCode`** dibuat sebagai fork dari `zai-org/ZCode` (Apache-2.0) lewat `gh repo fork`. Fork membawa history upstream; snapshot workspace ini didorong sebagai branch `ccode-workspace` supaya spesifikasi perilaku tetap bisa dirujuk dari repo rilis.
