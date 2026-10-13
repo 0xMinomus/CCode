@@ -13,7 +13,6 @@ Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AG
 - [[AGENTS|AGENTS]] — aturan kerja agent di repo
 - [[docs/ARCHITECTURE|ARCHITECTURE]]
 - [[docs/CHANGELOG|CHANGELOG]]
-- [[docs/COMPUTER_USE_PLAN|COMPUTER_USE_PLAN]]
 - [[docs/DEVELOPMENT|DEVELOPMENT]]
 - [[docs/MODELS|MODELS]]
 - [[docs/NO_LOGIN_TEST|NO_LOGIN_TEST]]
