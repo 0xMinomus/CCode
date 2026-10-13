@@ -61,11 +61,12 @@ Side by side, at a glance:
 | **Auto-update** | Polls the vendor update feed | Update channel removed; a release never overwrites your build |
 | **Startup network footprint** | Account and business-config calls, catalog refresh, update checks | None of the above; only the provider endpoints you configure, only when you use them |
 | **Performance & resource use** | Account/cloud round-trips during startup and for stats | No account/cloud/update round-trips; Activity is read-only local SQLite. The Computer Use MCP defers model loading to the first observation (~60 MB less per idle session, measured), and an optional Chromium low-memory switch saves ~128 MB PSS when enabled (documented, off by default) |
-| **Disk footprint (measured)** | 195 MB single AppImage (3.14.5) | Deployed application directory 653 MiB unpacked (the Electron/Chromium runtime dominates); the patched bundle is ~166 KB smaller than the upstream baseline. Packaged installers are on the [roadmap](#roadmap) |
+| **Distribution size** | 195 MB single AppImage for 3.14.5 (compressed squashfs payload) | No packaged installer yet — packaging is on the [roadmap](#roadmap); the payload is the same upstream tree, so a comparable AppImage is expected at roughly 195 MB |
+| **On-disk footprint (unpacked, measured)** | 654 MiB / 683,835,082 B across 624 files | 653 MiB / 682,637,475 B across the same 624 files — about **1.1 MiB smaller** than upstream: lighter CCode icon assets (−732 KB) and a smaller application bundle (−170 KB, account/cloud surfaces removed). The Electron/Chromium runtime dominates either way |
 | **Identity** | ZCode branding and vendor endpoints | CCode branding end to end, with the `zcode://` scheme, `.zcode` layout, `ZCODE_*` variables, and `zcode-*` IPC channels retained on purpose for host/agent compatibility |
 | **License** | Apache-2.0 — Copyright 2026 Z.AI Co., Ltd | Apache-2.0, same terms, attribution preserved |
 
-<sub>Measured figures come from the project's reference workstation and are recorded in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). A reproducible head-to-head benchmark suite is on the roadmap.</sub>
+<sub>Sizes are measured (unpacked trees compared file by file: 624 files on both sides). An AppImage is a compressed squashfs bundle, so its 195 MB file expands to roughly 654 MiB once extracted — package size and unpacked footprint are different numbers. Performance figures come from the project's reference workstation and are recorded in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); a reproducible head-to-head benchmark suite is on the roadmap.</sub>
 
 ## Requirements
 

@@ -16,6 +16,12 @@
 - Verifikasi: `make build` + `make test` lolos **134 tes** (termasuk `tests/test_branding.py` baru: lexer/rename/guard/scaled path, dan `tests/test_apply_build.py` yang kini membuat AppDir minimal untuk menguji rename identitas). Smoke test di root terisolasi (`/tmp/ccode-*`): judul window `CCode`, tidak ada layar login, **0** `Unknown channel`, **0** `No handler registered`, **0** `ReferenceError`/`TypeError`; DOM onboarding merender mark CCode (`svg path` = path CCode, 0 path legacy) dan `<img alt="CCode">` memakai data URI CCode; splash `#loading` juga memakai mark baru. `make apply` dijalankan (identitas AppDir diganti), `make install` dijalankan (namespace 149 MB dipindahkan ke `~/.local/share/ccode`, unit lama dipensiunkan, `ccode-model-sync.timer`/`.path` aktif dan service-nya selesai tanpa error).
 - Dokumen yang diperbarui: README, AGENTS, ARCHITECTURE (bagian **Branding** baru), DEVELOPMENT (bagian Branding dan ikon), OPERATIONS (install/migrasi/rollback), MODELS, VOICE, THIRD_PARTY, COMPUTER_USE_IMPROVEMENTS.
 
+### Perbandingan ukuran: apel vs jeruk
+
+- Pengguna menanyakan baris "Disk footprint" di README: apakah CCode lebih berat dari ZCode? Ternyata baris itu membandingkan dua hal berbeda — 195 MB itu berkas AppImage upstream (squashfs terkompresi), sedangkan 653 MiB itu direktori CCode yang sudah diekstrak.
+- Diukur langsung: AppImage 3.14.5 diekstrak (`--appimage-extract`) = **683.835.082 B / 654 MiB / 624 berkas**; direktori CCode terpasang = **682.637.475 B / 653 MiB / 624 berkas** → CCode **~1,1 MiB lebih kecil**, bukan lebih berat. Selisih terbesar: aset ikon CCode 218.316 B (1024 px launcher), 218.316 B (`icon_windows.png`), 170.502 B (`icon.png`), 124.923 B (`icon_512x512.png`) = −732 KB total, plus `app.asar` −169.756 B karena permukaan akun/cloud dibuang. Jumlah berkas sama (624 vs 624), jadi tidak ada berkas hilang di proses patch.
+- README diperbaiki: satu baris menyesatkan diganti dua baris — **Distribution size** (AppImage vs paket yang belum ada) dan **On-disk footprint (unpacked, measured)**, plus catatan bahwa AppImage = squashfs terkompresi sehingga 195 MB mengembang jadi ~654 MiB bila diekstrak.
+
 ### README profesional (EN) + LICENSE/NOTICE
 
 - Permintaan pengguna: README dibuat proper dan umum (bukan niche "Fedora-only"), bahasa Inggris, memuat logo, lisensi, security, dan tabel perbandingan ZCode vs CCode. Seksi "Batasan yang jujur" **dihapus dari README** atas permintaan pemilik proyek; catatan batasan tetap hidup di dokumen internal.
