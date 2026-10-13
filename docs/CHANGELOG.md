@@ -2,6 +2,13 @@
 
 ## 2026-10-13
 
+### Revert flag memori Chromium, optimasi lain tetap
+
+- `scripts/run.sh` dikembalikan ke `exec` biasa tanpa flag Chromium. Alasannya: `--enable-low-end-device-mode` menyentuh perilaku render/hover UI, dan permintaan pengguna adalah menjaga UI/UX tetap seperti upstream tanpa kehilangan apa pun. Penghematannya (~128 MB PSS) dicatat sebagai opsi manual, bukan default.
+- Uji A/B pada viewport 1568x980 (root terisolasi, config provider sintetis 12 grup): geometri pemilih model **identik** dengan dan tanpa flag, yaitu panel grup 1070,65 194x458 dan submenu model 1259,104 236x112 dengan overlap 560 px². Jadi flag memori bukan penyebab keluhan hover pada pemilih model, tetapi default tetap dikembalikan.
+- Pemeriksaan terkait keluhan itu: tidak ada patch project yang menyentuh komponen `chat-model-select*` (diverifikasi lewat pencarian anchor), dan data provider pengguna bersih (12 provider, nama serta id unik, `providerOrder` cocok, tanpa duplikat). Submenu yang menempel 5 px ke tepi panel induk adalah geometri upstream saat ruang kanan sempit.
+- Yang tidak diubah oleh revert ini: warmup malas MCP desktop, pembuangan dua salinan pra-patch dan import mati, serta seluruh pekerjaan Computer Use (jalur teks, klik per elemen, kebijakan pointer).
+
 ### Harness lebih ringan: flag memori terukur, warmup malas, sisa kode dibuang
 
 - `scripts/run.sh` menyalakan `--enable-low-end-device-mode` secara default (`ZCODE_MEMORY_FLAGS=0` mematikannya). Diukur pada root terisolasi saat idle dengan PSS: **876 MB → 748 MB** (15%, dua kali baseline 876,0 dan 873,9 MB), sementara DOM identik (judul, 19 tombol, 24 div, teks onboarding sama) dan log bebas `Unknown channel`/`No handler registered`/`ReferenceError`/`TypeError`.

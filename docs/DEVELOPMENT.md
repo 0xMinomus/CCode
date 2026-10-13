@@ -30,7 +30,7 @@ Ukur dengan root terisolasi, bukan aplikasi pengguna: jalankan `ZCODE_STANDALONE
 
 Catatan saat mengukur: proses anak Electron menulis ulang argv menjadi `/proc/self/exe`, sehingga pencocokan `cmdline` saja akan melewatkan renderer; cocokkan lewat environ atau pohon proses. Bersihkan root uji dengan mematikan proses yang environ-nya memuat root tersebut.
 
-Knob yang tersedia: `ZCODE_MEMORY_FLAGS=0` (matikan `--enable-low-end-device-mode`), `ZCODE_CUA_WARMUP=1` (kembalikan prefetch model OCR di MCP desktop), `MCP_SCREEN_AMBIENT=0` dan `MCP_SCREEN_NO_NUDGE=1` (matikan sinyal ambient dan sentakan pointer). Jangan menaikkan batas heap V8 (`--js-flags=--max-old-space-size`) tanpa bukti: pengukuran menunjukkan tambahannya hanya ~2 MB dan menahan pertumbuhan heap berisiko OOM pada task panjang.
+Knob yang tersedia: `ZCODE_CUA_WARMUP=1` (kembalikan prefetch model OCR di MCP desktop), `MCP_SCREEN_AMBIENT=0` dan `MCP_SCREEN_NO_NUDGE=1` (matikan sinyal ambient dan sentakan pointer). Jangan menambahkan flag Chromium ke `scripts/run.sh` untuk mengejar memori: `--enable-low-end-device-mode` memang menghemat ~128 MB tetapi menyentuh perilaku render/hover, dan default harness ini sengaja tetap upstream. Jangan pula menaikkan batas heap V8 (`--js-flags=--max-old-space-size`) tanpa bukti: tambahannya hanya ~2 MB dan menahan pertumbuhan heap berisiko OOM pada task panjang.
 
 
 ## Backend

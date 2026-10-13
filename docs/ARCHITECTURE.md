@@ -44,9 +44,9 @@ Rincian dan batasnya ada di [COMPUTER_USE_IMPROVEMENTS.md](COMPUTER_USE_IMPROVEM
 
 ### Memori dan CPU
 
-`scripts/run.sh` menyalakan `--enable-low-end-device-mode` secara default (`ZCODE_MEMORY_FLAGS=0` untuk mematikannya). Diukur pada root terisolasi saat idle: pohon proses turun dari ~876 MB ke ~748 MB PSS (15%) dengan DOM yang identik dan log bebas `Unknown channel`/`ReferenceError`/`TypeError`. Flag ini hanya mengecilkan cache renderer dan buffering gambar, jadi tidak ada fungsi aplikasi yang hilang.
+`scripts/run.sh` sengaja **tidak** menambahkan flag Chromium apa pun; perilaku render dan hover harus tetap seperti upstream. `--enable-low-end-device-mode` diukur menghemat sekitar 128 MB PSS (876 ke 748 MB, idle, root terisolasi) dan sempat dinyalakan default, lalu dikembalikan karena flag Chromium menyentuh perilaku render/hover. Uji A/B pada viewport 1568x980 menunjukkan geometri pemilih model identik dengan dan tanpa flag (panel 1070x65 194x458, submenu 1259x104 236x112, overlap 560 px²), jadi flag itu bukan penyebab keluhan hover; tetap dikembalikan supaya default tetap upstream. Untuk mengujinya lagi, tambahkan flag secara manual saat menjalankan `app/zcode`.
 
-Server MCP desktop tidak lagi memuat model OCR/OmniParser saat start; sesi dibangun saat observasi pertama (knob `ZCODE_CUA_WARMUP=1` mengembalikan prefetch). Penghematannya sekitar 60 MB untuk setiap sesi MCP yang tidak mengambil gambar.
+Server MCP desktop tidak memuat model OCR/OmniParser saat start; sesi dibangun saat observasi pertama (knob `ZCODE_CUA_WARMUP=1` mengembalikan prefetch). Penghematannya sekitar 60 MB untuk setiap sesi MCP yang tidak mengambil gambar.
 
 CPU saat idle terukur rendah (sekitar 1% untuk seluruh pohon proses setelah startup); timer model-sync memakai 0,17 sampai 0,25 detik CPU dan 60 MB transient sekali per menit.
 

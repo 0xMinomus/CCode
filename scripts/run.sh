@@ -23,12 +23,7 @@ export ZCODE_DESKTOP_USER_DATA_DIR="$standalone_root/electron"
 export ZCODE_STORAGE_DIR="$standalone_root/data/.zcode"
 export STORAGE_DIR="$standalone_root/data/.zcode"
 export ZCODE_SESSION_DB_PATH="$standalone_root/data/.zcode/cli/db/db.sqlite"
-# Chromium memory tuning for the standalone harness. `--enable-low-end-device-mode` trims
-# renderer caches and image buffering; measured on an isolated root at idle it takes the
-# process tree from ~876 MB to ~748 MB PSS (-15%) with the same DOM and no console errors.
-# Set ZCODE_MEMORY_FLAGS=0 to launch without it.
-memory_flags=()
-if [ "${ZCODE_MEMORY_FLAGS:-1}" != "0" ]; then
-  memory_flags+=(--enable-low-end-device-mode)
-fi
-exec /usr/bin/flock --shared "$standalone_root/../.$(basename "$standalone_root").operations.lock" "$project_root/app/zcode" ${memory_flags[@]+"${memory_flags[@]}"} "$@"
+# Catatan: `--enable-low-end-device-mode` pernah dinyalakan di sini untuk menghemat ~128 MB
+# (876 -> 748 MB PSS), tetapi flag Chromium itu menyentuh perilaku render/hover UI. Default
+# dikembalikan ke upstream; tambahkan flag secara manual bila ingin mengujinya lagi.
+exec /usr/bin/flock --shared "$standalone_root/../.$(basename "$standalone_root").operations.lock" "$project_root/app/zcode" "$@"
