@@ -38,6 +38,8 @@ Build baru tidak aktif sampai `make apply`. Apply menolak jika executable projec
 
 Apply menyisakan **dua** cadangan terbaru (`BACKUP_RETENTION` di `scripts/apply_build.py`); cadangan lebih tua dihapus otomatis, begitu pula marker `zcode-builtin-refresh.json` di namespace (`zcode-builtin.json` tidak pernah disentuh). Rollback hanya mungkin dari dua promote terakhir, jadi promote besar sebaiknya diikuti verifikasi cepat sebelum promote berikutnya.
 
+Pack native `glm/packages/bundled-skills` ikut diverifikasi dan dicadangkan saat apply. Cutover memensiunkan resource `glm/packages/ccode-skills-plugin`, tetapi tidak menghapus skills atau cache di namespace user. Untuk rollback cutover, pulihkan pack dan resource plugin lama dari cadangan yang sama dengan agent dan ASAR; jangan mencampur resource dari build berbeda.
+
 Ukuran yang perlu dijaga: `app/resources` (aset live), `runtime/build` (staged), `runtime/backups` (dua cadangan), `runtime/cutover-backups` (snapshot migrasi, salinan `app/` sudah dibuang saat pembersihan 2026-10-13), dan `runtime/no-login` (fixture uji; salinan `app/`-nya reproducible dan tidak disimpan). Snapshot lama tetap di `~/.local/share/zcode-on-steroids-backups` (default baru: `~/.local/share/ccode-backups`).
 
 Integrasi lama dapat dipulihkan dengan menyalin kembali launcher/unit dari `<namespace>/integration-backups`, tetapi perhatikan: sejak rebrand CCode, `make install` memindahkan namespace ke `~/.local/share/ccode` dan memensiunkan launcher/unit ZCode-era. Rollback penuh berarti memindahkan namespace kembali (`mv ~/.local/share/ccode ~/.local/share/zcode-on-steroids`) dan mengembalikan launcher/unit dari backup; tanpa langkah itu aplikasi akan memakai root yang baru.

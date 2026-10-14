@@ -2,6 +2,14 @@
 
 ## 2026-10-14
 
+### 32 skills menjadi Default di menu Skills, tanpa plugin CCode Skills
+
+- Payload `src/skills/` kembali dikirim lewat pack native `glm/packages/bundled-skills`, dengan seed `dynamic-workflows` vendor tetap tersedia. Instalasi baru tidak memerlukan plugin CCode Skills.
+- Filter listing dan klasifikasi Skills diperbaiki agar skill system bundled tampil di Settings → Skills sebagai Default, bukan dibuang karena tidak berasal dari plugin.
+- Cutover memensiunkan resource plugin lama dengan snapshot/rollback. Identitas plugin CCode lama tidak dimuat lagi; skills buatan user dan cache namespace tidak dihapus atau ditimpa.
+- Hash baseline, assertion anchor unik, dan verifikasi hash resource staged tetap berlaku.
+- Verifikasi: `make build` dan `make test` lulus (167 tes). CLI aktual pada root baru dan root yang pernah memakai plugin lama memuat seluruh 32 nama tepat sekali sebagai `system/bundled`, tanpa plugin CCode; skill user dan cache lama tetap utuh. UI aktual menampilkan **Default 33** (32 skill CCode + `dynamic-workflows` vendor), total 47 bersama 14 skill plugin vendor. Pencarian, detail dengan Scope Default/Status Enabled, dan halaman Plugins tanpa CCode Skills diperiksa; tidak ada error renderer tercatat.
+
 ### Default skills dikirim sebagai plugin bawaan (agent + halaman Plugins)
 
 - Pengguna melaporkan skill belum terlihat di CCode. Hasil investigasi: pack skill bawaan (`glm/packages/bundled-skills`) **terbaca agent tetapi tidak pernah muncul di halaman Skills** — halaman itu hanya menampilkan skill yang datang lewat plugin. Route pack karena itu diganti; commit `c83cd51` tetap tercatat sebagai langkah pack yang tidak terpakai lagi.

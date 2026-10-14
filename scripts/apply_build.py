@@ -14,40 +14,50 @@ BACKUP_RETENTION=2
 APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/zcode"'
 FILES=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json']
-SKILL_PACK='glm/packages/'+skills_plugin.PLUGIN_DIR
+SKILL_PACK='glm/packages/'+skills_plugin.PACK_DIR
+LEGACY_SKILL_PLUGIN='glm/packages/ccode-skills-plugin'
 def promote_skill_pack(staged,target,proof,backup):
- """Sync the bundled CCode skills plugin: verify the staged hashes, snapshot, then replace it.
-
- The plugin directory is ours end to end, so it is copied as one unit; the vendored
- `glm/packages/bundled-skills` pack is never touched.
- """
- if proof.get('bundled_plugin')!=skills_plugin.PLUGIN_DIR:
-  raise ValueError('Staged build carries the wrong bundled plugin: '+str(proof.get('bundled_plugin')))
+ """Verify the native pack, snapshot both owned resources, then retire the old plugin."""
+ if proof.get('bundled_skill_pack')!=skills_plugin.PACK_DIR:
+  raise ValueError('Staged build carries the wrong bundled skill pack: '+str(proof.get('bundled_skill_pack')))
  files=sorted(name for name in proof['sha256'] if name.startswith(SKILL_PACK+'/'))
- if not files:raise ValueError('Staged build carries no bundled plugin files')
+ actual=sorted(str(path.relative_to(staged)) for path in (staged/SKILL_PACK).rglob('*') if path.is_file())
+ if not files or files!=actual:raise ValueError('Staged bundled skill pack file inventory mismatch')
  for name in files:
   if hashlib.sha256((staged/name).read_bytes()).hexdigest()!=proof['sha256'][name]:
-   raise ValueError('Staged plugin checksum mismatch: '+name)
- destination=target/SKILL_PACK
- if destination.exists():
-  # Snapshot into a temporary directory first: a half-written snapshot must never
-  # overwrite the intact plugin during rollback.
-  snapshot=backup/(SKILL_PACK+'.part')
-  shutil.rmtree(snapshot,ignore_errors=True)
-  shutil.copytree(destination,snapshot)
-  os.rename(snapshot,backup/SKILL_PACK)
- shutil.rmtree(destination,ignore_errors=True)
- shutil.copytree(staged/SKILL_PACK,destination)
- return list(proof.get('bundled_skills') or [])
+   raise ValueError('Staged skill pack checksum mismatch: '+name)
+ skills=proof.get('bundled_skills')
+ owned=json.loads((staged/SKILL_PACK/'.ccode-skills.json').read_text()).get('skills')
+ if not isinstance(skills,list) or not skills or skills!=owned or any(not isinstance(name,str) for name in skills) or len(skills)!=len(set(skills)):
+  raise ValueError('Staged bundled skill names do not match the ownership marker')
+ for name in skills:
+  if not isinstance(name,str) or not name or name in ('.','..') or '/' in name or '\\' in name or not (staged/SKILL_PACK/'skills'/name/'SKILL.md').is_file():
+   raise ValueError('Invalid staged bundled skill: '+str(name))
+ for name in ('SKILL.md','examples.md','patterns.md'):
+  if not (staged/SKILL_PACK/'skills/dynamic-workflows'/name).is_file():
+   raise ValueError('Staged bundled skill seed is missing: '+name)
+ for resource in (SKILL_PACK,LEGACY_SKILL_PLUGIN):
+  destination=target/resource
+  if destination.exists():
+   # Only complete snapshots are eligible for rollback.
+   snapshot=backup/(resource+'.part')
+   shutil.copytree(destination,snapshot)
+   os.rename(snapshot,backup/resource)
+  else:
+   absent=backup/(resource+'.absent');absent.parent.mkdir(parents=True,exist_ok=True);absent.touch()
+ if (target/SKILL_PACK).exists():shutil.rmtree(target/SKILL_PACK)
+ shutil.copytree(staged/SKILL_PACK,target/SKILL_PACK)
+ if (target/LEGACY_SKILL_PLUGIN).exists():shutil.rmtree(target/LEGACY_SKILL_PLUGIN)
+ return skills
 def restore_skill_pack(target,backup):
- """Roll the plugin back to the pre-promotion snapshot after a failed run.
-
- Without a snapshot nothing was written yet, so the plugin is left alone.
- """
- archived=backup/SKILL_PACK
- if not archived.exists():return
- shutil.rmtree(target/SKILL_PACK,ignore_errors=True)
- shutil.copytree(archived,target/SKILL_PACK)
+ """Restore completed snapshots, removing new resources that did not exist before."""
+ for resource in (SKILL_PACK,LEGACY_SKILL_PLUGIN):
+  archived=backup/resource
+  if archived.exists():
+   shutil.rmtree(target/resource,ignore_errors=True)
+   shutil.copytree(archived,target/resource)
+  elif (backup/(resource+'.absent')).exists():
+   shutil.rmtree(target/resource,ignore_errors=True)
 def timestamped_backup(name):
  """True when name is a backup timestamp this script created."""
  try:datetime.datetime.strptime(name,'%Y%m%d-%H%M%S-%f')

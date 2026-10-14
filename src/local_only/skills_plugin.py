@@ -1,77 +1,77 @@
-"""Bundle the CCode default skills as a built-in app plugin.
+"""Expose the native bundled skill pack without registering a plugin.
 
-The desktop client only lists skills that arrive through a plugin: its bundled
-skill pack root (`glm/packages/bundled-skills`) is discovered by the agent but
-never shown in Settings -> Skills. A bundled *plugin* is shown, seeded into the
-plugin cache, and discovered as `system/plugin` by the agent as well.
-
-The agent resolves bundled plugin roots from a definition list baked into its
-bundle; each definition names its `rootCandidates` (for example
-`packages/ccode-skills-plugin`) and the seed paths that must exist. This patch
-prepends our definition to that list, and `scripts/build.py` stages the plugin
-package next to the agent so the app can seed it.
-
-Anchor is version-pinned: `replace_once` fails the build when it stops matching.
+The agent already discovers bundled-skills. Settings uses a separate host-side
+filesystem scanner, so both catalogs and the renderer need pinned patches.
 """
 from . import replace_once
 
-PLUGIN_NAME = 'ccode-skills'
-PLUGIN_DIR = PLUGIN_NAME + '-plugin'
-PLUGIN_VERSION = '1.0.0'
-CATEGORY = 'productivity'
-DESCRIPTION = 'Default CCode agent skills: antislop, GSAP, UI design, and engineering workflow.'
-SEED_SKILLS = ('antislop', 'impeccable', 'gsap-core', 'code-review', 'handoff')
+PACK_DIR = 'bundled-skills'
+LEGACY_PLUGIN_ID = 'ccode-skills@zcode-plugins-official'
 
-ANCHOR = 'u9=[{defaultEnabled:!0,name:Uwt,'
-# The agent lists plugin skills for the `glm` provider only when the plugin id is in
-# this allowlist of official plugins. Without the entry our skills never reach the
-# Skills page, even though the plugin itself is installed and listed.
-OFFICIAL_PLUGIN_IDS_ANCHOR = 'new Set(["browser-use@zcode-plugins-official",'
-OFFICIAL_MARKETPLACE = 'zcode-plugins-official'
-
-
-def definition(skills=SEED_SKILLS):
-    """The bundled-plugin definition appended to the agent's plugin list."""
-    seed_paths = ','.join(f'"skills/{name}/SKILL.md"' for name in skills)
-    candidates = ','.join(f'"packages/{PLUGIN_DIR}"' if index == 0 else f'"{"../" * index}{PLUGIN_DIR}"'
-                          for index in range(4))
-    return (f'{{defaultEnabled:!0,name:"{PLUGIN_NAME}",version:"{PLUGIN_VERSION}",'
-            f'requiredSeedPaths:[{seed_paths}],rootCandidates:[{candidates}],'
-            'listing:{author:{name:"CCode",url:"https://github.com/0xMinomus/CCode"},'
-            f'category:"{CATEGORY}",displayName:"CCode Skills",displayName_i18n:{{"zh-CN":"CCode \u6280\u80fd"}},'
-            f'description:"{DESCRIPTION}",'
-            'description_i18n:{"zh-CN":"CCode \u9ed8\u8ba4\u6280\u80fd\uff1aantislop\u3001GSAP\u3001\u754c\u9762\u8bbe\u8ba1\u4e0e\u5de5\u7a0b\u6d41\u7a0b\u3002"}}}')
+AGENT_DISCOVERY_ANCHOR = 'if(!I||I.source==="official"&&t.config.suppressedBuiltins.includes(I.id))continue;'
+AGENT_INSTALLED_ANCHOR = 'f=X7(n),g=new Set(f.map(L=>L.id)),_=[];'
+AGENT_AVAILABLE_ANCHOR = 'T=_.flatMap(L=>L.entries.map(U=>{let B=O$a(U,L.summary.id,g);'
+AGENT_CATALOG_ANCHOR = 'function LZo(e,t){return{authority:e,skills:t.skills.filter(n=>n.source!=="bundled").map(YXa)}}'
 
 
 def patch_agent(text):
-    """Register the bundled plugin in the agent's plugin list and official-plugin allowlist."""
-    text = replace_once(text, ANCHOR, 'u9=[' + definition() + ',' + ANCHOR[len('u9=['):])
-    return replace_once(text, OFFICIAL_PLUGIN_IDS_ANCHOR,
-                        f'new Set(["{PLUGIN_NAME}@{OFFICIAL_MARKETPLACE}",' + OFFICIAL_PLUGIN_IDS_ANCHOR[len('new Set(['):])
+    """Keep native discovery and exclude only the obsolete official plugin ID."""
+    text = replace_once(text, AGENT_DISCOVERY_ANCHOR,
+                        f'if(!I||I.id==="{LEGACY_PLUGIN_ID}"||I.source==="official"&&t.config.suppressedBuiltins.includes(I.id))continue;')
+    text = replace_once(text, AGENT_INSTALLED_ANCHOR,
+                        f'f=X7(n).filter(L=>L.id!=="{LEGACY_PLUGIN_ID}"),g=new Set(f.map(L=>L.id)),_=[];')
+    text = replace_once(text, AGENT_AVAILABLE_ANCHOR,
+                        f'T=_.flatMap(L=>L.entries.filter(U=>`${{U.name}}@${{L.summary.id}}`!=="{LEGACY_PLUGIN_ID}").map(U=>{{let B=O$a(U,L.summary.id,g);')
+    return replace_once(text, AGENT_CATALOG_ANCHOR,
+                        'function LZo(e,t){return{authority:e,skills:t.skills.map(YXa)}}')
 
 
-# The renderer keeps its own list of built-in plugin names and package paths to
-# decide which plugin skills the Skills page treats as built-in. Our plugin must
-# be named there too, or its skills are filtered out of that page.
-RENDERER_NAMES_ANCHOR = 'new Set([`android-emulator`,`browser`,`browser-use`,'
-RENDERER_PATHS_ANCHOR = '[`/zcode-plugins-official/`,'
+HOST_PLUGIN_ANCHOR = 'if(c.marketplace===G_&&e.suppressedBuiltins.includes(l)||a.has(l))continue;'
+HOST_ROOTS_ANCHOR = 'n.push(...await phe());let r=[],o=[],s=new Set'
+HOST_ENTRY_ANCHOR = 'scope:u.scope,enabled:!0,...u.pluginName?{pluginName:u.pluginName}:{}'
+HOST_DELETE_ANCHOR = 'if(o.scope==="plugin")throw new Error('
+HOST_ENABLED_ANCHOR = 'if(!d)throw new Error(`Skill not found: ${n.skillId}`);let l=await NK();'
+
+
+def patch_host(text):
+    """Feed native system skills into the actual Settings skillsService.list."""
+    text = replace_once(text, HOST_PLUGIN_ANCHOR,
+                        f'if(l==="{LEGACY_PLUGIN_ID}"||c.marketplace===G_&&e.suppressedBuiltins.includes(l)||a.has(l))continue;')
+    text = replace_once(text, HOST_ROOTS_ANCHOR,
+                        'n.push(...await phe());n.push({scope:"user",source:"bundled",rootPath:j2e(new URL("../../../glm/packages/bundled-skills/skills",import.meta.url))});let r=[],o=[],s=new Set')
+    text = replace_once(text, HOST_ENTRY_ANCHOR,
+                        'scope:u.scope,enabled:!0,...u.source==="bundled"?{source:"bundled",readOnly:!0}:{},...u.pluginName?{pluginName:u.pluginName}:{}')
+    text = replace_once(text, HOST_ENABLED_ANCHOR,
+                        'if(!d)throw new Error(`Skill not found: ${n.skillId}`);if(d.readOnly)throw new Error("Bundled skills are read-only.");let l=await NK();')
+    return replace_once(text, HOST_DELETE_ANCHOR,
+                        'if(o.readOnly)throw new Error("Bundled skills are read-only.");if(o.scope==="plugin")throw new Error(')
+
+
+RENDERER_BUILTIN_ANCHOR = 'function L7e(e){if(e.scope!==`plugin`)return!1;'
+RENDERER_GROUP_ANCHOR = 'function R4t(e,t){let n=new Set,r=[],i=[];'
+RENDERER_GROUP_PUSH_ANCHOR = 'I0(t,[a.name,a.description,a.pluginName])&&(a.scope===`plugin`?i.push(a):r.push(a)))}return{local:r,plugin:i}}'
+RENDERER_COUNT_ANCHOR = 'Ce=xe.local.length+xe.plugin.length,we='
+RENDERER_DEFAULT_ANCHOR = 'Se.filter(e=>e.id.startsWith(`plugin:`)).map(e=>'
+RENDERER_ACTIONS_ANCHOR = 'children:e.scope===`plugin`?null:(0,$.jsxs)($.Fragment,{children:[(0,$.jsx)(Xx,'
+RENDERER_DELETE_ANCHOR = 'if(!(!E||e.scope===`plugin`)&&await T({title:p.formatMessage({id:`settings.skills.delete.title`})'
+RENDERER_SCOPE_ANCHOR = 'pe=(0,Q.useCallback)(e=>{switch(e.scope){'
 
 
 def patch_renderer(text):
-    """Register the bundled plugin in the renderer's built-in plugin sets."""
-    names = replace_once(text, RENDERER_NAMES_ANCHOR,
-                         f'new Set([`{PLUGIN_NAME}`,' + RENDERER_NAMES_ANCHOR[len('new Set(['):])
-    return replace_once(names, RENDERER_PATHS_ANCHOR,
-                        f'[`/{PLUGIN_DIR}/`,' + RENDERER_PATHS_ANCHOR[1:])
-
-
-def plugin_manifest(description=DESCRIPTION):
-    """The manifest the app reads from the staged plugin package."""
-    return {
-        'name': PLUGIN_NAME,
-        'version': PLUGIN_VERSION,
-        'description': description,
-        'author': {'name': 'CCode'},
-        'license': 'see docs/THIRD_PARTY.md',
-        'skills': 'skills',
-    }
+    """Use the existing skill rows and translated Default label for native skills."""
+    text = replace_once(text, RENDERER_BUILTIN_ANCHOR,
+                        'function L7e(e){if(e.source===`bundled`)return!0;if(e.scope!==`plugin`)return!1;')
+    text = replace_once(text, RENDERER_GROUP_ANCHOR,
+                        'function R4t(e,t){let n=new Set,r=[],i=[],o=[];')
+    text = replace_once(text, RENDERER_GROUP_PUSH_ANCHOR,
+                        'I0(t,[a.name,a.description,a.pluginName])&&(a.source===`bundled`?o.push(a):a.scope===`plugin`?i.push(a):r.push(a)))}return{local:r,plugin:i,builtIn:o}}')
+    text = replace_once(text, RENDERER_COUNT_ANCHOR,
+                        'Ce=xe.local.length+xe.plugin.length+xe.builtIn.length,we=')
+    text = replace_once(text, RENDERER_DEFAULT_ANCHOR,
+                        'xe.builtIn.length>0?(0,$.jsxs)(`section`,{"data-skills-group":`default`,className:`space-y-4`,children:[(0,$.jsx)(H7,{count:xe.builtIn.length,title:p.formatMessage({id:`settings.scope.default`})}),Ie(xe.builtIn)]}):null,Se.filter(e=>e.id.startsWith(`plugin:`)).map(e=>')
+    text = replace_once(text, RENDERER_ACTIONS_ANCHOR,
+                        'children:e.readOnly||e.scope===`plugin`?null:(0,$.jsxs)($.Fragment,{children:[(0,$.jsx)(Xx,')
+    text = replace_once(text, RENDERER_DELETE_ANCHOR,
+                        'if(!(!E||e.readOnly||e.scope===`plugin`)&&await T({title:p.formatMessage({id:`settings.skills.delete.title`})')
+    return replace_once(text, RENDERER_SCOPE_ANCHOR,
+                        'pe=(0,Q.useCallback)(e=>{if(e.source===`bundled`)return p.formatMessage({id:`settings.scope.default`});switch(e.scope){')

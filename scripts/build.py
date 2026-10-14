@@ -6,6 +6,31 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once
 from local_only import storage,cloud,catalog,branding,skills_plugin
+SKILL_MARKER='.ccode-skills.json'
+VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
+def stage_skill_pack(skill_source,installed,output):
+ skills=sorted(path.name for path in skill_source.iterdir() if (path/'SKILL.md').is_file())
+ if not skills:raise ValueError('No bundled skills to stage in '+str(skill_source))
+ for name in VENDOR_SKILL_SEEDS:
+  if not (installed/name).is_file():raise ValueError('Installed bundled skill seed is missing: '+str(installed/name))
+ marker=installed/SKILL_MARKER
+ previous=json.loads(marker.read_text()).get('skills',[]) if marker.exists() else []
+ if not isinstance(previous,list) or any(not isinstance(name,str) or not name or name in ('.','..') or '/' in name or '\\' in name for name in previous):
+  raise ValueError('Invalid bundled skill ownership marker: '+str(marker))
+ pack=output/'glm/packages'/skills_plugin.PACK_DIR
+ if pack.exists():shutil.rmtree(pack)
+ shutil.copytree(installed,pack)
+ for name in set(previous)-set(skills):
+  if name=='dynamic-workflows':continue
+  shutil.rmtree(pack/'skills'/name,ignore_errors=True)
+ for name in skills:
+  destination=pack/'skills'/name
+  if destination.exists():shutil.rmtree(destination)
+  shutil.copytree(skill_source/name,destination)
+ (pack/SKILL_MARKER).write_text(json.dumps({'skills':skills},indent=2)+'\n')
+ shutil.rmtree(output/'glm/packages/ccode-skills-plugin',ignore_errors=True)
+ files=sorted(str(path.relative_to(output)) for path in pack.rglob('*') if path.is_file())
+ return skills,files
 def main():
  manifest=json.loads((ROOT/'project.json').read_text());base=ROOT/manifest['baseline']
  if hashlib.sha256(base.read_bytes()).hexdigest()!=manifest['baseline_sha256']:raise ValueError('Baseline hash mismatch; review upstream version before changing project.json')
@@ -28,6 +53,7 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  replacements={renderer:s.encode(),manifest['main_asset']:main.encode(),manifest['preload_asset']:preload.encode()}
  storage.patch_archive(archive,replacements,renderer)
  cloud.patch_archive(archive,replacements,renderer)
+ replacements[cloud.HOST]=skills_plugin.patch_host(replacements[cloud.HOST].decode()).encode()
  branding.patch_archive(archive,replacements,{'renderer':renderer,'intl':manifest['renderer_intl_asset'],'icon':manifest['renderer_icon_asset']})
  identity=json.loads(archive.read('package.json'))
  identity.update({'name':manifest['application_name'],'productName':branding.PRODUCT,'description':branding.PRODUCT+' desktop application'})
@@ -44,21 +70,10 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  (output/'config/provider').mkdir(parents=True,exist_ok=True)
  (output/'config/provider/zcode-builtin.json').write_text(catalog.patch_catalog(catalog_source.read_text()))
  for name,source in branding.PACKAGED_ICONS.items():shutil.copy2(branding.ICON_DIR/source,output/name)
- skill_source=ROOT/'src/skills'
- skills=sorted(path.name for path in skill_source.iterdir() if (path/'SKILL.md').is_file())
- if not skills:raise ValueError('No bundled skills to stage in '+str(skill_source))
- plugin=output/'glm/packages'/skills_plugin.PLUGIN_DIR
- if plugin.exists():shutil.rmtree(plugin)
- (plugin/'.zcode-plugin').mkdir(parents=True)
- (plugin/'.zcode-plugin/plugin.json').write_text(json.dumps(skills_plugin.plugin_manifest(),indent=2)+'\n')
- shutil.copytree(skill_source,plugin/'skills')
- # An older build staged our skills into the vendor pack; that staging step is gone,
- # so drop a stale copy to keep the staged tree honest.
- shutil.rmtree(output/'glm/packages/bundled-skills',ignore_errors=True)
- bundled_plugin=sorted(str(path.relative_to(output)) for path in plugin.rglob('*') if path.is_file())
- files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*bundled_plugin]
+ skills,pack_files=stage_skill_pack(ROOT/'src/skills',ROOT/'app/resources/glm/packages'/skills_plugin.PACK_DIR,output)
+ files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*pack_files]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
-        'bundled_plugin':skills_plugin.PLUGIN_DIR,'bundled_skills':skills,
+        'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}
  (output/'build-manifest.json').write_text(json.dumps(proof,indent=2)+'\n')
  print('Build staged:',output/'app.asar')
