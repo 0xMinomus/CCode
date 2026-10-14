@@ -2,7 +2,18 @@
 
 ## 2026-10-14
 
+### Default skills dikirim sebagai plugin bawaan (agent + halaman Plugins)
+
+- Pengguna melaporkan skill belum terlihat di CCode. Hasil investigasi: pack skill bawaan (`glm/packages/bundled-skills`) **terbaca agent tetapi tidak pernah muncul di halaman Skills** — halaman itu hanya menampilkan skill yang datang lewat plugin. Route pack karena itu diganti; commit `c83cd51` tetap tercatat sebagai langkah pack yang tidak terpakai lagi.
+- Payload tetap `src/skills/` (32 skill). `scripts/build.py` kini merakit paket plugin `glm/packages/ccode-skills-plugin` (`.zcode-plugin/plugin.json` dengan `"skills": "skills"` + salinan payload) dan mencatat tiap berkasnya di `build-manifest.json` (`bundled_plugin`, `bundled_skills`, `sha256`); pack vendor tidak disentuh lagi.
+- Patch baru `src/local_only/skills_plugin.py` (dipakai build, anchor unik + `replace_once`): (1) menyisipkan definisi plugin bawaan (`rootCandidates: packages/ccode-skills-plugin`, `requiredSeedPaths`, listing dua bahasa) ke daftar definisi plugin agent, (2) menambah id `ccode-skills@zcode-plugins-official` ke `DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS`, (3) menambah nama/`packages/…` plugin ke dua daftar plugin bawaan di renderer.
+- `scripts/apply_build.py::promote_skill_pack` mengganti paket plugin di `app/resources` sebagai satu unit: verifikasi hash, snapshot lewat direktori `.part` + rename (snapshot setengah jadi tidak pernah menimpa yang utuh), lalu salin; rollback penuh bila promosi gagal.
+- Verifikasi (root terpisah, resource staged): plugin tersemai ke cache (`cache/zcode-plugins-official/ccode-skills/1.0.0`, 32 `SKILL.md`), `plugins list` → `ccode-skills@zcode-plugins-official [enabled] … skills: 32`, `skills list` memuat skill bawaan sebagai `system/plugin`, dan halaman **Plugins** menampilkan kartu **CCode Skills** (kategori productivity, "Default"). `make build` + `make test` **151 tes** hijau (termasuk anchor plugin/agen, integritas payload, dan uji promosi/rollback paket plugin).
+- Belum selesai, dan tidak diklaim: halaman **Skills** masih menampilkan 14 skill vendor. Service `skillsService.list({provider:'glm'})` dijawab agent lewat channel protokol (kode minified) dan filter yang membuang plugin kita belum ditemukan; tombol Refresh maupun restart aplikasi tidak mengubah hasilnya.
+
 ### Default skills dibundel ke CCode (antislop + UI/GSAP + engineering workflow)
+
+> Catatan: route pack di entri ini digantikan oleh route plugin pada entri di atasnya — payload `src/skills/` tidak berubah, cara pengirimannya berubah.
 
 - Permintaan pengguna: 32 skill dijadikan skill bawaan CCode — antislop 4 (`antislop`, `antislop-code`, `antislop-copywriting`, `antislop-human`; dua skill yang di-ignore di Oh My Pi **tidak** ikut), UI/desain 5 (`design-taste-frontend`, `emil-design-eng`, `impeccable`, `prototype`, `full-output-enforcement`), GSAP 8, dan engineering workflow 15 (`code-review`, `diagnosing-bugs`, `investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `tdd`, `verify-and-stop`, `resolving-merge-conflicts`, `pr`, `research`, `wizard`, `find-skills`, `handoff`).
 - Mekanisme yang dipakai adalah pack skill bawaan aplikasi, bukan plugin marketplace: agent membaca root `glm/packages/bundled-skills` relatif ke dir bundle-nya dan memakai `skills/` di dalamnya sebagai root skill scope `system`. Pack hanya diterima bila tiga seed path vendor (`skills/dynamic-workflows/{SKILL.md,patterns.md,examples.md}`) ada, jadi pack tidak pernah kehilangan isi vendor.

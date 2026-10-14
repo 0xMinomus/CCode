@@ -1,9 +1,13 @@
 """Integrity of the bundled default skills that ship inside the app resources."""
 import pathlib
 import re
+import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'src'))
+from local_only import skills_plugin
+
 BUNDLE = ROOT / 'src/skills'
 UI = ['design-taste-frontend', 'emil-design-eng', 'impeccable', 'prototype', 'full-output-enforcement']
 GSAP = ['gsap-core', 'gsap-frameworks', 'gsap-performance', 'gsap-plugins', 'gsap-react',
@@ -61,6 +65,31 @@ class BundledSkillBundleTests(unittest.TestCase):
     def test_large_payloads_stay_out_of_the_bundle(self):
         biggest = max((path.stat().st_size, str(path.relative_to(BUNDLE))) for path in BUNDLE.rglob('*') if path.is_file())
         self.assertLess(biggest[0], 2_000_000, f'unexpected large bundled file: {biggest}')
+
+
+class BundledPluginTests(unittest.TestCase):
+    """The default skills reach the UI as a bundled plugin, not as a bare skill pack."""
+
+    def test_the_agent_anchor_is_still_unique(self):
+        baseline = ROOT / 'baselines/zcode-3.14.5-original-agent.cjs'
+        text = baseline.read_text(errors='replace')
+        self.assertEqual(text.count(skills_plugin.ANCHOR), 1,
+                         'the bundled-plugin list anchor moved; re-pin it before changing skills_plugin.py')
+
+    def test_the_patch_prepends_one_definition(self):
+        baseline = ROOT / 'baselines/zcode-3.14.5-original-agent.cjs'
+        patched = skills_plugin.patch_agent(baseline.read_text(errors='replace'))
+        self.assertEqual(patched.count(f'name:"{skills_plugin.PLUGIN_NAME}"'), 1)
+        self.assertIn(f'packages/{skills_plugin.PLUGIN_DIR}', patched)
+        self.assertIn('skills/antislop/SKILL.md', patched)
+
+    def test_the_manifest_points_at_the_skill_payload(self):
+        manifest = skills_plugin.plugin_manifest()
+        self.assertEqual(manifest['name'], skills_plugin.PLUGIN_NAME)
+        self.assertEqual(manifest['skills'], 'skills')
+        self.assertTrue(manifest['description'])
+        for name in skills_plugin.SEED_SKILLS:
+            self.assertTrue((BUNDLE / name / 'SKILL.md').is_file(), name)
 
 
 if __name__ == '__main__':

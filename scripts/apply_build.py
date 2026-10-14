@@ -4,7 +4,7 @@ import hashlib,json,pathlib,shutil,os,datetime,sys
 from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
-from local_only import catalog,branding
+from local_only import catalog,branding,skills_plugin
 def namespace_root():
  return pathlib.Path(os.environ.get('ZCODE_STANDALONE_ROOT','').strip() or pathlib.Path.home()/'.local/share/ccode')
 def derived_catalogs():
@@ -14,42 +14,35 @@ BACKUP_RETENTION=2
 APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/zcode"'
 FILES=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json']
-SKILL_PACK='glm/packages/bundled-skills'
+SKILL_PACK='glm/packages/'+skills_plugin.PLUGIN_DIR
 def promote_skill_pack(staged,target,proof,backup):
- """Sync the bundled skill pack: verify the staged hashes, back up, copy, drop skills we removed.
+ """Sync the bundled CCode skills plugin: verify the staged hashes, snapshot, then replace it.
 
- The pack directory ships the vendor skills too (for example `dynamic-workflows`,
- which the agent requires before it accepts the pack as a skill root), so only the
- skills named in our own manifest are written or pruned.
+ The plugin directory is ours end to end, so it is copied as one unit; the vendored
+ `glm/packages/bundled-skills` pack is never touched.
  """
- names=json.loads((staged/SKILL_PACK/'.ccode-skills.json').read_text())['skills']
- for path in sorted((staged/SKILL_PACK).rglob('*')):
-  if not path.is_file():continue
-  name=str(path.relative_to(staged))
-  if proof['sha256'].get(name)!=hashlib.sha256(path.read_bytes()).hexdigest():
-   raise ValueError('Staged skill checksum mismatch: '+name)
- if proof.get('bundled_skills')!=names:raise ValueError('Staged skill manifest disagrees with the build proof')
- pack=target/SKILL_PACK
- if pack.exists():
+ if proof.get('bundled_plugin')!=skills_plugin.PLUGIN_DIR:
+  raise ValueError('Staged build carries the wrong bundled plugin: '+str(proof.get('bundled_plugin')))
+ files=sorted(name for name in proof['sha256'] if name.startswith(SKILL_PACK+'/'))
+ if not files:raise ValueError('Staged build carries no bundled plugin files')
+ for name in files:
+  if hashlib.sha256((staged/name).read_bytes()).hexdigest()!=proof['sha256'][name]:
+   raise ValueError('Staged plugin checksum mismatch: '+name)
+ destination=target/SKILL_PACK
+ if destination.exists():
   # Snapshot into a temporary directory first: a half-written snapshot must never
-  # overwrite the intact pack during rollback.
+  # overwrite the intact plugin during rollback.
   snapshot=backup/(SKILL_PACK+'.part')
   shutil.rmtree(snapshot,ignore_errors=True)
-  shutil.copytree(pack,snapshot)
+  shutil.copytree(destination,snapshot)
   os.rename(snapshot,backup/SKILL_PACK)
- previous=json.loads((pack/'.ccode-skills.json').read_text())['skills'] if (pack/'.ccode-skills.json').exists() else []
- for name in sorted(set(previous)-set(names)):
-  shutil.rmtree(pack/'skills'/name,ignore_errors=True)
- for name in names:
-  destination=pack/'skills'/name
-  if destination.exists():shutil.rmtree(destination)
-  shutil.copytree(staged/SKILL_PACK/'skills'/name,destination)
- (pack/'.ccode-skills.json').write_text((staged/SKILL_PACK/'.ccode-skills.json').read_text())
- return names
+ shutil.rmtree(destination,ignore_errors=True)
+ shutil.copytree(staged/SKILL_PACK,destination)
+ return list(proof.get('bundled_skills') or [])
 def restore_skill_pack(target,backup):
- """Roll the pack back to the pre-promotion snapshot after a failed run.
+ """Roll the plugin back to the pre-promotion snapshot after a failed run.
 
- Without a snapshot nothing was written yet, so the pack is left alone.
+ Without a snapshot nothing was written yet, so the plugin is left alone.
  """
  archived=backup/SKILL_PACK
  if not archived.exists():return

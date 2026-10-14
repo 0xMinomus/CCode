@@ -68,19 +68,17 @@ class PromotionTests(unittest.TestCase):
         env = mock.patch.dict(os.environ, {'ZCODE_STANDALONE_ROOT': str(self.namespace)})
         env.start()
         self.addCleanup(env.stop)
-        self.pack_staged = self.staged / 'glm/packages/bundled-skills'
-        self.pack_target = self.target / 'glm/packages/bundled-skills'
+        self.pack_staged = self.staged / 'glm/packages' / apply_build.skills_plugin.PLUGIN_DIR
+        self.pack_target = self.target / 'glm/packages' / apply_build.skills_plugin.PLUGIN_DIR
         staged_pack_files = {
+            '.zcode-plugin/plugin.json': b'{"name": "ccode-skills", "skills": "skills"}\n',
             'skills/alpha/SKILL.md': b'new alpha body\n',
             'skills/beta/SKILL.md': b'new beta body\n',
-            'skills/dynamic-workflows/SKILL.md': b'vendor body\n',
-            '.ccode-skills.json': b'{"skills": ["alpha", "beta"]}\n',
         }
         self.pack_previous = {
+            '.zcode-plugin/plugin.json': b'{"name": "ccode-skills", "skills": "skills"}\n',
             'skills/alpha/SKILL.md': b'old alpha body\n',
             'skills/stale/SKILL.md': b'old stale body\n',
-            'skills/dynamic-workflows/SKILL.md': b'vendor body\n',
-            '.ccode-skills.json': b'{"skills": ["alpha", "stale"]}\n',
         }
         for rel, data in staged_pack_files.items():
             (self.pack_staged / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -90,7 +88,8 @@ class PromotionTests(unittest.TestCase):
             (self.pack_target / rel).write_bytes(data)
         staged_names = [*self.names, *(str(path.relative_to(self.staged)) for path in sorted(self.pack_staged.rglob('*'))
                                  if path.is_file())]
-        proof = {'application_name': 'ccode', 'bundled_skills': ['alpha', 'beta'], 'sha256': {
+        proof = {'application_name': 'ccode', 'bundled_plugin': apply_build.skills_plugin.PLUGIN_DIR,
+                 'bundled_skills': ['alpha', 'beta'], 'sha256': {
             name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest() for name in staged_names}}
         (self.staged / 'build-manifest.json').write_text(json.dumps(proof))
         patch = mock.patch.object(apply_build, 'ROOT', self.root)
@@ -150,42 +149,44 @@ class PromotionTests(unittest.TestCase):
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
             self.assertFalse((self.target / name).with_name(pathlib.Path(name).name + '.new').exists())
 
-    def test_bundled_skills_are_promoted_and_stale_ones_pruned(self):
+    def test_bundled_plugin_is_replaced_as_a_unit(self):
         apply_build.main()
         self.assertEqual((self.pack_target / 'skills/alpha/SKILL.md').read_bytes(), b'new alpha body\n')
         self.assertEqual((self.pack_target / 'skills/beta/SKILL.md').read_bytes(), b'new beta body\n')
-        self.assertFalse((self.pack_target / 'skills/stale').exists(), 'skills we removed are pruned')
-        self.assertEqual((self.pack_target / '.ccode-skills.json').read_bytes(), b'{"skills": ["alpha", "beta"]}\n')
-        self.assertEqual((self.pack_target / 'skills/dynamic-workflows/SKILL.md').read_bytes(), b'vendor body\n',
-                         'vendor bundled skills are never touched')
+        self.assertFalse((self.pack_target / 'skills/stale').exists(), 'skills we dropped are gone with the old plugin')
+        self.assertEqual((self.pack_target / '.zcode-plugin/plugin.json').read_bytes(),
+                         b'{"name": "ccode-skills", "skills": "skills"}\n')
 
-    def test_corrupt_staged_skill_cannot_replace_the_pack(self):
+    def test_corrupt_staged_plugin_cannot_replace_the_deployed_one(self):
         (self.pack_staged / 'skills/beta/SKILL.md').write_bytes(b'corrupt')
-        with self.assertRaisesRegex(ValueError, 'Staged skill checksum mismatch'):
+        with self.assertRaisesRegex(ValueError, 'Staged plugin checksum mismatch'):
             apply_build.main()
         for rel, data in self.pack_previous.items():
             self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
         for name in self.names:
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
 
-    def test_failed_skill_copy_restores_the_previous_pack(self):
+    def test_failed_plugin_copy_restores_the_previous_plugin(self):
         real_copytree = apply_build.shutil.copytree
+        copies = {'count': 0}
 
         def flaky(source, destination, *args, **kwargs):
-            if str(destination).endswith('/skills/beta'):
-                raise OSError('simulated copy failure')
+            if str(destination).endswith(apply_build.skills_plugin.PLUGIN_DIR):
+                copies['count'] += 1
+                if copies['count'] == 1:
+                    raise OSError('simulated copy failure')
             return real_copytree(source, destination, *args, **kwargs)
 
         with mock.patch.object(apply_build.shutil, 'copytree', side_effect=flaky):
             with self.assertRaises(OSError):
                 apply_build.main()
+        self.assertEqual(copies['count'], 2, 'promotion failed once and the rollback copied the snapshot back')
         for rel, data in self.pack_previous.items():
             self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
-        self.assertFalse((self.pack_target / 'skills/beta').exists(), 'half-copied skills are rolled back')
         for name in self.names:
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
 
-    def test_failed_pack_snapshot_leaves_the_pack_untouched(self):
+    def test_failed_plugin_snapshot_leaves_the_plugin_untouched(self):
         real_copytree = apply_build.shutil.copytree
 
         def flaky(source, destination, *args, **kwargs):
@@ -198,7 +199,8 @@ class PromotionTests(unittest.TestCase):
                 apply_build.main()
         for rel, data in self.pack_previous.items():
             self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
-        self.assertTrue((self.pack_target / 'skills/stale').exists(), 'an intact pack is never replaced by a partial snapshot')
+        self.assertTrue((self.pack_target / 'skills/stale').exists(),
+                        'an intact plugin is never replaced by a partial snapshot')
         for name in self.names:
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
 

@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once
-from local_only import storage,cloud,catalog,branding
+from local_only import storage,cloud,catalog,branding,skills_plugin
 def main():
  manifest=json.loads((ROOT/'project.json').read_text());base=ROOT/manifest['baseline']
  if hashlib.sha256(base.read_bytes()).hexdigest()!=manifest['baseline_sha256']:raise ValueError('Baseline hash mismatch; review upstream version before changing project.json')
@@ -17,6 +17,7 @@ def main():
  s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\nfunction iOn(p){return fedoraCuaLocal(p)?$.jsx(FedoraCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
  s+='\n'+(ROOT/'src/renderer/voice-input.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/activity-panel.js').read_text()+'\n'
+ s=skills_plugin.patch_renderer(s)
  main=archive.read(manifest['main_asset']).decode()+'''\nimport {app as zcodeVoiceApp,ipcMain as zcodeVoiceIpcMain} from "electron";
 import {createRequire as zcodeVoiceCreateRequire} from "node:module";
 const zcodeVoiceRequire=zcodeVoiceCreateRequire(import.meta.url);
@@ -33,7 +34,7 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  replacements['package.json']=(json.dumps(identity,indent=2)+'\n').encode()
  agent_base=ROOT/manifest['agent_baseline']
  if hashlib.sha256(agent_base.read_bytes()).hexdigest()!=manifest['agent_baseline_sha256']:raise ValueError('Agent baseline hash mismatch; review upstream version before changing project.json')
- agent=cloud.patch_agent(storage.patch_agent(agent_base.read_text()))
+ agent=skills_plugin.patch_agent(cloud.patch_agent(storage.patch_agent(agent_base.read_text())))
  output=ROOT/'runtime/build/resources';archive.write(output/'app.asar',replacements)
  (output/'glm').mkdir(parents=True,exist_ok=True);(output/'glm/zcode.cjs').write_text(agent)
  (output/'voice').mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/'src/main/voice.cjs',output/'voice/main.cjs')
@@ -43,25 +44,21 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  (output/'config/provider').mkdir(parents=True,exist_ok=True)
  (output/'config/provider/zcode-builtin.json').write_text(catalog.patch_catalog(catalog_source.read_text()))
  for name,source in branding.PACKAGED_ICONS.items():shutil.copy2(branding.ICON_DIR/source,output/name)
- pack_source=ROOT/'app/resources/glm/packages/bundled-skills'
- if not (pack_source/'skills').is_dir():raise ValueError('Installed bundled-skill pack is missing: '+str(pack_source))
  skill_source=ROOT/'src/skills'
  skills=sorted(path.name for path in skill_source.iterdir() if (path/'SKILL.md').is_file())
  if not skills:raise ValueError('No bundled skills to stage in '+str(skill_source))
- pack=output/'glm/packages/bundled-skills'
- if pack.exists():shutil.rmtree(pack)
- shutil.copytree(pack_source,pack)
- previous=json.loads((pack/'.ccode-skills.json').read_text())['skills'] if (pack/'.ccode-skills.json').exists() else []
- for name in previous:
-  if name not in skills:shutil.rmtree(pack/'skills'/name,ignore_errors=True)
- for name in skills:
-  destination=pack/'skills'/name
-  if destination.exists():shutil.rmtree(destination)
-  shutil.copytree(skill_source/name,destination)
- (pack/'.ccode-skills.json').write_text(json.dumps({'skills':skills},indent=2)+'\n')
- packaged_skills=sorted(str(path.relative_to(output)) for path in pack.rglob('*') if path.is_file())
- files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*packaged_skills]
- proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),'bundled_skills':skills,
+ plugin=output/'glm/packages'/skills_plugin.PLUGIN_DIR
+ if plugin.exists():shutil.rmtree(plugin)
+ (plugin/'.zcode-plugin').mkdir(parents=True)
+ (plugin/'.zcode-plugin/plugin.json').write_text(json.dumps(skills_plugin.plugin_manifest(),indent=2)+'\n')
+ shutil.copytree(skill_source,plugin/'skills')
+ # An older build staged our skills into the vendor pack; that staging step is gone,
+ # so drop a stale copy to keep the staged tree honest.
+ shutil.rmtree(output/'glm/packages/bundled-skills',ignore_errors=True)
+ bundled_plugin=sorted(str(path.relative_to(output)) for path in plugin.rglob('*') if path.is_file())
+ files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*bundled_plugin]
+ proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
+        'bundled_plugin':skills_plugin.PLUGIN_DIR,'bundled_skills':skills,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}
  (output/'build-manifest.json').write_text(json.dumps(proof,indent=2)+'\n')
  print('Build staged:',output/'app.asar')

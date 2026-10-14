@@ -25,13 +25,13 @@ CSS renderer adalah hasil build Tailwind statis dari upstream: kelas yang tidak 
 
 ### Default skills
 
-Aplikasi memuat skill bawaan dari pack `glm/packages/bundled-skills` (konstanta `bundled-skills`/`skills` di agent; root diresolusi relatif ke dir bundle agent, `MEn()`). Pack hanya diterima bila **tiga seed path vendor** ada — `skills/dynamic-workflows/{SKILL.md,patterns.md,examples.md}` — sehingga isi vendor tidak boleh dihapus.
+Skill bawaan dikirim sebagai **plugin bawaan**, bukan sebagai pack skill: halaman Settings → Skills hanya menampilkan skill yang datang lewat plugin (pack `glm/packages/bundled-skills` terbaca agent tapi tidak pernah muncul di UI).
 
-Sumber kanonik di repo adalah `src/skills/<nama>/` (32 skill: antislop 4, GSAP 8, UI/desain 5, workflow 15). `scripts/build.py` menyalin pack yang terpasang (`app/resources/glm/packages/bundled-skills`, termasuk skill vendor) ke `runtime/build/resources/glm/packages/bundled-skills`, menghapus skill yang sebelumnya kita pasang tapi tidak ada lagi di `src/skills`, menambahkan skill dari `src/skills`, lalu menulis manifest kecil `.ccode-skills.json` berisi daftar nama milik kita. Setiap berkas pack masuk `build-manifest.json` (`sha256` + `bundled_skills`).
-
-`scripts/apply_build.py::promote_skill_pack` memverifikasi hash semua berkas pack, membuat snapshot pack lama di `runtime/backups/<stamp>` (lewat direktori `.part` lalu rename, supaya snapshot setengah jadi tidak pernah menimpa pack yang utuh), menyalin skill kita, dan menghapus hanya skill yang tercatat di manifest kita. Pack yang lama dipulihkan utuh bila promosi gagal. Skill vendor di luar manifest kita tidak pernah disentuh.
-
-Skill yang dibundel muncul di aplikasi sebagai `system/bundled`; verifikasi tanpa GUI: `ZCODE_STANDALONE_ROOT=<dir> ELECTRON_RUN_AS_NODE=1 app/ccode runtime/build/resources/glm/zcode.cjs skills list`.
+- Payload: `src/skills/<nama>/` (32 skill). `scripts/build.py` merakit paket plugin di `runtime/build/resources/glm/packages/ccode-skills-plugin/` (`.zcode-plugin/plugin.json` dengan `"skills": "skills"` + salinan payload) dan mencatat setiap berkasnya di `build-manifest.json` (`sha256`, `bundled_plugin`). Daftar nama skill ada di `bundled_skills`.
+- Registrasi di sisi agent: `src/local_only/skills_plugin.py` menambahkan definisi plugin ke daftar definisi plugin bawaan agent (`rootCandidates: packages/ccode-skills-plugin`, `requiredSeedPaths`, listing), menambah id `ccode-skills@zcode-plugins-official` ke `DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS`, dan menambahkan nama/`packages/…` plugin ke dua daftar plugin bawaan di renderer (yang dipakai UI untuk menandai skill plugin bawaan). Semua anchor unik; `replace_once` menggagalkan build bila anchor bergeser.
+- `scripts/apply_build.py::promote_skill_pack` mengganti paket plugin di `app/resources` sebagai satu unit (hash diverifikasi, snapshot `.part` + rename, rollback bila gagal). Pack `bundled-skills` milik vendor tidak pernah disentuh.
+- Verifikasi tanpa GUI: `ZCODE_STANDALONE_ROOT=<dir> ELECTRON_RUN_AS_NODE=1 app/ccode app/resources/glm/zcode.cjs plugins list` harus memuat `ccode-skills@zcode-plugins-official [enabled] … skills: 32`, dan `skills list` memuat skill kita sebagai `system/plugin`.
+- Batas yang masih terbuka: halaman Skills memanggil service `skillsService.list({provider:'glm'})` (dijawab agent lewat channel protokol, minified) dan pada uji terakhir masih mengembalikan 14 skill vendor saja, walau plugin kita `[enabled]` dengan 32 skill dan muncul di halaman Plugins sebagai "CCode Skills". Filter di service itu belum ditemukan; jangan mengklaim halaman Skills sudah memuat skill bawaan sebelum terbukti.
 
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 
