@@ -497,6 +497,8 @@ def patch_archive(archive, replacements, renderer_asset):
     replacements[INTL] = _intl(text).encode()
 
 
+BUILTIN_REMOTE_FETCH = ('function xnr(e){let t=new AbortController,n=!1,o=setTimeout(()=>{n=!0,t.abort()},2e4);',
+                        'function xnr(e){return null;let t=new AbortController,n=!1,o=setTimeout(()=>{n=!0,t.abort()},2e4);')
 LOGIN_SWITCH = 'case"login":return await vTt(e,T,L,n.values["no-browser"]===!0);case"logout":return await bTt(e,T,L);'
 LOGIN_HELP = '  login      Sign in with Z.AI OAuth for model access\n  logout     Remove the shared Z.AI login credentials\n'
 NO_BROWSER_HELP = '  --no-browser     Print the OAuth URL without opening a browser\n'
@@ -510,6 +512,16 @@ LOGIN_REGISTRY = ('{details:["Opens a Coding Plan setup picker when called witho
                   'name:"logout",summary:"Remove the shared Z.ai login credentials.",usage:"/logout"},')
 LOGIN_PARSER = ('if(o==="login")return{args:s,name:"login",rawName:o,type:"known"};'
                 'if(o==="logout")return{args:s,name:"logout",rawName:o,type:"known"};')
+
+
+def patch_builtin_refresh(text):
+    """Answer "no release" instead of fetching the account catalog.
+
+    The agent-side refresh calls `/api/v1/client/configs` on the endpoint origin and
+    logged `CCode Built-in client-config: invalid response` once a minute in this
+    build. The pinned catalog and the local model sync are the only sources here.
+    """
+    return replace_once(text, *BUILTIN_REMOTE_FETCH)
 
 
 def patch_login_surface(text):
@@ -542,4 +554,4 @@ def patch_agent(text):
         'declaredMcpServerNames:e.manifest.name==="image-search"?s.filter(n=>n!=="image_search"):s,'
         'description:e.manifest.description',
     )
-    return patch_login_surface(text)
+    return patch_login_surface(patch_builtin_refresh(text))
