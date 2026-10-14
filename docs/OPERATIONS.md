@@ -22,11 +22,13 @@ systemctl --user disable --now ccode-model-sync.timer     # hentikan sync rutin
 
 ## MCP di Settings
 
-Context7, Websearch, dan Codegraph tersedia setelah instalasi aplikasi. Buka **Settings → MCP Servers** untuk melihat server native dan katalog integrasi. Tombol **Test** menjalankan operasi MCP aktual dan menampilkan hasil atau kegagalan.
+Context7 dan Codegraph tersedia setelah instalasi aplikasi. **Settings → MCP Servers** menampilkan daftar **Installed** server native; entri opsional **LSP** dan **Ripgrep** muncul sebagai baris di daftar yang sama dengan tombol **Install** pada slot switch-nya. Setelah di-Install, baris native dengan switch on/off menggantikan baris itu.
 
-MCP opsional dipasang lewat **Install** di katalog. LSP membutuhkan language server untuk bahasa proyek; Ripgrep mencari berkas lokal. GitHub membutuhkan token, n8n membutuhkan URL instance dan API key, dan Obsidian membutuhkan folder vault yang dipilih user. Jangan menyalin credentials dari konfigurasi agent lain.
+LSP membutuhkan language server untuk bahasa proyek (TypeScript/JavaScript dipasang bersama entri ini). Ripgrep mencari berkas lokal. Instalasi opsional memakai registry npm dan direktori privat di dalam namespace (`mcp/packages`), tanpa Node/npm sistem.
 
-Default tidak berarti semua proses server berjalan terus. Runtime MCP tetap mengikuti pemuatan oleh agent. Context7 dan Websearch menggunakan jaringan saat tool dipanggil; Codegraph menyimpan indeks lokal proyek. Mematikan atau menghapus server melalui pengelolaan native tidak boleh dibatalkan oleh bootstrap berikutnya.
+Default tidak berarti semua proses server berjalan terus; runtime MCP tetap mengikuti pemuatan oleh agent. Context7 memakai jaringan saat tool dokumentasi dipanggil. Codegraph menyimpan indeks lokal proyek. Mematikan atau menghapus server lewat pengelolaan native tidak dibatalkan oleh bootstrap berikutnya.
+
+MCP lain (mis. n8n atau GitHub) dapat ditambahkan sendiri lewat tombol **New** di halaman yang sama; tidak ada entri bawaan untuk keduanya.
 
 ## Backup dan restore data standalone
 

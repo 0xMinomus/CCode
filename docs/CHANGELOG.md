@@ -2,6 +2,14 @@
 
 ## 2026-10-14
 
+### MCP: baris gaya native, hanya Context7 + Codegraph + LSP + Ripgrep
+
+- Permintaan user: hilangkan bagian "Server catalog" bergaya kartu. Entri opsional sekarang memakai baris milik daftar **Installed** yang sama; tombol **Install** mengisi slot kontrol, lalu baris native ber-switch on/off menggantikannya. Tidak ada lagi tombol Test di UI.
+- Websearch dihapus dari bawaan karena Browser Use sudah menyediakan pencarian web. Obsidian dihapus karena sudah tersedia lewat plugin. n8n dan GitHub dihapus dari katalog: di build standalone ini plugin-declared MCP server tampil read-only dan tidak punya tempat mengisi credentials, jadi mengirimnya sebagai plugin bawaan hanya akan menghasilkan integrasi yang tidak bisa dipakai. Keduanya tetap bisa ditambahkan manual lewat tombol New.
+- Katalog tinggal empat entri: Context7 dan Codegraph (default, disemai otomatis) plus LSP dan Ripgrep (opsional, di-Install dari baris katalog). Dependency `@yoloyash/web-basics`, `n8n-mcp`, `@bitbonsai/mcpvault`, dan GitHub remote tidak lagi dibundel; `services/mcp/package-lock.json` diperbarui.
+- Runtime dipangkas mengikuti katalog: probe websearch/GitHub/n8n/Obsidian, transport HTTP, dan alur credentials (`validate`, `configFields`) dihapus; IPC hanya menyediakan `list` dan `install`. Pemeriksaan batas dipindah ke `services/mcp/test.cjs` (bootstrap, penghapusan yang disengaja, server user tidak diganti).
+- Verifikasi pada aplikasi terisolasi: `make build` + `make test` hijau; baris LSP dan Ripgrep muncul di daftar Installed dengan tombol Install, berubah menjadi baris native ber-switch setelah install, dan operasi tool nyata berhasil untuk Context7, Codegraph, LSP, serta Ripgrep.
+
 ### MCP terpasang default dan katalog Install/Test di menu MCP
 
 - Context7, Websearch, dan Codegraph menjadi MCP bawaan dengan dependency yang dikirim dalam resource aplikasi. Tidak memakai konfigurasi Oh My Pi, key pribadi pengembang, atau alamat SearXNG localhost pengembang.

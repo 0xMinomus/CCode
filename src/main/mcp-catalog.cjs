@@ -2,7 +2,7 @@
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
 const { spawn } = require('node:child_process');
 const { pathToFileURL, fileURLToPath } = require('node:url');
-const active = new Set(), busy = new Set(), outcomes = new Map();
+const active = new Set(), busy = new Set();
 function paths(options = {}) {
   const resources = path.resolve(options.resourcesPath || process.resourcesPath || path.join(__dirname, '../../app/resources'));
   const root = path.resolve(options.root || process.env.ZCODE_STANDALONE_ROOT || path.join(os.homedir(), '.local/share/ccode'));
@@ -31,11 +31,9 @@ function commit(p, snapshot) {
 }
 function runtimePath(p, item) { return item.default ? path.join(p.payload, 'runtime') : path.join(p.state, 'packages', item.id); }
 function executable(p, item) { return path.join(runtimePath(p, item), 'node_modules', item.nativePackage || item.package, item.entry); }
-function definition(p, item, config = {}) {
-  if (item.url) return { type: 'http', url: item.url, headers: { Authorization: 'Bearer ' + config.token } };
+function definition(p, item) {
   const env = { ELECTRON_RUN_AS_NODE: '1', ...item.env };
-  if (item.id === 'n8n') Object.assign(env, { N8N_API_URL: config.url, N8N_API_KEY: config.apiKey });
-  return { command: p.node, args: [path.join(p.payload, 'launch.cjs'), item.id, runtimePath(p, item), path.join(p.state, 'home', item.id), ...(item.id === 'obsidian' ? [config.vaultPath] : [])], env };
+  return { command: p.node, args: [path.join(p.payload, 'launch.cjs'), item.id, runtimePath(p, item), path.join(p.state, 'home', item.id)], env };
 }
 function bootstrap(options = {}) {
   const p = paths(options), entries = catalog(p), marker = path.join(p.state, 'default-seed.json');
@@ -54,26 +52,6 @@ function bootstrap(options = {}) {
   atomic(marker, { seeded });
   return { ok: true };
 }
-function validate(item, value) {
-  if (!object(value)) throw Error('MCP configuration must be an object.');
-  const keys = item.configFields.map(field => field.key);
-  if (Object.keys(value).some(key => !keys.includes(key))) throw Error('Unknown MCP configuration field.');
-  const result = {};
-  for (const field of item.configFields) {
-    const raw = value[field.key];
-    if (raw !== undefined && (typeof raw !== 'string' || raw.length > 8192 || /[\0\r\n]/.test(raw))) throw Error('Invalid ' + field.label + '.');
-    const text = raw?.trim() || '';
-    if (field.required && !text) throw Error(field.label + ' is required.');
-    result[field.key] = text;
-  }
-  if (item.id === 'n8n') {
-    let url; try { url = new URL(result.url); } catch { throw Error('Enter a valid n8n base URL.'); }
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw Error('Use an HTTP(S) n8n URL without embedded credentials.');
-    result.url = url.href.replace(/\/$/, '');
-  }
-  if (item.id === 'obsidian' && (!path.isAbsolute(result.vaultPath) || !fs.statSync(result.vaultPath, { throwIfNoEntry: false })?.isDirectory())) throw Error('Select an existing absolute vault folder.');
-  return result;
-}
 function itemFor(p, id) {
   if (typeof id !== 'string') throw Error('Unknown MCP catalog entry.');
   const item = catalog(p).find(entry => entry.id === id);
@@ -85,8 +63,10 @@ function list(options = {}) {
   return catalog(p).map(item => {
     const configured = Object.hasOwn(servers, item.id), present = !item.package || fs.existsSync(executable(p, item));
     const installed = configured && present;
-    const outcome = outcomes.get(item.id);
-    return { id: item.id, name: item.name, description: item.description, default: item.default, installed, configRequired: item.configFields.some(field => field.required), configFields: item.configFields, status: busy.has(item.id) ? 'installing' : !installed ? 'not-installed' : servers[item.id]?.disabled || servers[item.id]?.enabled === false ? 'disabled' : outcome?.ok ? 'usable' : outcome ? 'failed' : 'not-tested', error: outcome?.error || (!present && configured ? 'Installed package is missing. Install again.' : null) };
+    const server = servers[item.id];
+    return { id: item.id, name: item.name, description: item.description, default: item.default, installed,
+      status: busy.has(item.id) ? 'installing' : !installed ? 'not-installed' : server?.disabled || server?.enabled === false ? 'disabled' : 'installed',
+      error: !present && configured ? 'Installed package is missing. Install again.' : null };
   });
 }
 function cleanEnv(home) {
@@ -113,7 +93,6 @@ async function install(request, options = {}) {
   if (busy.has(item.id)) return { ok: false, error: 'An operation for this server is already running.' };
   busy.add(item.id);
   try {
-    const config = validate(item, request.config || {});
     const existing = readConfig(p).data.mcp.servers[item.id];
     const repair = object(existing) && item.package && !fs.existsSync(executable(p, item)) && existing.args?.[0] === path.join(p.payload, 'launch.cjs') && existing.args?.[1] === item.id;
     if (existing && !repair) throw Error('A server with this name already exists. Edit or remove it in the native MCP server list before reinstalling.');
@@ -124,41 +103,28 @@ async function install(request, options = {}) {
       if (JSON.stringify(servers[item.id]) !== JSON.stringify(existing)) throw Error('MCP settings changed concurrently. Retry the operation.');
     } else {
       if (Object.hasOwn(servers, item.id)) throw Error('MCP settings changed concurrently. Retry the operation.');
-      servers[item.id] = definition(p, item, config);
+      servers[item.id] = definition(p, item);
       commit(p, snapshot);
     }
-    outcomes.delete(item.id);
     return { ok: true };
   } catch (error) { return { ok: false, error: error.code ? 'MCP configuration could not be saved. Check file permissions and retry.' : error.message }; }
   finally { busy.delete(item.id); }
 }
 async function sdk(p) {
   const base = path.join(p.payload, 'runtime/node_modules/@modelcontextprotocol/sdk/dist/esm/client');
-  const [{ Client }, { StdioClientTransport }, { StreamableHTTPClientTransport }] = await Promise.all(['index.js', 'stdio.js', 'streamableHttp.js'].map(file => import(pathToFileURL(path.join(base, file)).href)));
-  return { Client, StdioClientTransport, StreamableHTTPClientTransport };
+  const [{ Client }, { StdioClientTransport }] = await Promise.all(['index.js', 'stdio.js'].map(file => import(pathToFileURL(path.join(base, file)).href)));
+  return { Client, StdioClientTransport };
 }
 function textResult(result) { return (result.content || []).filter(part => part.type === 'text').map(part => part.text).join('\n'); }
-const SAFE_PROBE_FAILURE = Symbol('safe-probe-failure');
-function websearchFailure(result) {
-  const detail = String(jsonResult(result)?.error || textResult(result));
-  const reasons = [];
-  const status = /firecrawl:[^;]*\b(401|403|429|5\d\d)\b/i.exec(detail)?.[1];
-  if (status) reasons.push('Firecrawl HTTP ' + status);
-  if (/exa:[^;]*no renderable|exa:[^;]*no.*results/i.test(detail)) reasons.push('Exa returned no search results');
-  if (/duckduckgo:[^;]*DNS resolution failed/i.test(detail)) reasons.push('DuckDuckGo DNS resolution failed');
-  const message = 'web_search failed: ' + (reasons.join('; ') || 'the public search providers returned no usable results') + '. Keyless provider availability and rate limits vary.';
-  return Object.assign(Error(message), { [SAFE_PROBE_FAILURE]: true });
-}
 function jsonResult(result) {
   if (object(result.structuredContent)) return result.structuredContent;
   try { return JSON.parse(textResult(result)); } catch { return null; }
 }
-function checkResult(result, tool) {
+function checkResult(result) {
   const text = textResult(result);
   const data = jsonResult(result);
   if (result.isError || data?.error || data?.success === false || /^\s*(Error:|Failed|Unauthorized|Authentication failed)/i.test(text)) {
-    if (tool === 'web_search') throw websearchFailure(result);
-    throw Error('The server returned a tool error. Check its credentials, connectivity and prerequisites.');
+    throw Error('The server returned a tool error. Check its connectivity and prerequisites.');
   }
   if (!text.trim() && !result.structuredContent) throw Error('The server returned no tool output.');
   return text;
@@ -167,7 +133,7 @@ async function probe(client, item, dir, timeout) {
   const call = async (name, args) => {
     try {
       const result = await client.callTool({ name, arguments: args }, undefined, { timeout });
-      checkResult(result, name);
+      checkResult(result);
       return result;
     } catch (error) {
       error.mcpTool = name;
@@ -181,13 +147,6 @@ async function probe(client, item, dir, timeout) {
     const docs = await call('query-docs', { libraryId, query: 'useState hook example' });
     if (!/useState/i.test(textResult(docs))) throw Error('Context7 did not return the requested documentation.');
     return 'Resolved React and read useState documentation';
-  }
-  if (item.id === 'websearch') {
-    const found = await call('web_search', { query: 'Model Context Protocol official documentation', limit: 2 });
-    if (!(found.structuredContent?.response?.sources?.length) && !/https?:\/\//.test(textResult(found))) throw websearchFailure(found);
-    const fetched = await call('fetch_url', { url: 'https://modelcontextprotocol.io/introduction', max_length: 2000 });
-    if (!/context|protocol/i.test(textResult(fetched))) throw Error('URL fetching returned no documentation.');
-    return 'Searched public providers and fetched MCP documentation';
   }
   if (item.id === 'codegraph') {
     const found = await call('get_ast_node', { symbol_name: 'ccodeSmokeAdd' });
@@ -206,24 +165,7 @@ async function probe(client, item, dir, timeout) {
     if (!textResult(found).includes('ccodeSmokeAdd')) throw Error('Ripgrep did not find the fixture text.');
     return 'Searched a local file with the installed native ripgrep';
   }
-  if (item.id === 'github') {
-    const found = await call('get_me', {});
-    if (!/login|username/i.test(textResult(found))) throw Error('GitHub did not return an authenticated account.');
-    return 'GitHub authenticated get_me succeeded';
-  }
-  if (item.id === 'n8n') {
-    const health = await call('n8n_health_check', {});
-    const status = jsonResult(health);
-    if (status?.success !== true || !['ok', 'healthy'].includes(status.data?.status || status.status)) throw Error('n8n instance health check did not succeed.');
-    const workflows = jsonResult(await call('n8n_list_workflows', { limit: 1 }));
-    if (workflows?.success !== true || !Array.isArray(workflows.data?.workflows)) throw Error('n8n workflow listing did not return a successful API response.');
-    return 'Reached the configured n8n instance and listed workflows';
-  }
-  const found = await call('list_directory', { path: '/' });
-  if (!textResult(found).includes('ccode-smoke')) throw Error('Obsidian did not list the temporary vault note.');
-  const note = await call('read_note', { path: 'ccode-smoke.md' });
-  if (!textResult(note).includes('CCode MCP smoke')) throw Error('Obsidian did not read the temporary vault note.');
-  return 'Listed and read a note in an isolated temporary vault';
+  throw Error('This catalog entry has no tool check yet.');
 }
 async function runNativeIndex(p, item, dir, home) {
   await new Promise((resolve, reject) => {
@@ -245,20 +187,15 @@ async function test(request, options = {}) {
   const controller = new AbortController(), stop = () => { controller.abort(); void client?.close().catch(() => {}); };
   active.add(stop);
   try {
-    fs.writeFileSync(path.join(dir, 'smoke.ts'), 'export function ccodeSmokeAdd(a: number, b: number) { return a + b; }\nconst ccodeSmokeTypeError: number = \"wrong\";\n');
+    fs.writeFileSync(path.join(dir, 'smoke.ts'), 'export function ccodeSmokeAdd(a: number, b: number) { return a + b; }\nconst ccodeSmokeTypeError: number = "wrong";\n');
     fs.writeFileSync(path.join(dir, 'package.json'), '{"name":"ccode-mcp-smoke","version":"1.0.0"}\n');
     fs.writeFileSync(path.join(dir, 'tsconfig.json'), '{"compilerOptions":{"strict":true},"include":["smoke.ts"]}\n');
-    fs.writeFileSync(path.join(dir, 'ccode-smoke.md'), '# CCode MCP smoke\n');
     if (item.id === 'codegraph') await runNativeIndex(p, item, dir, home);
-    const { Client, StdioClientTransport, StreamableHTTPClientTransport } = await sdk(p);
+    const { Client, StdioClientTransport } = await sdk(p);
     client = new Client({ name: 'ccode-mcp-probe', version: '1.0.0' });
-    if (server.url) transport = new StreamableHTTPClientTransport(new URL(server.url), { requestInit: { headers: server.headers || {}, signal: controller.signal } });
-    else {
+    {
       const args = [...(server.args || [])];
-      if (args[0] === path.join(p.payload, 'launch.cjs')) {
-        args[3] = home;
-        if (item.id === 'obsidian') args.splice(4, args.length - 4, dir);
-      }
+      if (args[0] === path.join(p.payload, 'launch.cjs')) args[3] = home;
       transport = new StdioClientTransport({ command: server.command, args, cwd: dir, env: { ...cleanEnv(home), ...server.env }, stderr: 'pipe' });
       transport.stderr?.on('data', () => {});
     }
@@ -272,10 +209,9 @@ async function test(request, options = {}) {
       return { ok: true, message, tools: tools.length, probe: item.id, testedAt: Date.now() };
     };
     const result = await Promise.race([run(), new Promise((_, reject) => { timer = setTimeout(() => { timedOut = true; stop(); reject(Error('The MCP operation timed out. Check connectivity and prerequisites.')); }, 100000); })]);
-    outcomes.set(item.id, result); return result;
+    return result;
   } catch (error) {
-    const result = { ok: false, error: timedOut ? 'The MCP operation timed out. Check connectivity and prerequisites.' : error[SAFE_PROBE_FAILURE] ? error.message : (error.mcpTool ? error.mcpTool + ' failed. ' : '') + 'MCP tools could not be used. Check network access, credentials and server prerequisites.' };
-    outcomes.set(item.id, result); return result;
+    return { ok: false, error: timedOut ? 'The MCP operation timed out. Check connectivity and prerequisites.' : (error.mcpTool ? error.mcpTool + ' failed. ' : '') + 'MCP tools could not be used. Check network access and server prerequisites.' };
   } finally {
     clearTimeout(timer); active.delete(stop);
     await client?.close().catch(() => {}); await transport?.close().catch(() => {});
@@ -289,13 +225,13 @@ function trusted(event) {
 }
 function register({ app, ipcMain }) {
   bootstrap();
-  for (const [name, operation] of [['list', list], ['install', install], ['test', test]]) ipcMain.handle('zcode-mcp-catalog:' + name, async (event, request) => {
+  for (const [name, operation] of [['list', list], ['install', install]]) ipcMain.handle('zcode-mcp-catalog:' + name, async (event, request) => {
     if (!trusted(event)) throw Error('MCP catalog is only available in the local CCode window.');
     return name === 'list' ? operation() : operation(request);
   });
   app.on('before-quit', () => { for (const stop of active) stop(); });
 }
-module.exports = { register, bootstrap, list, install, test, paths, validate, definition, trusted, websearchFailure };
+module.exports = { register, bootstrap, list, install, test, paths, definition, trusted };
 if (require.main === module && process.argv[2] === '--bootstrap') {
   try { bootstrap({ root: process.argv[3], resourcesPath: process.argv[4] }); }
   catch { process.stderr.write('CCode MCP default bootstrap failed. Check the packaged runtime and standalone config.\n'); process.exitCode = 1; }

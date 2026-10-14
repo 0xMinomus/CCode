@@ -6,7 +6,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
     "@upstash/context7-mcp": "4.4.1",
-    "@yoloyash/web-basics": "0.5.0",
     "@sdsrs/code-graph": "0.169.0",
     "npm": "10.9.4"
   }

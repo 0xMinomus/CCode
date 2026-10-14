@@ -40,7 +40,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Local task engine** | Conversations, tasks, and agent sessions persist in a local SQLite database that you can back up, inspect, or delete. |
 | **Activity dashboard** | Prompt metrics, streaks, and a January–December heatmap for any year, computed read-only from your local session database. |
 | **Bundled default skills** | 32 agent skills ship inside the app — antislop, GSAP, UI design, and engineering workflow — listed as Default in Settings → Skills without installing a plugin. |
-| **MCP catalog** | Context7, Websearch, and Codegraph are preinstalled. Install optional integrations from Settings → MCP Servers and run a real tool check there. |
+| **MCP catalog** | Context7 and Codegraph ship preinstalled. LSP and Ripgrep appear as rows of the native server list with an Install button that becomes the usual on/off switch. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
 | **Bilingual voice input** | Local Whisper worker tuned for mixed Indonesian–English speech, with preview-before-send, a 60-second cap, and temporary audio that is deleted after transcription. |
 | **Reasoning metadata that is real** | Reasoning levels come from provider metadata or verified behavior — no cosmetic Low/Max toggles. |

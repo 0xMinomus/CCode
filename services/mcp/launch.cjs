@@ -7,7 +7,6 @@ if (!item?.package || !path.isAbsolute(runtime || '') || !path.isAbsolute(home |
 const env = {};
 for (const key of ['PATH', 'LANG', 'LC_ALL', 'TMPDIR', 'SYSTEMROOT']) if (process.env[key]) env[key] = process.env[key];
 Object.assign(env, item.env, { HOME: home, XDG_CONFIG_HOME: path.join(home, '.config'), XDG_CACHE_HOME: path.join(home, '.cache'), ELECTRON_RUN_AS_NODE: '1' });
-if (id === 'n8n') for (const key of ['N8N_API_URL', 'N8N_API_KEY']) if (process.env[key]) env[key] = process.env[key];
 fs.mkdirSync(home, { recursive: true, mode: 0o700 });
 const bin = path.join(home, 'bin');
 fs.mkdirSync(bin, { recursive: true, mode: 0o700 });

@@ -35,13 +35,15 @@ Skill bawaan dikirim sebagai **pack skill native**, bukan plugin CCode Skills. S
 
 ### MCP bawaan dan katalog opsional
 
-Settings → MCP Servers mempertahankan daftar server native dan menambahkan katalog lokal. Context7, Websearch, dan Codegraph dikirim bersama resource aplikasi; pemakaian pertama tidak menjalankan `npx` untuk mengunduh dependency.
+Settings → MCP Servers mempertahankan daftar server native. Dua MCP dikirim bersama resource aplikasi dan disemai otomatis: **Context7** (dokumentasi library) dan **Codegraph** (navigasi simbol lokal). Pemakaian pertama tidak menjalankan `npx` untuk mengunduh dependency.
 
-`services/mcp/` menyimpan katalog dan dependency yang dipin. `src/main/mcp-catalog.cjs` menangani penyemaian default, instalasi opsional, serta probe MCP lewat IPC main-frame lokal. `src/renderer/mcp-catalog.js` memakai komponen bundled untuk Install, konfigurasi yang diperlukan, dan Test. Hasil Test berasal dari operasi tool aktual, bukan sekadar handshake atau jumlah tool.
+Entri opsional **LSP** dan **Ripgrep** tampil sebagai baris di dalam daftar **Installed** yang sama, memakai grid, ikon, dan slot kontrol milik baris native. Baris katalog memakai tombol **Install**; setelah server ditulis ke config MCP, baris native dengan switch on/off menggantikannya. Tidak ada bagian katalog terpisah, kartu, atau tombol Test di UI.
 
-Konfigurasi tetap berada di `data/.zcode/cli/config.json` milik namespace standalone. Penyemaian tidak menimpa server user, switch disabled, atau penghapusan yang disengaja. Credentials dan jalur vault dari instalasi Oh My Pi tidak diimpor. MCP opsional yang membutuhkan PAT, instance n8n, atau vault meminta konfigurasi user sebelum dipakai.
+`services/mcp/` menyimpan katalog dan dependency yang dipin. `src/main/mcp-catalog.cjs` menangani penyemaian default dan instalasi lewat IPC main-frame lokal (`zcode-mcp-catalog:list/install`). `src/renderer/mcp-catalog.js` hanya menyediakan baris katalog; pemasangannya ke daftar native ada di `src/local_only/mcp_catalog.py` (`FTn`).
 
-Context7 mengirim permintaan dokumentasi ke layanan Context7. Websearch mengirim query ke penyedia pencarian keyless; URL localhost SearXNG milik workstation pengembang tidak dibundel. Codegraph mengindeks proyek lokal, dengan update otomatis dan download model embedding dimatikan.
+Konfigurasi tetap berada di `data/.zcode/cli/config.json` milik namespace standalone. Penyemaian tidak menimpa server user, switch disabled, atau penghapusan yang disengaja. Semua entri katalog bebas credentials; Context7 mengirim permintaan dokumentasi ke layanan Context7, dan Codegraph mengindeks proyek lokal dengan update otomatis serta download model embedding dimatikan.
+
+Websearch, Obsidian, n8n, dan GitHub tidak dibundel: Browser Use sudah menyediakan pencarian web, vault Obsidian tersedia lewat plugin, sedangkan n8n dan GitHub tetap bisa ditambahkan sebagai MCP server sendiri lewat formulir **New** bila dibutuhkan. Di build standalone ini plugin-declared MCP server tampil read-only tanpa tempat mengisi credentials, jadi keduanya tidak dikirim sebagai plugin bawaan.
 
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 
