@@ -87,17 +87,27 @@ def merge_layout(legacy, destination, backup):
     return moved
 
 
-def rename_paths(root):
-    """Rename every path carrying the upstream token, deepest first."""
+def rename_paths(root, superseded):
+    """Rename every path carrying the upstream token, deepest first.
+
+    When the CCode-named sibling already exists the runtime re-seeded it from the
+    patched payload, so the legacy path is a stale copy: keep it in the superseded
+    archive instead of refusing the migration.
+    """
     renamed = []
+    dropped = []
     candidates = [path for path in root.rglob('*') if rebrand.leftover(path.name)]
     for path in sorted(candidates, key=lambda item: len(item.parts), reverse=True):
         target = path.with_name(rebrand.apply(path.name))
         if target.exists():
-            raise SystemExit(f'Migration target already exists: {target}')
+            archived = superseded / path.relative_to(root)
+            archived.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), str(archived))
+            dropped.append(path)
+            continue
         os.rename(path, target)
         renamed.append((path, target))
-    return renamed
+    return renamed, dropped
 
 
 def rewrite_contents(root):
@@ -137,10 +147,11 @@ def rewrite_database(path):
         for table in tables:
             columns = [row[1] for row in connection.execute(f'pragma table_info("{table}")')]
             for column in columns:
-                cursor = connection.execute(
-                    f'''update "{table}" set "{column}" = replace(replace(replace("{column}", 'ZCODE', 'CCODE'),
-                        'ZCode', 'CCode'), 'zcode', 'ccode')
-                        where "{column}" like '%zcode%' or "{column}" like '%ZCode%' or "{column}" like '%ZCODE%' ''')
+                value = f'"{column}"'
+                for source, target in rebrand.RENAMES:
+                    value = f"replace({value}, '{source}', '{target}')"
+                where = ' or '.join(f"\"{column}\" like '%{source}%'" for source, _ in rebrand.RENAMES)
+                cursor = connection.execute(f'update "{table}" set "{column}" = {value} where {where}')
                 changed += cursor.rowcount if cursor.rowcount > 0 else 0
         connection.commit()
         return changed
@@ -179,7 +190,7 @@ def main():
         archived = snapshot(namespace, namespace / 'migration-backups' / f'{stamp}-pre.tar.gz')
         print(f'Pre-migration snapshot: {archived}')
     replaced = merge_layout(legacy_layout, layout, namespace / 'migration-backups' / stamp)
-    renamed = rename_paths(namespace)
+    renamed, dropped = rename_paths(namespace, namespace / 'migration-backups' / f'{stamp}-superseded')
     rewritten = rewrite_contents(namespace)
     records = 0
     for relative in DATABASES:
@@ -187,6 +198,7 @@ def main():
     print(f'Namespace migrated: {namespace}')
     print(f'  merged legacy entries: {len(replaced)}')
     print(f'  renamed paths: {len(renamed)}')
+    print(f'  superseded legacy paths: {len(dropped)}')
     print(f'  rewritten files: {len(rewritten)}')
     print(f'  rewritten records: {records}')
 

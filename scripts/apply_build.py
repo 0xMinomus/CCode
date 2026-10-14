@@ -182,6 +182,9 @@ def promote_payload(staged,target,plan,backup):
   if not path.exists():continue
   archived=backup/'payload-legacy'/name;archived.parent.mkdir(parents=True,exist_ok=True)
   shutil.move(str(path),str(archived));journal['legacy'].append(name);log.write_text(json.dumps(journal,indent=2)+'\n')
+  parent=path.parent
+  while parent!=root and parent.is_dir() and not any(parent.iterdir()):
+   parent.rmdir();parent=parent.parent
 def restore_payload(target,backup):
  """Undo a failed payload promotion from its journal."""
  log=backup/PAYLOAD_JOURNAL

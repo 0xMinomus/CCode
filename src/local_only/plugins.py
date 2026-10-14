@@ -96,24 +96,26 @@ def _patch(relative, text):
     return text
 
 
-def legacy_files():
-    """Deployed payload files whose own name changed; a directory rename moves the rest."""
-    legacy = []
-    for relative in _staged_files():
-        target = target_name(relative)
-        if target == relative:
-            continue
-        head, _, old_name = relative.rpartition('/')
-        if target.rpartition('/')[2] == old_name:
-            continue
-        legacy.append(f'{target.rpartition("/")[0]}/{old_name}' if head else old_name)
-    return legacy
+def deployed_name(relative):
+    """How the deployed tree spells this path: only the directory renames were applied."""
+    parts = relative.split('/')
+    for old, new in DIR_RENAMES:
+        if parts[0] == old:
+            parts[0] = new
+    parts = [MANIFEST_DIR[1] if part == MANIFEST_DIR[0] else part for part in parts]
+    return '/'.join(parts)
+
+
+def legacy_paths():
+    """Deployed payload paths the current staging replaces; superseded by the new name."""
+    return sorted({deployed_name(relative) for relative in _staged_files()
+                   if deployed_name(relative) != target_name(relative)})
 
 
 def stage(output):
     """Write the patched payload into `output/<PACKAGES>` and return the promotion plan."""
     plan = {'files': {}, 'renames': rename_plan(), 'removals': list(REMOVALS),
-            'legacy': legacy_files()}
+            'legacy': legacy_paths()}
     for name in REMOVALS:
         shutil.rmtree(output / PACKAGES / name, ignore_errors=True)
     for relative in _staged_files():
