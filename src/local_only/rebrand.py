@@ -59,6 +59,15 @@ def previous(text):
     return _REVERSE.sub(lambda match: _REVERSE_MAP[match.group(0)], text)
 
 
+def restore_urls(text):
+    """Undo the rename inside absolute URLs.
+
+    The identity migration of an existing namespace rewrote stored URLs as if they
+    were labels; this reverses that for every `http(s)://…` run.
+    """
+    return URL.sub(lambda match: previous(match.group(0)), text)
+
+
 # Spellings of the pre-rebrand installation. The installer reads them to retire the
 # old launcher, units, data root, and lock file, which is why this module is the one
 # place in the repository where the upstream name is still written down.

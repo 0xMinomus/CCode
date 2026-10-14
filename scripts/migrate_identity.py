@@ -133,6 +133,25 @@ def rebrand_paths(root):
     return (path for path in root.rglob('*') if not any(part in SKIP_CONTENT for part in path.parts))
 
 
+def repair_urls(root):
+    """Restore stored URLs that an earlier migration pass renamed like a label."""
+    repaired = []
+    for path in sorted(rebrand_paths(root)):
+        if not path.is_file() or path.suffix not in TEXT_SUFFIXES and path.name not in TEXT_NAMES:
+            continue
+        if any(part in SKIP_CONTENT_PARTS for part in path.parts):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        patched = rebrand.restore_urls(text)
+        if patched != text:
+            path.write_text(patched, encoding='utf-8')
+            repaired.append(path)
+    return repaired
+
+
 def rewrite_database(path):
     """Replace the token in every text column; SQLite has no regex, so nest replaces."""
     import sqlite3
@@ -155,6 +174,39 @@ def rewrite_database(path):
                 changed += cursor.rowcount if cursor.rowcount > 0 else 0
         connection.commit()
         return changed
+    finally:
+        connection.close()
+
+
+def repair_database_urls(path):
+    """Restore renamed URLs inside text columns of a database."""
+    import sqlite3
+
+    if not path.is_file():
+        return 0
+    connection = sqlite3.connect(path)
+    try:
+        tables = [row[0] for row in connection.execute(
+            "select name from sqlite_master where type='table' and name not like 'sqlite_%'")]
+        repaired = 0
+        for table in tables:
+            columns = [row[1] for row in connection.execute(f'pragma table_info("{table}")')]
+            for column in columns:
+                try:
+                    rows = connection.execute(
+                        f'select rowid, "{column}" from "{table}" where "{column}" like \'%ccode%\''
+                        f' or "{column}" like \'%CCode%\' or "{column}" like \'%CCODE%\'').fetchall()
+                except sqlite3.OperationalError:
+                    continue
+                for rowid, value in rows:
+                    if not isinstance(value, str):
+                        continue
+                    patched = rebrand.restore_urls(value)
+                    if patched != value:
+                        connection.execute(f'update "{table}" set "{column}" = ? where rowid = ?', (patched, rowid))
+                        repaired += 1
+        connection.commit()
+        return repaired
     finally:
         connection.close()
 
@@ -192,15 +244,19 @@ def main():
     replaced = merge_layout(legacy_layout, layout, namespace / 'migration-backups' / stamp)
     renamed, dropped = rename_paths(namespace, namespace / 'migration-backups' / f'{stamp}-superseded')
     rewritten = rewrite_contents(namespace)
+    repaired_files = repair_urls(namespace)
     records = 0
+    repaired_records = 0
     for relative in DATABASES:
         records += rewrite_database(namespace / relative)
+        repaired_records += repair_database_urls(namespace / relative)
     print(f'Namespace migrated: {namespace}')
     print(f'  merged legacy entries: {len(replaced)}')
     print(f'  renamed paths: {len(renamed)}')
     print(f'  superseded legacy paths: {len(dropped)}')
     print(f'  rewritten files: {len(rewritten)}')
     print(f'  rewritten records: {records}')
+    print(f'  restored URLs: {len(repaired_files)} files, {repaired_records} records')
 
 
 if __name__ == '__main__':
