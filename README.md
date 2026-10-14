@@ -22,7 +22,7 @@ CCode is a fork of **ZCode**, the agentic coding workspace by Z.AI, rebuilt arou
 
 1. **No account, ever.** There is no sign-in screen, no account service, no plan or subscription surface. The app opens
    straight into a workspace and talks only to the model providers *you* configure.
-2. **Your machine, your data.** Everything — tasks, sessions, provider keys, voice preferences, activity history —
+2. **Your machine, your data.** Everything — tasks, sessions, provider keys, voice preferences, activity history, and token saver settings —
    lives in a dedicated namespace (`~/.local/share/ccode`). CCode never reads or writes another installation's data
    and never imports anything behind your back.
 3. **Local capabilities first.** Desktop automation over MCP, bilingual local voice input, and a local activity
@@ -39,6 +39,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Bring your own provider** | Any OpenAI-, Anthropic-, or Responses-compatible endpoint, plus a ready-made template for a local 9Router-compatible gateway. Keys are stored in your own config. |
 | **Local task engine** | Conversations, tasks, and agent sessions persist in a local SQLite database that you can back up, inspect, or delete. |
 | **Activity dashboard** | Prompt metrics, streaks, and a January–December heatmap for any year, computed read-only from your local session database. |
+| **Token savers** | Optional RTK shell-command rewrites plus Caveman and Ponytail agent-instruction modes. The chart reports RTK's estimated shell-output tokens saved, not provider-billed model tokens. |
 | **Bundled default skills** | 32 agent skills ship inside the app — antislop, GSAP, UI design, and engineering workflow — listed as Default in Settings → Skills without installing a plugin. |
 | **MCP catalog** | Context7 and Codegraph ship preinstalled. LSP and Ripgrep are installable from native server rows without an “Optional” badge; account-bound `image_search` is excluded. |
 | **n8n plugin** | Enable n8n from Plugins or Plugin Marketplace to load its MCP server and all 15 n8n skills. Configure your instance URL and API key in the native plugin settings. |
@@ -109,11 +110,11 @@ make dry-run        # show what the local integration would install
 
 | Path | Contents |
 |---|---|
-| `src/renderer/` | UI sources: Computer Use settings, voice input, Activity panel |
+| `src/renderer/` | UI sources: Computer Use settings, voice input, Activity panel, Token savers settings |
 | `src/skills/` | Default agent skills bundled into the app pack (`glm/packages/bundled-skills`) |
 | `src/plugins/n8n/` | Native n8n plugin manifest, MCP entrypoint, and all 15 activation-scoped n8n skills |
-| `src/main/` | Electron main-process modules: voice IPC, Activity data, Auto Detect |
-| `src/local_only/` | Product patches: storage namespacing, account/cloud removal, CCode branding, provider catalog |
+| `src/main/` | Electron main-process modules: voice IPC, Activity data, Token savers, Auto Detect |
+| `src/local_only/` | Product patches: storage namespacing, account/cloud removal, CCode branding, provider catalog, Token savers agent integration |
 | `services/desktop/` | `screen-mcp` desktop backend and its fast profile |
 | `services/voice/` | Whisper worker, bilingual terminology, model |
 | `services/mcp/` | Pinned default MCP packages and optional integration catalog |

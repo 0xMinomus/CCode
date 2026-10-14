@@ -2,6 +2,14 @@
 
 ## 2026-10-14
 
+### Token savers di Settings
+
+- Menu **Token savers** muncul tepat di bawah Memory. RTK, Caveman, dan Ponytail memiliki switch terpisah; Caveman/Ponytail menyediakan level Lite, Full, dan Ultra.
+- `rtk rewrite` dengan output valid (status 0; status 3 pada RTK 0.51.0 yang terpasang) mengganti perintah sebelum approval ZCode. No-match status 1 mempertahankan approval normal; status lain, kegagalan RTK, atau output rewrite tidak valid menghentikan perintah.
+- Grafik 30 hari memakai estimasi `saved_tokens` dari `rtk gain --daily --format json` lintas proyek. Angka ini bukan token model yang ditagihkan provider.
+- Pengaturan privat berada di `data/.zcode/v2/token-savers.json`; resource IPC/runtime RTK ikut checksum build dan rollback apply.
+- Verifikasi: `make build`, `make test` (179 tes), dan smoke UI dari AppDir/namespace terisolasi lulus; urutan menu, switch on/off, pilihan level, persistensi, grafik, dan tooltip teruji. Runtime RTK 0.51.0 nyata menguji rewrite serta no-match. AppDir aktif tidak dipromosikan karena CCode sedang berjalan.
+
 ### Plugin n8n: MCP terkonfigurasi dan seluruh skill
 
 - n8n tersedia di Plugins serta Plugin Marketplace sebagai plugin packaged yang mati secara default. Aktivasi native memuat MCP n8n dan seluruh 15 skill n8n beserta referensi/asset pendukungnya; disable mematikan keduanya.

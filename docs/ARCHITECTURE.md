@@ -23,6 +23,14 @@ Segmen adalah **tahun**, bukan rentang: `ZCodeActivityYears` menggabungkan tahun
 
 CSS renderer adalah hasil build Tailwind statis dari upstream: kelas yang tidak dipakai di sana (mis. `grid-cols-5`, `divide-x`, `h-[11px]`, `bg-foreground/5`, `bg-primary/25`) tidak punya aturan sama sekali, jadi utilitas seperti itu tidak berefek walau ditulis di JSX. Saat mengubah panel ini, pakai kelas/token yang benar-benar ada di `out/renderer/assets/styles-*.css` baseline, atau gaya inline untuk geometri dan warna. Seluruh teks panel ditulis langsung dalam bahasa Inggris (tidak lewat hook intl) supaya locale zh-CN tidak menggantinya; label dan istilah mengikuti kunci `settings.usage.*` upstream bila padanannya ada.
 
+### Token savers
+
+`src/renderer/token-savers-panel.js` menambahkan menu Settings → Token savers tepat di bawah Memory. Panel memakai `Q1`, `Z1`, `Xx`, tooltip `uA`, dan warna heatmap usage upstream. Toggle RTK, Caveman, dan Ponytail tersimpan terpisah; Caveman/Ponytail menambahkan instruksi berlevel Lite/Full/Ultra ke `userInstructions` agent.
+
+RTK memakai kontrak `rtk rewrite`: output `rtk ...` yang valid pada status 0, atau status 3 (RTK 0.51.0 yang terpasang), mengganti perintah sebelum jalur approval ZCode; status 1 tanpa output mempertahankan perintah dan approval normal. Status lain, kegagalan RTK, atau output rewrite tidak valid menghentikan perintah.
+
+Grafik 30 hari membaca `saved_tokens` dari `rtk gain --daily --format json`. Nilainya estimasi output shell RTK lintas proyek, bukan token yang ditagihkan provider. Main IPC `window.zcodeTokenSavers` hanya menerima main frame lokal; preferensi disimpan di `data/.zcode/v2/token-savers.json`.
+
 ### Default skills
 
 Skill bawaan dikirim sebagai **pack skill native**, bukan plugin CCode Skills. Settings → Skills menampilkan skill pack sebagai **Default**, dan agent memuatnya sebagai `system/bundled`.
@@ -68,7 +76,8 @@ Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch rendere
 5. `catalog.py` membersihkan katalog provider native dari keluarga Zhipu dan menambahkan template **9Router** (api-key, baseUrl `http://127.0.0.1:20128/v1`, model `combo/coding-harian`) secara idempotent; `apply_build.py` juga menyegarkan cache katalog per-endpoint di namespace karena salinan itu yang menang atas file bundled, lalu menghapus marker `zcode-builtin-refresh.json` yang dijadwalkan oleh host.
 6. Refresh katalog built-in dari endpoint akun dimatikan di host: facade `refreshZCodeBuiltin` dan `ZCodeBuiltinRemoteSynchronizer.refresh` menjawab `"skipped"`, jadi tidak ada fetch ke `https://zcode.z.ai` dan release upstream tidak bisa menimpa katalog yang sudah dipatch (tanpa Zhipu, dengan 9Router).
 7. Fitur akun/langganan dihapus dari akarnya: tombol Upgrade composer, section plan/usage di menu profil, tab app/coding-plan, grup **Providers** akun di Model settings (hanya Custom providers + template katalog yang tersisa; loading gate akun dipaku mati), dan remote control web/mobile (trigger, dialog, channel, hook status). Tanpa provider terkonfigurasi, pane detail Model settings merender empty state lokal (`ZCodeProviderEmptyState`, label ZCode sendiri) alih-alih kartu `common.loading` yang menunggu item navigasi yang tidak ada. Halaman Usage stats diganti **Activity** lokal: `src/main/activity.cjs` membaca `ZCODE_SESSION_DB_PATH` (`cli/db/db.sqlite`) read-only lewat `node:sqlite` (fallback snapshot bila WAL menolak handle read-only) dan menghitung prompt `role=user` per hari (seluruh riwayat) plus streak serta rekap per tahun; renderer memakainya lewat `window.zcodeActivity` (`src/renderer/activity-panel.js`). Katalog marketplace disaring di agen (`requiresPaidPlan` dibuang sebelum manifest), badge Coding Plan dimatikan di renderer, dan label akun di `IntlProvider-B-44tSXQ.js` ikut dipatch.
-8. `build-manifest.json` menyimpan SHA256 hasil staging untuk `app.asar`, `glm/zcode.cjs`, `voice/main.cjs`, `activity/main.cjs`, dan `config/provider/zcode-builtin.json`; `scripts/apply_build.py` menolak promote bila checksum tidak cocok dan mengembalikan kelima resource bila salah satu penggantian gagal. Apply juga menyisakan **dua** cadangan terbaru di `runtime/backups` (`BACKUP_RETENTION`) supaya cadangan penuh tiap promote tidak menumpuk tanpa batas.
+8. `build-manifest.json` menyimpan SHA256 hasil staging, termasuk `app.asar`, `glm/zcode.cjs`, `voice/main.cjs`, `activity/main.cjs`, `token-savers/main.cjs`, `token-savers/token-savers-runtime.cjs`, dan file katalog/provider. `scripts/apply_build.py` menolak promote bila checksum inventory tidak cocok dan mengembalikan resource yang dipromosikan bila penggantian gagal. Apply juga menyisakan **dua** cadangan terbaru di `runtime/backups` (`BACKUP_RETENTION`) supaya cadangan penuh tiap promote tidak menumpuk tanpa batas.
+9. `src/local_only/token_savers.py` memasang menu di bawah Memory, label locale, dan integrasi prompt/approval pada agent dari baseline. `src/main/token-savers.cjs` dan `src/main/token-savers-runtime.cjs` menyediakan persistence privat, bridge IPC lokal, RTK rewrite, dan data chart; keduanya ikut hash serta rollback.
 
 Anchor cloud terikat versi upstream dan sengaja gagal bila tidak unik. Jangan melemahkan assertion agar build terlihat berhasil. `cloud.guard_main` menutup celah yang tidak terlihat oleh anchor: setelah semua edit, build menolak main bundle yang masih mereferensikan binding/layanan yang sudah dihapus (`REMOVED_MAIN_SYMBOLS`) atau referensi `webRemoteControlManager` — hook `window closed` dan port telemetri host berjalan pada pemakaian normal, jadi referensi sisa berarti crash main process, bukan kode mati. `cloud.guard_remote_ipc_dependencies` memeriksa hal yang sama untuk region registrasi IPC yang diganti: setiap `e.<service>` yang dipanggil handler terdaftar harus dikirim ke `Ik({...})`, karena provider lokal (Docker/WSL/SSH) pernah hilang bersama region …
 
@@ -130,7 +139,7 @@ Aplikasi berjalan sebagai varian mandiri. Root default `~/.local/share/ccode`:
 
 | Path | Isi |
 |---|---|
-| `data/.zcode/v2` | setting, provider config, `tasks-index.sqlite`, snapshot sesi |
+| `data/.zcode/v2` | setting (termasuk `token-savers.json`), provider config, `tasks-index.sqlite`, snapshot sesi |
 | `data/.zcode/cli/db/db.sqlite` | database sesi/message agent |
 | `data/.zcode/cli/config.json` | config MCP pengguna |
 | `data/.zcode/workspace`, `plugin-workspace` | workspace percakapan dan plugin |

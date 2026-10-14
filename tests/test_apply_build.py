@@ -41,6 +41,7 @@ class PromotionTests(unittest.TestCase):
         self.staged = self.root / 'runtime/build/resources'
         self.target = self.root / 'app/resources'
         self.names = ['app.asar', 'glm/zcode.cjs', 'voice/main.cjs', 'activity/main.cjs',
+                      'token-savers/main.cjs', 'token-savers/token-savers-runtime.cjs',
                       'config/provider/zcode-builtin.json', 'icon.png', 'icon_512x512.png', 'icon_windows.png']
         self.previous = {}
         for name in self.names:
@@ -186,6 +187,8 @@ class PromotionTests(unittest.TestCase):
         apply_build.shutil.rmtree(self.pack_target)
         apply_build.shutil.rmtree(self.legacy)
         apply_build.main()
+        self.assertEqual((self.target / 'token-savers/main.cjs').read_bytes(), b'new:token-savers/main.cjs')
+        self.assertEqual((self.target / 'token-savers/token-savers-runtime.cjs').read_bytes(), b'new:token-savers/token-savers-runtime.cjs')
         self.assertEqual((self.pack_target / 'skills/alpha/SKILL.md').read_bytes(), b'new alpha body\n')
         self.assertEqual((self.pack_target / 'skills/dynamic-workflows/examples.md').read_bytes(), b'vendor examples\n')
         self.assertFalse(self.legacy.exists())

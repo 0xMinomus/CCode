@@ -13,7 +13,7 @@ def derived_catalogs():
 BACKUP_RETENTION=2
 APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/zcode"'
-FILES=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json']
+FILES=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','config/provider/zcode-builtin.json']
 SKILL_PACK='glm/packages/'+skills_plugin.PACK_DIR
 LEGACY_SKILL_PLUGIN='glm/packages/ccode-skills-plugin'
 MCP_RESOURCE='mcp'

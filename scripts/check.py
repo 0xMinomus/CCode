@@ -19,6 +19,8 @@ if staged.exists():
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/glm/zcode.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/voice/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/activity/main.cjs')],check=True)
+ subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/main.cjs')],check=True)
+ subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/token-savers-runtime.cjs')],check=True)
  subprocess.run(['node','--check',str(staged.parent/'mcp/main.cjs')],check=True)
  for p in (staged.parent/'mcp').glob('*.cjs'):
   if p.name!='main.cjs':subprocess.run(['node','--check',str(p)],check=True)

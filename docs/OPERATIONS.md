@@ -45,7 +45,7 @@ Field key/token disamarkan, tetapi nilai tersimpan dalam config private `data/.z
 
 ## Backup dan restore data standalone
 
-Tutup aplikasi lebih dulu; snapshot diambil offline agar index task, database sesi, dan file task konsisten sebagai satu set.
+Tutup aplikasi lebih dulu; snapshot diambil offline agar index task, database sesi, dan file task konsisten sebagai satu set. Pengaturan Token savers di `data/.zcode/v2/token-savers.json` ikut snapshot namespace.
 
 ```bash
 python3 scripts/data_backup.py backup  --root ~/.local/share/ccode --destination ~/ccode-backups/$(date +%F)
@@ -57,7 +57,7 @@ Snapshot memakai SQLite backup API, menolak symlink dan path traversal, dan meny
 
 ## Rollback
 
-Build baru tidak aktif sampai `make apply`. Apply menolak jika executable project masih berjalan dan menyimpan resource sebelumnya (`app.asar`, `glm/zcode.cjs`, `voice/main.cjs`, `activity/main.cjs`, `config/provider/zcode-builtin.json`) di `runtime/backups`, beserta cache katalog per-endpoint di `runtime/backups/<stamp>/derived/`. Untuk rollback patch, tutup aplikasi lalu salin kembali kelima file dan cache tersebut, atau pulihkan namespace lewat `data_backup.py restore`. Baseline asli dapat dipakai untuk investigasi, tetapi mengembalikannya langsung akan menghapus UI custom.
+Build baru tidak aktif sampai `make apply`. Apply menolak jika executable project masih berjalan dan mencadangkan inventory resource dari `scripts/apply_build.py` ke `runtime/backups`: file `FILES` (termasuk `app.asar`, `glm/zcode.cjs`, `token-savers/main.cjs`, `token-savers/token-savers-runtime.cjs`, katalog provider), ikon packaged, pack skills, dan tree MCP; cache katalog per-endpoint disimpan di `derived/`. Untuk rollback patch, tutup aplikasi lalu pulihkan satu snapshot resource beserta cache yang sesuai, atau pulihkan namespace lewat `data_backup.py restore`. Baseline asli dapat dipakai untuk investigasi, tetapi mengembalikannya langsung akan menghapus UI custom.
 
 Apply menyisakan **dua** cadangan terbaru (`BACKUP_RETENTION` di `scripts/apply_build.py`); cadangan lebih tua dihapus otomatis, begitu pula marker `zcode-builtin-refresh.json` di namespace (`zcode-builtin.json` tidak pernah disentuh). Rollback hanya mungkin dari dua promote terakhir, jadi promote besar sebaiknya diikuti verifikasi cepat sebelum promote berikutnya.
 
