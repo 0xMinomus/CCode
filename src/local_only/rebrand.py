@@ -10,7 +10,7 @@ identifier) consistent on both sides of each boundary.
 import pathlib
 import re
 
-RENAMES = (('ZCODE', 'CCODE'), ('ZCode', 'CCode'), ('zcode', 'ccode'))
+RENAMES = (('ZCODE', 'CCODE'), ('ZCode', 'CCode'), ('Zcode', 'Ccode'), ('zcode', 'ccode'))
 # The pre-rebrand two-word label collapses to the product name, as it did before
 # this module existed; the token pass alone would leave it as `CCode on Steroids`.
 LABELS = (('CCode on Steroids', 'CCode'),)

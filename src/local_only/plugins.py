@@ -69,13 +69,8 @@ def verify_baseline(expected):
 
 
 def target_name(relative):
-    """Deployed path of one payload file: renamed directories, upstream tokens replaced."""
-    parts = relative.split('/')
-    for old, new in DIR_RENAMES:
-        if parts[0] == old:
-            parts[0] = new
-    parts = [MANIFEST_DIR[1] if part == MANIFEST_DIR[0] else part for part in parts]
-    return '/'.join(parts)
+    """Deployed path of one payload file: every segment carries the CCode identity."""
+    return '/'.join(rebrand.apply(segment) for segment in relative.split('/'))
 
 
 def rename_plan():
@@ -101,9 +96,24 @@ def _patch(relative, text):
     return text
 
 
+def legacy_files():
+    """Deployed payload files whose own name changed; a directory rename moves the rest."""
+    legacy = []
+    for relative in _staged_files():
+        target = target_name(relative)
+        if target == relative:
+            continue
+        head, _, old_name = relative.rpartition('/')
+        if target.rpartition('/')[2] == old_name:
+            continue
+        legacy.append(f'{target.rpartition("/")[0]}/{old_name}' if head else old_name)
+    return legacy
+
+
 def stage(output):
     """Write the patched payload into `output/<PACKAGES>` and return the promotion plan."""
-    plan = {'files': {}, 'renames': rename_plan(), 'removals': list(REMOVALS)}
+    plan = {'files': {}, 'renames': rename_plan(), 'removals': list(REMOVALS),
+            'legacy': legacy_files()}
     for name in REMOVALS:
         shutil.rmtree(output / PACKAGES / name, ignore_errors=True)
     for relative in _staged_files():

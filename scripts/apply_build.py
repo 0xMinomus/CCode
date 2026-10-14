@@ -154,7 +154,7 @@ def verify_payload(staged,proof):
  return plan
 def promote_payload(staged,target,plan,backup):
  """Rename, drop, and rewrite the deployed plugin payload; journal for rollback."""
- journal={'renames':[],'removals':[],'writes':[]};log=backup/PAYLOAD_JOURNAL
+ journal={'renames':[],'removals':[],'writes':[],'legacy':[]};log=backup/PAYLOAD_JOURNAL
  root=target/PAYLOAD_ROOT
  log.write_text(json.dumps(journal,indent=2)+'\n')
  for old,new in (tuple(pair) for pair in plan['renames']):
@@ -177,6 +177,11 @@ def promote_payload(staged,target,plan,backup):
   destination.parent.mkdir(parents=True,exist_ok=True)
   shutil.copy2(staged/name,destination)
   journal['writes'].append(name);log.write_text(json.dumps(journal,indent=2)+'\n')
+ for name in plan.get('legacy',[]):
+  path=root/name
+  if not path.exists():continue
+  archived=backup/'payload-legacy'/name;archived.parent.mkdir(parents=True,exist_ok=True)
+  shutil.move(str(path),str(archived));journal['legacy'].append(name);log.write_text(json.dumps(journal,indent=2)+'\n')
 def restore_payload(target,backup):
  """Undo a failed payload promotion from its journal."""
  log=backup/PAYLOAD_JOURNAL
@@ -189,6 +194,11 @@ def restore_payload(target,backup):
   else:(target/name).unlink(missing_ok=True)
  for name in journal['removals']:
   archived=backup/'payload-removed'/name
+  if archived.exists():
+   destination=root/name;destination.parent.mkdir(parents=True,exist_ok=True)
+   shutil.move(str(archived),str(destination))
+ for name in journal.get('legacy',[]):
+  archived=backup/'payload-legacy'/name
   if archived.exists():
    destination=root/name;destination.parent.mkdir(parents=True,exist_ok=True)
    shutil.move(str(archived),str(destination))
