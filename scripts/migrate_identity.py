@@ -43,10 +43,10 @@ def app_running():
 
 
 def snapshot(namespace, destination):
-    """Archive the state this migration rewrites; `data_backup.py` refuses the user workspace.
+    """Archive the state this migration rewrites; the workspace stays out of the tar.
 
-    The workspace holds project files with symlinked node_modules, which the strict
-    snapshot validator rejects, and the migration never rewrites its contents.
+    `data_backup.py` can snapshot the whole namespace, but the workspace is the bulk
+    of it and the migration only renames one file name there.
     """
     import tarfile
 

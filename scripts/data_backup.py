@@ -138,6 +138,7 @@ def check_database(path):
 
 def tree_entries(root, skip_transient=False):
     entries = []
+    root = pathlib.Path(root).resolve()
     for parent, dirs, files in os.walk(root, followlinks=False):
         for name in sorted(dirs + files):
             path = pathlib.Path(parent) / name
@@ -147,7 +148,13 @@ def tree_entries(root, skip_transient=False):
                 if name in dirs:
                     dirs.remove(name)
                 continue
-            if stat.S_ISLNK(mode) or not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
+            if stat.S_ISLNK(mode):
+                # A link inside the namespace is data (workspace node_modules, Electron
+                # profile aliases); one that leaves it would drag foreign paths in.
+                target = (path.parent / os.readlink(path)).resolve()
+                if target != root and root not in target.parents:
+                    raise ValueError(f'Unsafe snapshot entry: {relative} points outside the namespace')
+            elif not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
                 raise ValueError(f'Unsafe snapshot entry: {relative}')
             entries.append((relative, path, mode))
     return sorted(entries)
@@ -188,6 +195,41 @@ def validate_snapshot(snapshot):
     actual = {relative for relative, _, _ in tree_entries(files)}
     if actual != set(expected):
         raise ValueError('Snapshot file inventory does not match manifest')
+    links = manifest.get('links', [])
+    if not isinstance(links, list):
+        raise ValueError('Invalid snapshot link inventory')
+    seen = set(expected)
+    for link in links:
+        if not isinstance(link, dict):
+            raise ValueError('Invalid snapshot link')
+        relative, target = link.get('path'), link.get('target')
+        if not isinstance(relative, str) or not isinstance(target, str):
+            raise ValueError('Invalid snapshot link')
+        rel = pathlib.PurePosixPath(relative)
+        if rel.is_absolute() or '..' in rel.parts or not rel.parts or rel.as_posix() != relative or relative in seen:
+            raise ValueError('Unsafe or duplicate snapshot link path')
+        if os.path.isabs(target):
+            # MCP tool links point at absolute paths inside the namespace; anything else
+            # would restore a link into foreign territory.
+            namespace = manifest.get('namespace')
+            if not isinstance(namespace, str):
+                raise ValueError('Snapshot namespace is missing')
+            base = pathlib.PurePosixPath(os.path.normpath(namespace))
+            resolved = pathlib.PurePosixPath(os.path.normpath(target))
+            if resolved != base and base not in resolved.parents:
+                raise ValueError('Snapshot link target escapes the namespace')
+        else:
+            depth = 0
+            for part in (str(rel.parent) + '/' + target).split('/'):
+                if part in ('', '.'):
+                    continue
+                if part == '..':
+                    if depth == 0:
+                        raise ValueError('Snapshot link target escapes the namespace')
+                    depth -= 1
+                else:
+                    depth += 1
+        seen.add(relative)
     return manifest
 
 
@@ -210,10 +252,14 @@ def backup(root, destination=None):
             source_entries = tree_entries(root, skip_transient=True)
             sqlite_paths = {relative for relative, path, mode in source_entries if stat.S_ISREG(mode) and is_sqlite(path)}
             entries = []
+            links = []
             omitted = []
             for relative, source, mode in source_entries:
                 if any(relative == db + suffix for db in sqlite_paths for suffix in ('-wal', '-shm', '-journal')):
                     omitted.append(relative)
+                    continue
+                if stat.S_ISLNK(mode):
+                    links.append({'path': relative, 'target': os.readlink(source)})
                     continue
                 target = files / relative
                 executable = bool(mode & 0o111)
@@ -235,7 +281,7 @@ def backup(root, destination=None):
                         'namespace': str(root), 'sqliteBackupApi': True,
                         'consistency': 'Offline standalone recovery set under an exclusive namespace lock.',
                         'omittedSqliteSidecars': omitted, 'omittedElectronTransientNames': sorted(TRANSIENT),
-                        'entries': entries}
+                        'entries': entries, 'links': links}
             atomic_json(stage / 'manifest.json', manifest)
             validate_snapshot(stage)
             os.rename(stage, destination)
@@ -270,6 +316,10 @@ def restore(root, snapshot):
                         raise ValueError('Staged restore checksum mismatch')
                     if entry['kind'] == 'sqlite':
                         check_database(target)
+            for link in manifest.get('links', []):
+                target = stage / link['path']
+                private_dir(target.parent)
+                os.symlink(link['target'], target)
             assert_offline(root)
             if root.exists():
                 tree_entries(root, skip_transient=True)
@@ -307,7 +357,7 @@ def main():
             print('Snapshot:', backup(args.root, args.destination))
         elif args.command == 'verify':
             manifest = validate_snapshot(args.snapshot)
-            print('Snapshot verified:', len(manifest['entries']), 'entries')
+            print('Snapshot verified:', len(manifest['entries']), 'entries,', len(manifest.get('links', [])), 'links')
         else:
             original = restore(args.root, args.snapshot)
             print('Restored namespace:', namespace_root(args.root))

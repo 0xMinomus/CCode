@@ -96,7 +96,7 @@ class DataBackupTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'inventory'):
             backup.validate_snapshot(self.snapshot)
 
-    def test_symlink_source_target_and_snapshot_refused(self):
+    def test_symlink_policy_keeps_inside_links_and_refuses_escape(self):
         self.create_database().close()
         link = self.root / 'data/outside'
         link.symlink_to(self.folder)
@@ -113,6 +113,35 @@ class DataBackupTests(unittest.TestCase):
             backup.restore(self.root, self.snapshot)
         with self.assertRaisesRegex(ValueError, 'Symlink'):
             backup.restore(alias, self.snapshot)
+
+    def test_workspace_links_are_snapshotted_and_restored(self):
+        self.create_database().close()
+        link = self.root / 'data/.ccode/workspace/node_modules/.bin/tool'
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to('../../cli/tool.js')
+        backup.backup(self.root, self.snapshot)
+        manifest = backup.validate_snapshot(self.snapshot)
+        self.assertEqual([entry['path'] for entry in manifest['links']],
+                         ['data/.ccode/workspace/node_modules/.bin/tool'])
+        self.assertNotIn('data/.ccode/workspace/node_modules/.bin/tool',
+                         [entry['path'] for entry in manifest['entries']])
+        link.unlink()
+        backup.restore(self.root, self.snapshot)
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(os.readlink(link), '../../cli/tool.js')
+
+    def test_escaping_link_target_in_a_snapshot_is_refused(self):
+        self.create_database().close()
+        link = self.root / 'data/.ccode/workspace/tool'
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to('../../cli/tool.js')
+        backup.backup(self.root, self.snapshot)
+        manifest_path = self.snapshot / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['links'][0]['target'] = '../../../../outside/tool.js'
+        manifest_path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, 'escapes'):
+            backup.validate_snapshot(self.snapshot)
 
     def test_electron_singletons_are_not_restored(self):
         self.create_database().close()

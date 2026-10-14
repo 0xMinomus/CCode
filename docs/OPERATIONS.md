@@ -12,7 +12,7 @@ journalctl --user -u ccode-model-sync.service -n 20
 
 `make install` menulis config MCP di dalam namespace standalone, launcher `ccode.desktop`, ikon hicolor (`ccode.png` per ukuran + `ccode.svg`), dan unit timer/path `ccode-model-sync.*` yang memantau `provider_config.json` supaya model 9Router terisi begitu provider dibuat/diubah dari UI. Provider API keys tidak diubah. Bila namespace pra-rebrand (`rebrand.PREVIOUS_NAMESPACE`) masih ada dan root baru belum ada, install juga memindahkannya ke `~/.local/share/ccode` (rename, bukan salin), lalu memensiunkan launcher pra-rebrand (`rebrand.PREVIOUS_LAUNCHER_FILE`/`PREVIOUS_LAUNCHER`) dan unit `*-model-sync` lama (`rebrand.PREVIOUS_UNIT`/`PREVIOUS_VANSROUTER_UNIT`, di-`disable --now` lebih dulu) serta lock namespace usang (`rebrand.PREVIOUS_LOCK`). Cadangan semua file integrasi yang diganti/dihapus tersimpan di `<namespace>/integration-backups` dengan izin 0600. Install juga menyegarkan `gtk-update-i…
 
-`make migrate` (`scripts/migrate_identity.py`) mengubah instalasi yang sudah ada ke ejaan baru dengan aplikasi tertutup: snapshot lewat `scripts/data_backup.py` (lewati dengan `--no-backup`), rename setiap path yang memuat token pra-rebrand (terdalam dulu), rewrite token di config/state/log di luar workspace, rewrite setiap kolom teks database (`data/.ccode/cli/db/db.sqlite`, `data/.ccode/v2/tasks-index.sqlite`), lalu hapus direktori layout lama yang kosong. `--dry-run` hanya melaporkan apa yang akan berubah.
+`make migrate` (`scripts/migrate_identity.py`) mengubah instalasi yang sudah ada ke ejaan baru dengan aplikasi tertutup: snapshot tar state di `migration-backups/` (lewati dengan `--no-backup`; workspace dikecualikan karena ukurannya), merge layout lama ke layout baru bila `make install` sudah menyemai sebagian, rename setiap path yang memuat token pra-rebrand (terdalam dulu), rewrite token di config/state/log di luar workspace, lalu rewrite setiap kolom teks database (`data/.ccode/cli/db/db.sqlite`, `data/.ccode/v2/tasks-index.sqlite`). `--dry-run` hanya melaporkan apa yang akan berubah.
 
 Periksa/matikan integrasi sync bila perlu:
 
@@ -56,7 +56,7 @@ python3 scripts/data_backup.py verify  ~/ccode-backups/2026-10-12
 python3 scripts/data_backup.py restore ~/ccode-backups/2026-10-12 --root ~/.local/share/ccode
 ```
 
-Snapshot memakai SQLite backup API, menolak symlink dan path traversal, dan menyimpan manifest berisi hash setiap entri. Restore menahan lock operasi eksklusif, menolak bila aplikasi masih berjalan, dan menyimpan namespace lama sebagai `<root>-pre-restore-<stamp>`.
+Snapshot memakai SQLite backup API, menolak path traversal, dan menyimpan manifest berisi hash setiap entri. Symlink yang menunjuk di dalam namespace (mis. `node_modules/.bin/*` di workspace atau link tool MCP) dicatat sebagai `links` dan dibuat ulang saat restore; symlink yang keluar namespace, entri non-regular, dan alias root tetap ditolak. Restore menahan lock operasi eksklusif, menolak bila aplikasi masih berjalan, dan menyimpan namespace lama sebagai `<root>-pre-restore-<stamp>`.
 
 ## Rollback
 

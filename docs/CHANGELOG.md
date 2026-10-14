@@ -12,6 +12,12 @@
 - Verifikasi nyata: `make build` + `make test` (154 tes) hijau; `make apply` + `make install` + `make migrate` dijalankan pada instalasi ini (76 path di-rename, 138 berkas dan 1.508 baris database ditulis ulang, 1.194 entri layout lama di-merge; pass kedua setelah nama berkas payload ikut di-rename menemukan 2 sisa path); app dijalankan dengan namespace asli — `model-selection.getView` OK, agent init selesai, daftar task tetap utuh dengan id marketplace `ccode-plugins-official`, cache plugin di-seed ulang tanpa pin model akun; UI tidak lagi memuat string pra-rebrand; smoke root terisolasi bersih dari layar login, `Unknown channel`, `No handler registered`, `ReferenceError`, dan `TypeError`. Prompt headless membalas identitas CCode tanpa tool dan subagent `presentations:visual-judge` berhasil start.
 - Baseline yang dipin di-rename: `baselines/upstream-3.14.5-original.asar`, `baselines/upstream-3.14.5-original-agent.cjs`, dan `baselines/upstream-3.14.5-original-plugins/`. Isinya artefak upstream yang tidak disentuh dan menjadi satu-satunya salinan ejaan upstream di dalam footprint aplikasi.
 
+### Backup namespace menerima symlink internal
+
+- `scripts/data_backup.py` menolak seluruh snapshot begitu menemukan symlink di namespace (mis. `data/.ccode/workspace/default/node_modules/.bin/image-size`, atau link tool MCP `mcp/home/ripgrep/bin/rg` yang absolut), sehingga perintah backup yang didokumentasikan gagal pada instalasi ini. Sekarang link yang menunjuk di dalam namespace dicatat di manifest (`links`) dan dibuat ulang saat restore; link yang keluar namespace, entri non-regular, alias root, dan target link yang diarahkan keluar manifest tetap ditolak (`Unsafe`).
+- Verifikasi: `tests/test_data_backup.py` 11 tes hijau (roundtrip link workspace/absolut, penolakan link keluar namespace, penolakan target keluar manifest), lalu snapshot nyata `python3 scripts/data_backup.py backup --root ~/.local/share/ccode` + `verify` selesai (12.720 entri, 9 link, 620 MB di `~/.local/share/ccode-backups/`).
+- `make migrate` tetap memakai snapshot tar khusus state: workspace adalah bagian terbesar namespace dan migration hanya me-rename satu nama berkas di sana.
+
 ### Token savers di Settings
 
 - Menu **Token savers** muncul tepat di bawah Memory. RTK, Caveman, dan Ponytail memiliki switch terpisah; Caveman/Ponytail menyediakan level Lite, Full, dan Ultra.

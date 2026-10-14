@@ -30,5 +30,5 @@ Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AG
 - Data lama `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis
 - Build: `make build && make test`; promote: `make apply` (aplikasi harus tertutup)
 - Backup/restore: `python3 scripts/data_backup.py backup|verify|restore`
-- Snapshot terakhir: `~/.local/share/belum ada snapshot`
+- Snapshot terakhir: `~/.local/share/ccode-backups/20261014-120744-571828`
 - Vault ini adalah folder project, jadi tidak ada salinan: catatan `README`, `AGENTS`, dan `docs/` adalah file asli repo.
