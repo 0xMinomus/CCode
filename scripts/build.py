@@ -43,8 +43,26 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  (output/'config/provider').mkdir(parents=True,exist_ok=True)
  (output/'config/provider/zcode-builtin.json').write_text(catalog.patch_catalog(catalog_source.read_text()))
  for name,source in branding.PACKAGED_ICONS.items():shutil.copy2(branding.ICON_DIR/source,output/name)
- files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS]
- proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}
+ pack_source=ROOT/'app/resources/glm/packages/bundled-skills'
+ if not (pack_source/'skills').is_dir():raise ValueError('Installed bundled-skill pack is missing: '+str(pack_source))
+ skill_source=ROOT/'src/skills'
+ skills=sorted(path.name for path in skill_source.iterdir() if (path/'SKILL.md').is_file())
+ if not skills:raise ValueError('No bundled skills to stage in '+str(skill_source))
+ pack=output/'glm/packages/bundled-skills'
+ if pack.exists():shutil.rmtree(pack)
+ shutil.copytree(pack_source,pack)
+ previous=json.loads((pack/'.ccode-skills.json').read_text())['skills'] if (pack/'.ccode-skills.json').exists() else []
+ for name in previous:
+  if name not in skills:shutil.rmtree(pack/'skills'/name,ignore_errors=True)
+ for name in skills:
+  destination=pack/'skills'/name
+  if destination.exists():shutil.rmtree(destination)
+  shutil.copytree(skill_source/name,destination)
+ (pack/'.ccode-skills.json').write_text(json.dumps({'skills':skills},indent=2)+'\n')
+ packaged_skills=sorted(str(path.relative_to(output)) for path in pack.rglob('*') if path.is_file())
+ files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*packaged_skills]
+ proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),'bundled_skills':skills,
+        'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}
  (output/'build-manifest.json').write_text(json.dumps(proof,indent=2)+'\n')
  print('Build staged:',output/'app.asar')
 if __name__=='__main__':main()

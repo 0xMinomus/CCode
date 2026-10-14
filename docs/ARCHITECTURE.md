@@ -23,6 +23,16 @@ Segmen adalah **tahun**, bukan rentang: `ZCodeActivityYears` menggabungkan tahun
 
 CSS renderer adalah hasil build Tailwind statis dari upstream: kelas yang tidak dipakai di sana (mis. `grid-cols-5`, `divide-x`, `h-[11px]`, `bg-foreground/5`, `bg-primary/25`) tidak punya aturan sama sekali, jadi utilitas seperti itu tidak berefek walau ditulis di JSX. Saat mengubah panel ini, pakai kelas/token yang benar-benar ada di `out/renderer/assets/styles-*.css` baseline, atau gaya inline untuk geometri dan warna. Seluruh teks panel ditulis langsung dalam bahasa Inggris (tidak lewat hook intl) supaya locale zh-CN tidak menggantinya; label dan istilah mengikuti kunci `settings.usage.*` upstream bila padanannya ada.
 
+### Default skills
+
+Aplikasi memuat skill bawaan dari pack `glm/packages/bundled-skills` (konstanta `bundled-skills`/`skills` di agent; root diresolusi relatif ke dir bundle agent, `MEn()`). Pack hanya diterima bila **tiga seed path vendor** ada — `skills/dynamic-workflows/{SKILL.md,patterns.md,examples.md}` — sehingga isi vendor tidak boleh dihapus.
+
+Sumber kanonik di repo adalah `src/skills/<nama>/` (32 skill: antislop 4, GSAP 8, UI/desain 5, workflow 15). `scripts/build.py` menyalin pack yang terpasang (`app/resources/glm/packages/bundled-skills`, termasuk skill vendor) ke `runtime/build/resources/glm/packages/bundled-skills`, menghapus skill yang sebelumnya kita pasang tapi tidak ada lagi di `src/skills`, menambahkan skill dari `src/skills`, lalu menulis manifest kecil `.ccode-skills.json` berisi daftar nama milik kita. Setiap berkas pack masuk `build-manifest.json` (`sha256` + `bundled_skills`).
+
+`scripts/apply_build.py::promote_skill_pack` memverifikasi hash semua berkas pack, membuat snapshot pack lama di `runtime/backups/<stamp>` (lewat direktori `.part` lalu rename, supaya snapshot setengah jadi tidak pernah menimpa pack yang utuh), menyalin skill kita, dan menghapus hanya skill yang tercatat di manifest kita. Pack yang lama dipulihkan utuh bila promosi gagal. Skill vendor di luar manifest kita tidak pernah disentuh.
+
+Skill yang dibundel muncul di aplikasi sebagai `system/bundled`; verifikasi tanpa GUI: `ZCODE_STANDALONE_ROOT=<dir> ELECTRON_RUN_AS_NODE=1 app/ccode runtime/build/resources/glm/zcode.cjs skills list`.
+
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 
 1. `storage.py` menetapkan namespace data, profil, database task, database sesi agent, config MCP, dan menghapus migrasi/scan lintas instalasi. Ini juga berisi bootstrap env untuk chunk `out/main`, `out/host`, `out/scheduler`, dan backend agent.

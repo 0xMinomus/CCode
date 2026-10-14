@@ -19,6 +19,8 @@ spec.loader.exec_module(apply_build)
 sys.path.insert(0, str(ROOT / 'src'))
 from local_only import branding
 
+SKILL_PACK_PART = apply_build.SKILL_PACK + '.part'
+
 
 def identity_archive():
     payload = json.dumps({'name': 'ccode'}).encode()
@@ -66,8 +68,30 @@ class PromotionTests(unittest.TestCase):
         env = mock.patch.dict(os.environ, {'ZCODE_STANDALONE_ROOT': str(self.namespace)})
         env.start()
         self.addCleanup(env.stop)
-        proof = {'application_name': 'ccode', 'sha256': {
-            name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest() for name in self.names}}
+        self.pack_staged = self.staged / 'glm/packages/bundled-skills'
+        self.pack_target = self.target / 'glm/packages/bundled-skills'
+        staged_pack_files = {
+            'skills/alpha/SKILL.md': b'new alpha body\n',
+            'skills/beta/SKILL.md': b'new beta body\n',
+            'skills/dynamic-workflows/SKILL.md': b'vendor body\n',
+            '.ccode-skills.json': b'{"skills": ["alpha", "beta"]}\n',
+        }
+        self.pack_previous = {
+            'skills/alpha/SKILL.md': b'old alpha body\n',
+            'skills/stale/SKILL.md': b'old stale body\n',
+            'skills/dynamic-workflows/SKILL.md': b'vendor body\n',
+            '.ccode-skills.json': b'{"skills": ["alpha", "stale"]}\n',
+        }
+        for rel, data in staged_pack_files.items():
+            (self.pack_staged / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.pack_staged / rel).write_bytes(data)
+        for rel, data in self.pack_previous.items():
+            (self.pack_target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.pack_target / rel).write_bytes(data)
+        staged_names = [*self.names, *(str(path.relative_to(self.staged)) for path in sorted(self.pack_staged.rglob('*'))
+                                 if path.is_file())]
+        proof = {'application_name': 'ccode', 'bundled_skills': ['alpha', 'beta'], 'sha256': {
+            name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest() for name in staged_names}}
         (self.staged / 'build-manifest.json').write_text(json.dumps(proof))
         patch = mock.patch.object(apply_build, 'ROOT', self.root)
         patch.start()
@@ -125,6 +149,58 @@ class PromotionTests(unittest.TestCase):
         for name in self.names:
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
             self.assertFalse((self.target / name).with_name(pathlib.Path(name).name + '.new').exists())
+
+    def test_bundled_skills_are_promoted_and_stale_ones_pruned(self):
+        apply_build.main()
+        self.assertEqual((self.pack_target / 'skills/alpha/SKILL.md').read_bytes(), b'new alpha body\n')
+        self.assertEqual((self.pack_target / 'skills/beta/SKILL.md').read_bytes(), b'new beta body\n')
+        self.assertFalse((self.pack_target / 'skills/stale').exists(), 'skills we removed are pruned')
+        self.assertEqual((self.pack_target / '.ccode-skills.json').read_bytes(), b'{"skills": ["alpha", "beta"]}\n')
+        self.assertEqual((self.pack_target / 'skills/dynamic-workflows/SKILL.md').read_bytes(), b'vendor body\n',
+                         'vendor bundled skills are never touched')
+
+    def test_corrupt_staged_skill_cannot_replace_the_pack(self):
+        (self.pack_staged / 'skills/beta/SKILL.md').write_bytes(b'corrupt')
+        with self.assertRaisesRegex(ValueError, 'Staged skill checksum mismatch'):
+            apply_build.main()
+        for rel, data in self.pack_previous.items():
+            self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
+        for name in self.names:
+            self.assertEqual((self.target / name).read_bytes(), self.previous[name])
+
+    def test_failed_skill_copy_restores_the_previous_pack(self):
+        real_copytree = apply_build.shutil.copytree
+
+        def flaky(source, destination, *args, **kwargs):
+            if str(destination).endswith('/skills/beta'):
+                raise OSError('simulated copy failure')
+            return real_copytree(source, destination, *args, **kwargs)
+
+        with mock.patch.object(apply_build.shutil, 'copytree', side_effect=flaky):
+            with self.assertRaises(OSError):
+                apply_build.main()
+        for rel, data in self.pack_previous.items():
+            self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
+        self.assertFalse((self.pack_target / 'skills/beta').exists(), 'half-copied skills are rolled back')
+        for name in self.names:
+            self.assertEqual((self.target / name).read_bytes(), self.previous[name])
+
+    def test_failed_pack_snapshot_leaves_the_pack_untouched(self):
+        real_copytree = apply_build.shutil.copytree
+
+        def flaky(source, destination, *args, **kwargs):
+            if str(destination).endswith(SKILL_PACK_PART):
+                raise OSError('simulated snapshot failure')
+            return real_copytree(source, destination, *args, **kwargs)
+
+        with mock.patch.object(apply_build.shutil, 'copytree', side_effect=flaky):
+            with self.assertRaises(OSError):
+                apply_build.main()
+        for rel, data in self.pack_previous.items():
+            self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
+        self.assertTrue((self.pack_target / 'skills/stale').exists(), 'an intact pack is never replaced by a partial snapshot')
+        for name in self.names:
+            self.assertEqual((self.target / name).read_bytes(), self.previous[name])
 
     def test_apply_prunes_old_backups_and_removes_stale_markers(self):
         backups = self.root / 'runtime/backups'

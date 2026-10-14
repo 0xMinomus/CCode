@@ -39,6 +39,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Bring your own provider** | Any OpenAI-, Anthropic-, or Responses-compatible endpoint, plus a ready-made template for a local 9Router-compatible gateway. Keys are stored in your own config. |
 | **Local task engine** | Conversations, tasks, and agent sessions persist in a local SQLite database that you can back up, inspect, or delete. |
 | **Activity dashboard** | Prompt metrics, streaks, and a January–December heatmap for any year, computed read-only from your local session database. |
+| **Bundled default skills** | 32 agent skills ship inside the app — antislop, GSAP, UI design, and engineering workflow — available to every new session without setup. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
 | **Bilingual voice input** | Local Whisper worker tuned for mixed Indonesian–English speech, with preview-before-send, a 60-second cap, and temporary audio that is deleted after transcription. |
 | **Reasoning metadata that is real** | Reasoning levels come from provider metadata or verified behavior — no cosmetic Low/Max toggles. |
@@ -107,6 +108,7 @@ make dry-run        # show what the local integration would install
 | Path | Contents |
 |---|---|
 | `src/renderer/` | UI sources: Computer Use settings, voice input, Activity panel |
+| `src/skills/` | Default agent skills bundled into the app pack (`glm/packages/bundled-skills`) |
 | `src/main/` | Electron main-process modules: voice IPC, Activity data, Auto Detect |
 | `src/local_only/` | Product patches: storage namespacing, account/cloud removal, CCode branding, provider catalog |
 | `services/desktop/` | `screen-mcp` desktop backend and its fast profile |

@@ -14,6 +14,47 @@ BACKUP_RETENTION=2
 APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/zcode"'
 FILES=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json']
+SKILL_PACK='glm/packages/bundled-skills'
+def promote_skill_pack(staged,target,proof,backup):
+ """Sync the bundled skill pack: verify the staged hashes, back up, copy, drop skills we removed.
+
+ The pack directory ships the vendor skills too (for example `dynamic-workflows`,
+ which the agent requires before it accepts the pack as a skill root), so only the
+ skills named in our own manifest are written or pruned.
+ """
+ names=json.loads((staged/SKILL_PACK/'.ccode-skills.json').read_text())['skills']
+ for path in sorted((staged/SKILL_PACK).rglob('*')):
+  if not path.is_file():continue
+  name=str(path.relative_to(staged))
+  if proof['sha256'].get(name)!=hashlib.sha256(path.read_bytes()).hexdigest():
+   raise ValueError('Staged skill checksum mismatch: '+name)
+ if proof.get('bundled_skills')!=names:raise ValueError('Staged skill manifest disagrees with the build proof')
+ pack=target/SKILL_PACK
+ if pack.exists():
+  # Snapshot into a temporary directory first: a half-written snapshot must never
+  # overwrite the intact pack during rollback.
+  snapshot=backup/(SKILL_PACK+'.part')
+  shutil.rmtree(snapshot,ignore_errors=True)
+  shutil.copytree(pack,snapshot)
+  os.rename(snapshot,backup/SKILL_PACK)
+ previous=json.loads((pack/'.ccode-skills.json').read_text())['skills'] if (pack/'.ccode-skills.json').exists() else []
+ for name in sorted(set(previous)-set(names)):
+  shutil.rmtree(pack/'skills'/name,ignore_errors=True)
+ for name in names:
+  destination=pack/'skills'/name
+  if destination.exists():shutil.rmtree(destination)
+  shutil.copytree(staged/SKILL_PACK/'skills'/name,destination)
+ (pack/'.ccode-skills.json').write_text((staged/SKILL_PACK/'.ccode-skills.json').read_text())
+ return names
+def restore_skill_pack(target,backup):
+ """Roll the pack back to the pre-promotion snapshot after a failed run.
+
+ Without a snapshot nothing was written yet, so the pack is left alone.
+ """
+ archived=backup/SKILL_PACK
+ if not archived.exists():return
+ shutil.rmtree(target/SKILL_PACK,ignore_errors=True)
+ shutil.copytree(archived,target/SKILL_PACK)
 def timestamped_backup(name):
  """True when name is a backup timestamp this script created."""
  try:datetime.datetime.strptime(name,'%Y%m%d-%H%M%S-%f')
@@ -128,10 +169,12 @@ def main():
    shutil.copy2(staged/name,dst.with_name(dst.name+'.new'))
   for name in files:
    dst=target/name;os.replace(dst.with_name(dst.name+'.new'),dst);promoted.append(name)
+  skills=promote_skill_pack(staged,target,proof,backup)
  except BaseException:
   for name in reversed(promoted):
    if (backup/name).exists():shutil.copy2(backup/name,target/name)
    else:(target/name).unlink()
+  restore_skill_pack(target,backup)
   raise
  finally:
   for name in files:
@@ -143,6 +186,7 @@ def main():
  removed_markers=remove_stale_catalog_markers()
  pruned=prune_backups(ROOT/'runtime/backups',backup)
  print('Build applied. Previous resources:',backup)
+ print(f'Bundled skills: {len(skills)} packaged in {SKILL_PACK}/skills')
  if identity_notes:print('AppDir identity:',*identity_notes,sep='\n  ')
  if refreshed:print('Refreshed cached provider catalog:',*[str(p) for p in refreshed],sep='\n  ')
  if removed_markers:print('Removed stale catalog markers:',*[str(p) for p in removed_markers],sep='\n  ')

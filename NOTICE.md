@@ -30,6 +30,9 @@ Every change relative to the pinned upstream build is recorded in [`docs/CHANGEL
   template is added, and the built-in catalog refresh from the account endpoint is disabled.
 - **Local features** — Activity dashboard computed from the local session database, bilingual (Indonesian–English)
   local voice input, and a Linux desktop Computer Use backend exposed over MCP.
+- **Bundled default skills** — 32 agent skills (antislop, GSAP, UI design, and engineering workflow) ship inside the
+  app resources at `glm/packages/bundled-skills/skills`. Sources, provenance, and per-group license status are listed
+  in [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md); several of them declare no license upstream.
 - **Compatibility identifiers intentionally retained** — `ZCODE_*` environment variables, `zcode-*` IPC channels, the
   `zcode://` URL scheme, the `.zcode` storage layout, and the cross-process protocol strings are unchanged so that the
   packaged host and agent backend keep working.
@@ -46,4 +49,4 @@ for that purpose by Apache-2.0 §6.
 
 Third-party components keep their own terms. See [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) for the full list,
 including the Electron/Chromium notices shipped inside the application directory, `screen-mcp` (FSL-1.1-ALv2),
-and the Whisper voice model.
+the Whisper voice model, and the bundled default skills (MIT, Apache-2.0, and undeclared).
