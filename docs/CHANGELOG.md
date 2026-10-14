@@ -2,6 +2,17 @@
 
 ## 2026-10-14
 
+### Plugin n8n: MCP terkonfigurasi dan seluruh skill
+
+- n8n tersedia di Plugins serta Plugin Marketplace sebagai plugin packaged yang mati secara default. Aktivasi native memuat MCP n8n dan seluruh 15 skill n8n beserta referensi/asset pendukungnya; disable mematikan keduanya.
+- URL instance, API key, dan token MCP instance memakai form konfigurasi plugin native; field secret disamarkan. `n8n-mcp` 2.92.1 dipin dan dikirim bersama resource yang diverifikasi SHA256/promosi/rollback, tanpa Node/npm sistem atau download saat start.
+- Launcher memakai plugin host native/Electron, data privat plugin, telemetry disabled, HTTPS remote dan loopback lokal dengan guard SSRF upstream tetap aktif.
+- Resolver home scanner Skills host diarahkan ke namespace standalone. Enablement tidak lagi dibaca dari HOME asli yang berbeda dari lokasi cache plugin.
+- Koneksi n8n diuji pada instance 2.32.0 terisolasi: health check, create/read/delete workflow melalui MCP nyata, serta penolakan API key salah tanpa memaparkan key. Workflow uji tidak dijalankan dan tidak menyentuh layanan eksternal pengguna.
+- Smoke UI membuktikan konfigurasi native tersimpan dengan field key tetap masked, MCP berstatus connected, dan seluruh 15 skill tampil di Settings → Skills hanya saat plugin aktif. Enable/disable juga dibuktikan melalui agent dan scanner host pada namespace terisolasi.
+- `make build` dan `make test` lulus (173 tes ditambah pemeriksaan batas launcher). Form Marketplace/Plugins memakai komponen native tanpa UI konfigurasi kedua.
+- Lisensi payload skill yang tidak dinyatakan sumber dicatat di THIRD_PARTY; jangan menganggap lisensi MIT server juga berlaku untuk skill.
+
 ### MCP: label `Optional` dihapus dan image_search dikecualikan
 
 - Baris LSP, Ripgrep, dan semua entri MCP non-default tidak lagi menampilkan label `Optional`; label `Default` tetap ada.

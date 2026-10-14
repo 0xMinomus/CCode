@@ -43,7 +43,21 @@ Baris katalog **LSP** dan **Ripgrep** tampil di daftar **Installed** yang sama, 
 
 Konfigurasi tetap berada di `data/.zcode/cli/config.json` milik namespace standalone. Penyemaian tidak menimpa server user, switch disabled, atau penghapusan yang disengaja. Semua entri katalog bebas credentials; Context7 mengirim permintaan dokumentasi ke layanan Context7, dan Codegraph mengindeks proyek lokal dengan update otomatis serta download model embedding dimatikan.
 
-Websearch, Obsidian, n8n, dan GitHub tidak dibundel: Browser Use sudah menyediakan pencarian web, vault Obsidian tersedia lewat plugin, sedangkan n8n dan GitHub tetap bisa ditambahkan manual lewat formulir **New** bila dibutuhkan. Di build standalone ini plugin-declared MCP server tampil read-only tanpa tempat mengisi credentials, jadi keduanya tidak dikirim sebagai plugin bawaan. MCP `image_search` dari plugin resmi juga tidak diregistrasikan karena autentikasi akun Z.ai tidak tersedia.
+Websearch, Obsidian, dan GitHub tidak dibundel: Browser Use sudah menyediakan pencarian web, vault Obsidian tersedia lewat plugin, dan GitHub dapat ditambahkan manual lewat formulir **New**. MCP `image_search` dari plugin resmi tidak diregistrasikan karena autentikasi akun Z.ai tidak tersedia.
+
+### Plugin n8n
+
+`src/plugins/n8n/` menyimpan manifest native, entrypoint `dist/mcp/server.js`, dan 15 skill n8n beserta seluruh berkas pendukungnya. `services/mcp/stage.cjs` menyalin plugin ke `resources/mcp/plugins/n8n` dan memasang `n8n-mcp` 2.92.1 dari lockfile. Seluruh payload ikut inventori SHA256, promosi, dan rollback resource MCP yang sudah ada.
+
+`src/local_only/n8n_plugin.py` menambahkan registry lokal dengan root `../mcp/plugins/n8n`, relatif terhadap entrypoint agent di `resources/glm`. Native runtime menyemai cache plugin, membangun listing Marketplace, dan memakai `__zcode-plugin-host` untuk menjalankan entrypoint dengan binary Electron sebagai Node. Tidak membutuhkan Node/npm sistem dan tidak mengunduh server saat pemakaian pertama.
+
+Plugin tersedia tetapi mati secara default. Enable/disable native menjadi satu gerbang untuk MCP `plugin:n8n:n8n` dan seluruh 15 skill; tidak ada salinan n8n di pack skill Default. Form native **Advanced details → Configuration** menyimpan URL instance, API key, serta token MCP instance bila fitur terkait memerlukannya. API key/token memakai field `sensitive` dan hanya diinterpolasikan ke environment server, bukan argv atau URL. Konfigurasi disimpan lokal dalam file private, bukan dienkripsi oleh keychain.
+
+Entrypoint membatasi endpoint ke HTTPS, kecuali HTTP loopback, dan menolak URL yang memuat credentials/query/fragment. Data runtime memakai `ZCODE_PLUGIN_DATA`; telemetry upstream dimatikan melalui `N8N_MCP_TELEMETRY_DISABLED=true`. Key kosong atau URL tidak valid menghasilkan error konfigurasi, bukan koneksi palsu.
+
+Policy SSRF upstream memakai `strict` untuk endpoint remote dan `moderate` untuk loopback yang dipilih eksplisit, agar instance lokal dapat diakses. Keduanya mempertahankan larangan endpoint metadata cloud dan alamat private non-loopback; tidak ada mode `permissive` atau pelemahan guard secara global.
+
+Scanner Skills host memakai resolver `Up()` untuk lokasi config dan user skills. `storage.py` mengarahkannya ke `Ai()` (data root standalone), sehingga switch plugin dibaca dari namespace yang sama dengan cache dan agent. Sebelumnya scanner membaca enablement dari HOME asli walaupun cache sudah memakai namespace; plugin opt-in tidak muncul di Settings → Skills.
 
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 

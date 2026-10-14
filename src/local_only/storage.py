@@ -66,6 +66,7 @@ def patch_archive(archive, replacements, renderer_asset):
         ('async function g1(e,t){let n=await mR(ui,e,t);return n.length>0?n:mR(hR,e,t)}', 'async function g1(e,t){let n=await mR(ui,e,t);return e==="user"||n.length>0?n:mR(hR,e,t)}'),
         ('function c1(){return process.env.HOME?.trim()||process.env.USERPROFILE?.trim()||qhe()}', 'function c1(){return Ai()}'),
         ('function aA(){let e=process.env.HOME?.trim()||process.env.USERPROFILE?.trim();return e&&e.length>0?e:DSe()}', 'function aA(){return Ai()}'),
+        ('function Up(){let e=process.env.HOME?.trim()||process.env.USERPROFILE?.trim();return e&&e.length>0?e:Rge()}', 'function Up(){return Ai()}'),
         ('function rhe(e){let t=li(e.storage)?e.storage:{};return typeof t.dir=="string"&&t.dir.trim().length>0?t.dir:"~/.zcode"}', 'function rhe(e){return process.env.ZCODE_STORAGE_DIR}'),
         ('function Lw(e){let t=await Kwe(e),n=lq(t.storage)?t.storage:{},r=typeof n.dir=="string"&&n.dir.trim().length>0?n.dir.trim():"~/.zcode";return jwe(r,e)}', 'function Lw(e){return process.env.ZCODE_STORAGE_DIR}'),
         ('...t.readLegacyProviders?{importLegacy:i(async()=>qI({legacyProviders:await t.readLegacyProviders()}),"importLegacy")}:{}};', '};'),

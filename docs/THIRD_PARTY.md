@@ -23,12 +23,20 @@ Katalog MCP menggunakan package upstream berikut. Dependency transitif dan teks 
 | Codegraph | [`@sdsrs/code-graph`](https://www.npmjs.com/package/@sdsrs/code-graph) | MIT |
 | LSP | [`lsp-mcp-server`](https://www.npmjs.com/package/lsp-mcp-server) | MIT |
 | Ripgrep | [`mcp-ripgrep`](https://www.npmjs.com/package/mcp-ripgrep) | MIT |
+| n8n plugin MCP | [`n8n-mcp` 2.92.1](https://www.npmjs.com/package/n8n-mcp) / [source](https://github.com/czlonkowski/n8n-mcp) | MIT |
 
 Context7 membutuhkan jaringan ketika tool dokumentasi dipanggil dan dapat terkena rate limit. Codegraph mengindeks proyek lokal. Ripgrep memakai binary pencarian native `@vscode/ripgrep-linux-x64`.
 
-Websearch, Obsidian, n8n, dan GitHub tidak ikut dibundel.
+Websearch, Obsidian, dan GitHub tidak ikut dibundel. n8n-mcp ikut runtime plugin n8n; telemetry upstream dinonaktifkan.
 
 Installer npm yang dibundel menggunakan Artistic-2.0. Dukungan TypeScript opsional (`typescript` dan `typescript-language-server`) menggunakan Apache-2.0. Package Codegraph dipakai melalui engine native; hook, prompt, dan installer plugin Claude tidak dimasukkan ke runtime CCode.
+
+## Skill plugin n8n (`src/plugins/n8n/skills`)
+
+15 skill disalin lengkap dari library operator `~/.omp/agent/skills`: `using-n8n-mcp-skills` dan seluruh 14 skill berawalan `n8n-`. README pada tujuh skill inti mencantumkan kredit Romuald Członkowski (aiadvisors.pl/en) dan koleksi n8n-skills. Seluruh referensi dan enam asset self-hosting dipertahankan; `.env.*.example` hanya berisi contoh, bukan credentials.
+
+Berkas skill yang terpasang tidak menyatakan lisensi redistribusi. Lisensi MIT **n8n-mcp** tidak otomatis berlaku untuk skill tersebut. Payload skill digunakan pada workspace pribadi atas permintaan pemilik; jangan merilisnya secara publik sebelum izin/lisensi sumber dipastikan. Skill n8n menjadi milik plugin, bukan pack skill Default, sehingga hanya aktif ketika plugin diaktifkan.
+
 
 ## Default skills yang dibundel (`src/skills`)
 

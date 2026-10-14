@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once
-from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 def stage_skill_pack(skill_source,installed,output):
@@ -66,7 +66,7 @@ zcodeVoiceRequire(process.resourcesPath+"/mcp/main.cjs").register({app:zcodeVoic
  replacements['package.json']=(json.dumps(identity,indent=2)+'\n').encode()
  agent_base=ROOT/manifest['agent_baseline']
  if hashlib.sha256(agent_base.read_bytes()).hexdigest()!=manifest['agent_baseline_sha256']:raise ValueError('Agent baseline hash mismatch; review upstream version before changing project.json')
- agent=skills_plugin.patch_agent(cloud.patch_agent(storage.patch_agent(agent_base.read_text())))
+ agent=n8n_plugin.patch_agent(skills_plugin.patch_agent(cloud.patch_agent(storage.patch_agent(agent_base.read_text()))))
  output=ROOT/'runtime/build/resources';archive.write(output/'app.asar',replacements)
  (output/'glm').mkdir(parents=True,exist_ok=True);(output/'glm/zcode.cjs').write_text(agent)
  (output/'voice').mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/'src/main/voice.cjs',output/'voice/main.cjs')

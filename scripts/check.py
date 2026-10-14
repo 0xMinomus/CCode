@@ -5,6 +5,7 @@ for p in list((ROOT/'scripts').glob('*.py'))+list((ROOT/'src/local_only').glob('
  ast.parse(p.read_text(),filename=str(p))
 for p in list((ROOT/'src/renderer').glob('*.js'))+list((ROOT/'src/main').glob('*.cjs'))+list((ROOT/'services/mcp').glob('*.cjs')):
  subprocess.run(['node','--check',str(p)],check=True)
+subprocess.run(['node',str(ROOT/'services/mcp/test-n8n.cjs')],check=True,cwd=ROOT)
 subprocess.run([sys.executable,'-m','unittest','discover','-s',str(ROOT/'tests'),'-v'],check=True,cwd=ROOT)
 staged=ROOT/'runtime/build/resources/app.asar'
 if staged.exists():

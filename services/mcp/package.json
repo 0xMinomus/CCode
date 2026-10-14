@@ -7,6 +7,7 @@
     "@modelcontextprotocol/sdk": "1.30.0",
     "@upstash/context7-mcp": "4.4.1",
     "@sdsrs/code-graph": "0.169.0",
+    "n8n-mcp": "2.92.1",
     "npm": "10.9.4"
   }
 }

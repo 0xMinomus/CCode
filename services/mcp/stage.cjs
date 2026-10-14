@@ -17,3 +17,7 @@ for (const entry of catalog.filter(item => item.default)) {
 fs.rmSync(path.join(runtime, 'node_modules/@sdsrs/code-graph/claude-plugin'), { recursive: true, force: true });
 for (const file of ['catalog.json', 'launch.cjs', 'smoke.cjs']) fs.copyFileSync(path.join(__dirname, file), path.join(dest, file));
 fs.copyFileSync(path.join(__dirname, '../../src/main/mcp-catalog.cjs'), path.join(dest, 'main.cjs'));
+const plugin = path.join(dest, 'plugins/n8n');
+fs.rmSync(plugin, { recursive: true, force: true });
+fs.cpSync(path.join(__dirname, '../../src/plugins/n8n'), plugin, { recursive: true });
+if (!fs.existsSync(path.join(runtime, 'node_modules/n8n-mcp/dist/mcp/stdio-wrapper.js'))) throw Error('Missing packaged n8n MCP executable.');

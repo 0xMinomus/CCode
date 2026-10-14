@@ -28,7 +28,20 @@ LSP membutuhkan language server untuk bahasa proyek (TypeScript/JavaScript dipas
 
 Default tidak berarti semua proses server berjalan terus; runtime MCP tetap mengikuti pemuatan oleh agent. Context7 memakai jaringan saat tool dokumentasi dipanggil. Codegraph menyimpan indeks lokal proyek. Mematikan atau menghapus server lewat pengelolaan native tidak dibatalkan oleh bootstrap berikutnya.
 
-MCP lain (mis. n8n atau GitHub) dapat ditambahkan sendiri lewat tombol **New** di halaman yang sama; tidak ada entri bawaan untuk keduanya. MCP resmi `image_search` tidak dimuat karena memerlukan autentikasi akun Z.ai.
+MCP lain (mis. GitHub) dapat ditambahkan sendiri lewat tombol **New** di halaman yang sama. MCP resmi `image_search` tidak dimuat karena memerlukan autentikasi akun Z.ai.
+
+## Plugin n8n
+
+1. Buka **Settings → Plugins → n8n**, atau pilih n8n di **Plugin Marketplace**.
+2. Buka **Advanced details → Configuration**. Isi **n8n instance URL** (base URL tanpa `/api/v1`) dan **n8n API key** dari Settings → n8n API pada instance Anda. Gunakan HTTPS untuk instance remote; HTTP hanya diterima untuk loopback.
+3. Token **n8n instance MCP access token** hanya diperlukan oleh fitur MCP instance seperti persisted agents dan resource dropdown. Isi jika fitur tersebut dipakai; workflow API biasa cukup memakai API key.
+4. Tekan **Save configuration**, lalu aktifkan switch n8n di Plugins. MCP `n8n` dan seluruh 15 skill tersedia bersama. Matikan switch untuk menonaktifkan keduanya.
+
+Server MCP dan dokumentasi node dikirim bersama aplikasi; tidak membutuhkan `npx` saat start. API key tetap diperlukan untuk mengelola instance. Permission key menentukan operasi yang diizinkan; HTTP 401/403 menandakan credentials/scope perlu diperiksa, bukan keberhasilan koneksi. Endpoint offline harus diperbaiki di form konfigurasi.
+
+Alamat remote harus dapat diakses melalui HTTPS publik. Guard SSRF upstream tetap menolak alamat private non-loopback dan metadata cloud; instance lokal memakai URL loopback. Policy webhook mengikuti mode tersebut.
+
+Field key/token disamarkan, tetapi nilai tersimpan dalam config private `data/.zcode/cli/config.json` di namespace CCode. Jangan membagikan config atau snapshot namespace. Telemetry n8n-mcp dimatikan; penggunaan tool tetap menghubungi instance yang Anda konfigurasi dan layanan template/dokumentasi upstream sesuai tool.
 
 ## Backup dan restore data standalone
 

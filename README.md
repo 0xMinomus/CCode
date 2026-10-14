@@ -41,6 +41,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Activity dashboard** | Prompt metrics, streaks, and a January–December heatmap for any year, computed read-only from your local session database. |
 | **Bundled default skills** | 32 agent skills ship inside the app — antislop, GSAP, UI design, and engineering workflow — listed as Default in Settings → Skills without installing a plugin. |
 | **MCP catalog** | Context7 and Codegraph ship preinstalled. LSP and Ripgrep are installable from native server rows without an “Optional” badge; account-bound `image_search` is excluded. |
+| **n8n plugin** | Enable n8n from Plugins or Plugin Marketplace to load its MCP server and all 15 n8n skills. Configure your instance URL and API key in the native plugin settings. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
 | **Bilingual voice input** | Local Whisper worker tuned for mixed Indonesian–English speech, with preview-before-send, a 60-second cap, and temporary audio that is deleted after transcription. |
 | **Reasoning metadata that is real** | Reasoning levels come from provider metadata or verified behavior — no cosmetic Low/Max toggles. |
@@ -110,6 +111,7 @@ make dry-run        # show what the local integration would install
 |---|---|
 | `src/renderer/` | UI sources: Computer Use settings, voice input, Activity panel |
 | `src/skills/` | Default agent skills bundled into the app pack (`glm/packages/bundled-skills`) |
+| `src/plugins/n8n/` | Native n8n plugin manifest, MCP entrypoint, and all 15 activation-scoped n8n skills |
 | `src/main/` | Electron main-process modules: voice IPC, Activity data, Auto Detect |
 | `src/local_only/` | Product patches: storage namespacing, account/cloud removal, CCode branding, provider catalog |
 | `services/desktop/` | `screen-mcp` desktop backend and its fast profile |
