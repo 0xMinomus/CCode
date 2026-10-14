@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once,rebrand
-from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 AGENT_RESOURCE='glm/ccode.cjs'
@@ -101,7 +101,7 @@ ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcM
  replacements['package.json']=(json.dumps(identity,indent=2)+'\n').encode()
  agent_base=ROOT/manifest['agent_baseline']
  if hashlib.sha256(agent_base.read_bytes()).hexdigest()!=manifest['agent_baseline_sha256']:raise ValueError('Agent baseline hash mismatch; review upstream version before changing project.json')
- agent=runtime_tuning.patch_agent(n8n_plugin.patch_agent(skills_plugin.patch_agent(token_savers.patch_agent(cloud.patch_agent(storage.patch_agent(rebrand.apply(agent_base.read_text())))))))
+ agent=runtime_tuning.patch_agent(n8n_plugin.patch_agent(skills_plugin.patch_agent(token_savers.patch_agent(marketplace.patch_agent(cloud.patch_agent(storage.patch_agent(rebrand.apply(agent_base.read_text()))))))))
  rebrand.assert_clean(agent,AGENT_RESOURCE)
  output=ROOT/'runtime/build/resources';view.write(output/'app.asar',replacements,renamed_entries(archive))
  (output/'glm').mkdir(parents=True,exist_ok=True);(output/AGENT_RESOURCE).write_text(agent)
@@ -113,6 +113,8 @@ ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcM
  shutil.copy2(ROOT/'src/main/token-savers.cjs',output/'token-savers/main.cjs')
  shutil.copy2(ROOT/'src/main/token-savers-runtime.cjs',output/'token-savers/token-savers-runtime.cjs')
  rebrand.rewrite_tree(output/'voice');rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers')
+ (output/marketplace.RESOURCE_DIR).mkdir(parents=True,exist_ok=True)
+ (output/marketplace.RESOURCE_FILE).write_text(marketplace.render_runtime())
  (output/'config/provider').mkdir(parents=True,exist_ok=True)
  (output/CATALOG_RESOURCE).write_text(rebrand.apply(catalog.patch_catalog(installed_catalog().read_text())))
  for name,source in branding.PACKAGED_ICONS.items():shutil.copy2(branding.ICON_DIR/source,output/name)
@@ -121,7 +123,7 @@ ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcM
  subprocess.run(['node',str(ROOT/'services/mcp/stage.cjs'),str(output/'mcp')],check=True,cwd=ROOT)
  rebrand.rewrite_tree(output/'mcp')
  mcp_files=sorted(str(path.relative_to(output)) for path in (output/'mcp').rglob('*') if path.is_file())
- files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
+ files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
         'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,'plugin_payload':payload,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}

@@ -15,7 +15,7 @@ APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/ccode"'
 LEGACY=rebrand.previous
 LEGACY_FILES=(LEGACY('glm/ccode.cjs'),LEGACY('config/provider/ccode-builtin.json'))
-FILES=['app.asar','glm/ccode.cjs','glm/.node-bundle-meta.json','app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','config/provider/ccode-builtin.json']
+FILES=['app.asar','glm/ccode.cjs','glm/.node-bundle-meta.json','app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','marketplace/marketplace-compat.cjs','config/provider/ccode-builtin.json']
 PAYLOAD_JOURNAL='plugin-payload.json'
 PAYLOAD_ROOT='glm/packages'
 SKILL_PACK='glm/packages/'+skills_plugin.PACK_DIR

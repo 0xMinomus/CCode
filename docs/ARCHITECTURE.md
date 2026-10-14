@@ -53,6 +53,16 @@ Konfigurasi tetap berada di `data/.ccode/cli/config.json` milik namespace standa
 
 Websearch, Obsidian, dan GitHub tidak dibundel: Browser Use sudah menyediakan pencarian web, vault Obsidian tersedia lewat plugin, dan GitHub dapat ditambahkan manual lewat formulir **New**. MCP `image_search` dari plugin resmi tidak diregistrasikan karena autentikasi akun Z.ai tidak tersedia.
 
+### Plugin Marketplace
+
+Marketplace resmi mengambil manifest dari `https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json`. Nama di dalam kontrak publisher itu tetap ejaan upstream — id marketplace `zcode-plugins-official`, direktori manifest `.zcode-plugin/` di dalam zip plugin, variabel `${ZCODE_PLUGIN_ROOT}`/`${ZCODE_PROJECT_DIR}` pada manifest, dan env `<PREFIX>_PLUGIN_DATA` yang dibaca runtime plugin — sehingga `src/local_only/marketplace.py` menambalnya di batas, bukan me-rename-nya. Resource `resources/marketplace/marketplace-compat.cjs` dihasilkan build dari `src/main/marketplace-compat.cjs`: enam ejaan kontrak diisi dari `rebrand.previous()`, dan `render_runtime()` menolak template yang masih memuat placeholder atau token upstream di luar kontrak itu. Dengan begitu ejaan upstream tetap hanya tertulis di `rebrand.py`, sementara agen CCode tidak pernah memuatnya.
+
+Sembilan anchor pada agent ditambal. Validasi manifest marketplace resmi menerima id publisher lalu mengganti nama manifest ke id lokal (`acceptOfficialName`/`adoptOfficialName`), sehingga `jun()` menerima manifest itu dan cache ditulis dengan id lokal. Pencarian manifest plugin menerima direktori publisher di tiga jalur (`sct` untuk direktori dan zip, `BBs` untuk akar zip, `g3s` untuk adapter skill). Ekspansi `${…}` mengenali prefiks publisher (`resolveRemoteVar`), dan proses plugin menerima kembaran env berprefiks publisher (`envAliases`) di jalur MCP stdio maupun hook. Terakhir, setiap pohon plugin yang sudah di-resolve (`ict`, satu titik untuk describe, validate, dan install) dilokalkan (`localizeResolved`), dan listing marketplace dinormalkan (`localizeManifestEntries` di `OJr`).
+
+Lokalisasi payload menulis ulang hanya label yang dibaca UI dan agent, pada salinan plugin di namespace: `description` manifest memakai varian `description_i18n.en` bila label dasarnya berbahasa Cina, `userConfig.*.title` berbahasa Cina menjadi nama field (`blenderPath` → `Blender path`), `userConfig.*.description` Cina tanpa sisa Latin dibuang, dan frontmatter `description`/`when_to_use` skill berbahasa Cina memakai deskripsi Inggris plugin. Body SKILL.md, README, dan panel web milik publisher tidak diterjemahkan. Pemanggilan berulang tidak mengubah apa pun, dan kegagalan tulis tidak pernah menggagalkan describe/install.
+
+`claude-plugins-official` (sumber GitHub) berjalan tanpa modul ini: manifest-nya sudah memakai `.claude-plugin` dan tanpa label Cina.
+
 ### Plugin n8n
 
 `src/plugins/n8n/` menyimpan manifest native, entrypoint `dist/mcp/server.js`, dan 15 skill n8n beserta seluruh berkas pendukungnya. `services/mcp/stage.cjs` menyalin plugin ke `resources/mcp/plugins/n8n` dan memasang `n8n-mcp` 2.92.1 dari lockfile. Seluruh payload ikut inventori SHA256, promosi, dan rollback resource MCP yang sudah ada.
