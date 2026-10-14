@@ -115,6 +115,8 @@ class RuntimeContractTests(unittest.TestCase):
             "'ZCODE_PLUGIN_DATA,ZCODE_PLUGIN_ID,ZCODE_PLUGIN_NAME,ZCODE_PLUGIN_ROOT,ZCODE_PROJECT_DIR');"
             "check('textNoUrl',compat.localizeText('Official ZCode plugins marketplace for ZCode'),"
             "'Official CCode plugins marketplace for CCode');"
+            "check('mixedCase',compat.localizeText('Zcode MCP App Dev'),'Ccode MCP App Dev');"
+            "check('lowerCase',compat.localizeText('zcode plugin'),'ccode plugin');"
             "check('urlKept',compat.localizeText('https://cdn-zcode.z.ai/zcode/official-plugin/assets'),"
             "'https://cdn-zcode.z.ai/zcode/official-plugin/assets');"
         )
@@ -199,6 +201,9 @@ class RuntimeContractTests(unittest.TestCase):
             "check('icon',entry.icon,'https://cdn-zcode.z.ai/zcode/official-plugin/assets/blender/icon.png');"
             "check('skill',entry.skills.blender.description,'CCode skill');"
             "check('name',entry.name,'blender');"
+            "const named={name:'zcode-mcp-app-dev',description:'Develop apps'};"
+            "compat.localizeEntry(named);"
+            "check('derivedDisplayName',named.displayName,'ccode-mcp-app-dev');"
         )
         self.assertEqual([item['name'] for item in report if not item['ok']], [])
 
@@ -211,7 +216,8 @@ class PatchTests(unittest.TestCase):
                        'ccodePluginCompat.manifestAt(e)',
                        'ccodePluginCompat.resolveRemoteVar(s,t)',
                        'ccodePluginCompat.localizeResolved(await ictResolved(e))',
-                       'ccodePluginCompat.localizeManifestEntries(e)'):
+                       'ccodePluginCompat.localizeManifestEntries(e)',
+                       'function OJr(e){ccodePluginCompat.localizeManifestEntries(e);if(q8s(e))return e;'):
             self.assertIn(marker, patched)
         self.assertIn('const ccodePluginCompat=require("../marketplace/marketplace-compat.cjs");', patched)
         self.assertNotIn(REMOTE_MARKETPLACE, patched)

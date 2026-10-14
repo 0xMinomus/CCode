@@ -39,6 +39,7 @@ PLACEHOLDERS = (
     ('__REMOTE_ENV_PREFIX__', 'CCODE_'),
     ('__REMOTE_PRODUCT_UPPER__', 'CCODE'),
     ('__REMOTE_PRODUCT_TITLE__', 'CCode'),
+    ('__REMOTE_PRODUCT_MIXED__', 'Ccode'),
     ('__REMOTE_PRODUCT_LOWER__', 'ccode'),
 )
 
@@ -92,8 +93,9 @@ HOOK_ENV_PATCH = ('return e?{set:{...o,...ccodePluginCompat.envAliases({dataPath
 RESOLVE_ANCHOR = 'async function ict(e){nT(e.signal);'
 RESOLVE_PATCH = ('async function ict(e){return ccodePluginCompat.localizeResolved(await ictResolved(e));}'
                  'async function ictResolved(e){nT(e.signal);')
+# Normalized manifests carry `raw` and return early, so the hook runs first.
 ENTRIES_ANCHOR = 'function OJr(e){if(q8s(e))return e;'
-ENTRIES_PATCH = 'function OJr(e){if(q8s(e))return e;ccodePluginCompat.localizeManifestEntries(e);'
+ENTRIES_PATCH = 'function OJr(e){ccodePluginCompat.localizeManifestEntries(e);if(q8s(e))return e;'
 
 # The plugin adapter (`v7s`) and the MCP manifest reader (`EEn`) resolve manifests
 # from their own constants, outside the marketplace module patched above.
@@ -154,6 +156,7 @@ def patch_agent(text):
 if __name__ == '__main__':
     runtime = render_runtime()
     assert 'zcode-plugins-official' in runtime and '.zcode-plugin' in runtime and 'ZCODE_' in runtime
+    assert rebrand.previous('Ccode') in runtime
     assert runtime.count('__REMOTE_') == 0
     sample = AGENT_REQUIRE[0] + '\n' + '\n'.join(anchor for anchor, _ in PATCHES)
     patched = patch_agent(sample)

@@ -26,14 +26,19 @@ const LOCAL = {
   marketplaceId: 'ccode-plugins-official',
   manifestDir: '.ccode-plugin',
   envPrefix: 'CCODE_',
-  product: { upper: 'CCODE', title: 'CCode', lower: 'ccode' },
+  product: { upper: 'CCODE', title: 'CCode', mixed: 'Ccode', lower: 'ccode' },
 };
 
 const REMOTE = {
   marketplaceId: '__REMOTE_MARKETPLACE_ID__',
   manifestDir: '__REMOTE_MANIFEST_DIR__',
   envPrefix: '__REMOTE_ENV_PREFIX__',
-  product: { upper: '__REMOTE_PRODUCT_UPPER__', title: '__REMOTE_PRODUCT_TITLE__', lower: '__REMOTE_PRODUCT_LOWER__' },
+  product: {
+    upper: '__REMOTE_PRODUCT_UPPER__',
+    title: '__REMOTE_PRODUCT_TITLE__',
+    mixed: '__REMOTE_PRODUCT_MIXED__',
+    lower: '__REMOTE_PRODUCT_LOWER__',
+  },
 };
 
 const MANIFEST_NAME = 'plugin.json';
@@ -135,10 +140,8 @@ function localizeText(text) {
     urls.push(match);
     return `${MASK}${urls.length - 1}\u0000`;
   });
-  const localized = masked
-    .split(REMOTE.product.title).join(LOCAL.product.title)
-    .split(REMOTE.product.upper).join(LOCAL.product.upper)
-    .split(REMOTE.product.lower).join(LOCAL.product.lower);
+  const localized = Object.keys(REMOTE.product)
+    .reduce((text, key) => text.split(REMOTE.product[key]).join(LOCAL.product[key]), masked);
   if (!urls.length) return localized;
   return localized.replace(new RegExp(`${MASK}(\\d+)\u0000`, 'g'), (_match, index) => urls[Number(index)]);
 }
@@ -302,6 +305,14 @@ function localizeEntry(entry) {
     if (typeof entry[field] === 'string') entry[field] = localizeText(entry[field]);
   }
   if (typeof entry.category === 'string') entry.category = localizeText(entry.category);
+  // A published plugin whose own name carries the upstream spelling has no display
+  // name to fall back on, so the list would show that spelling: give it one in the
+  // local spelling. The identity itself stays as published - install paths, the
+  // manifest inside the zip and `plugin://` references all use the published name.
+  if (typeof entry.displayName !== 'string' && typeof entry.name === 'string') {
+    const localizedName = localizeText(entry.name);
+    if (localizedName !== entry.name) entry.displayName = localizedName;
+  }
   for (const field of ['displayName_i18n', 'description_i18n', 'examplePrompts_i18n']) {
     const map = entry[field];
     if (!map || typeof map !== 'object') continue;
