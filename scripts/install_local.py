@@ -224,7 +224,8 @@ def remove_legacy_integration(applications, units, namespace):
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     removed = []
     candidates = [units / (name + suffix) for name in LEGACY_UNITS for suffix in ('.service', '.timer', '.path')]
-    candidates += [applications / name for name in LEGACY_LAUNCHERS]
+    for name in LEGACY_LAUNCHERS:
+        candidates += sorted(applications.glob(name + '*'))
     candidates += sorted(applications.glob(LEGACY_APPIMAGE_LAUNCHER))
     for path in candidates:
         if not path.exists():
@@ -236,6 +237,12 @@ def remove_legacy_integration(applications, units, namespace):
     if lock.exists() and lock.is_file() and not lock.stat().st_size:
         lock.unlink()
         removed.append(lock)
+    config_dir = HOME / '.config' / rebrand.PREVIOUS_CONFIG_DIR
+    if config_dir.is_dir():
+        folder = private_dir(namespace / 'integration-backups' / datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f'))
+        shutil.copytree(config_dir, folder / config_dir.name)
+        shutil.rmtree(config_dir)
+        removed.append(config_dir)
     return removed
 
 

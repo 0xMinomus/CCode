@@ -55,7 +55,8 @@ PREVIOUS_LAUNCHER = previous('ccode-on-steroids.desktop')
 PREVIOUS_LAUNCHER_FILE = previous('ccode.desktop')
 PREVIOUS_APPDATA = previous('.ccode')
 PREVIOUS_APPCONFIG = previous('CCode')
-PREVIOUS_LOCK = previous('.ccode.operations.lock')
+PREVIOUS_CONFIG_DIR = previous('CCode on Steroids')
+PREVIOUS_LOCK = previous('.ccode-on-steroids.operations.lock')
 PREVIOUS_VANSROUTER_UNIT = previous('ccode-vansrouter-model-sync')
 
 
