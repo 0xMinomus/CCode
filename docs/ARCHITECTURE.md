@@ -33,6 +33,16 @@ Skill bawaan dikirim sebagai **pack skill native**, bukan plugin CCode Skills. S
 - Skills buatan user dan konfigurasi namespace tidak ditimpa. Cache plugin lama tidak perlu dihapus: identitas plugin bawaan yang sudah pensiun tidak dimuat lagi.
 - Verifikasi mencakup instalasi baru, namespace yang pernah memakai plugin lama, listing agent tanpa duplikasi, serta Settings → Skills dengan label Default.
 
+### MCP bawaan dan katalog opsional
+
+Settings → MCP Servers mempertahankan daftar server native dan menambahkan katalog lokal. Context7, Websearch, dan Codegraph dikirim bersama resource aplikasi; pemakaian pertama tidak menjalankan `npx` untuk mengunduh dependency.
+
+`services/mcp/` menyimpan katalog dan dependency yang dipin. `src/main/mcp-catalog.cjs` menangani penyemaian default, instalasi opsional, serta probe MCP lewat IPC main-frame lokal. `src/renderer/mcp-catalog.js` memakai komponen bundled untuk Install, konfigurasi yang diperlukan, dan Test. Hasil Test berasal dari operasi tool aktual, bukan sekadar handshake atau jumlah tool.
+
+Konfigurasi tetap berada di `data/.zcode/cli/config.json` milik namespace standalone. Penyemaian tidak menimpa server user, switch disabled, atau penghapusan yang disengaja. Credentials dan jalur vault dari instalasi Oh My Pi tidak diimpor. MCP opsional yang membutuhkan PAT, instance n8n, atau vault meminta konfigurasi user sebelum dipakai.
+
+Context7 mengirim permintaan dokumentasi ke layanan Context7. Websearch mengirim query ke penyedia pencarian keyless; URL localhost SearXNG milik workstation pengembang tidak dibundel. Codegraph mengindeks proyek lokal, dengan update otomatis dan download model embedding dimatikan.
+
 Patch standalone hidup di `src/local_only/` dan dijalankan setelah patch renderer:
 
 1. `storage.py` menetapkan namespace data, profil, database task, database sesi agent, config MCP, dan menghapus migrasi/scan lintas instalasi. Ini juga berisi bootstrap env untuk chunk `out/main`, `out/host`, `out/scheduler`, dan backend agent.

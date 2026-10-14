@@ -33,6 +33,8 @@ Every change relative to the pinned upstream build is recorded in [`docs/CHANGEL
 - **Bundled default skills** — 32 agent skills (antislop, GSAP, UI design, and engineering workflow) ship inside the
   app resources at `glm/packages/bundled-skills/skills`. Sources, provenance, and per-group license status are listed
   in [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md); several of them declare no license upstream.
+- **MCP catalog**: Context7, Websearch, and Codegraph ship as preinstalled servers. Optional integrations can be
+  installed and checked from the MCP settings page. Upstream package licenses remain applicable.
 - **Compatibility identifiers intentionally retained** — `ZCODE_*` environment variables, `zcode-*` IPC channels, the
   `zcode://` URL scheme, the `.zcode` storage layout, and the cross-process protocol strings are unchanged so that the
   packaged host and agent backend keep working.

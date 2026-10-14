@@ -13,6 +13,25 @@ Berkas lisensi proyek ada di root: `LICENSE` (Apache-2.0 verbatim) dan `NOTICE.m
 
 Jangan menyertakan credentials, portal restore tokens, task history, rekaman pribadi, atau config backup pengguna dalam distribusi/project commit.
 
+## MCP bawaan dan opsional
+
+Katalog MCP menggunakan package upstream berikut. Dependency transitif dan teks lisensi ikut dipertahankan di payload runtime; lockfile menjadi sumber versi build.
+
+| Integrasi | Sumber | Lisensi package |
+|---|---|---|
+| Context7 | [`@upstash/context7-mcp`](https://www.npmjs.com/package/@upstash/context7-mcp) | MIT |
+| Websearch | [`@yoloyash/web-basics`](https://www.npmjs.com/package/@yoloyash/web-basics) | MIT |
+| Codegraph | [`@sdsrs/code-graph`](https://www.npmjs.com/package/@sdsrs/code-graph) | MIT |
+| LSP | [`lsp-mcp-server`](https://www.npmjs.com/package/lsp-mcp-server) | MIT |
+| Ripgrep | [`mcp-ripgrep`](https://www.npmjs.com/package/mcp-ripgrep) | MIT |
+| n8n | [`n8n-mcp`](https://www.npmjs.com/package/n8n-mcp) | MIT |
+| Obsidian | [`@bitbonsai/mcpvault`](https://www.npmjs.com/package/@bitbonsai/mcpvault) | MIT |
+| GitHub | [`github/github-mcp-server`](https://github.com/github/github-mcp-server) | MIT |
+
+Context7 dan pencarian web membutuhkan jaringan ketika tool dipanggil. Hasil pencarian keyless bergantung pada layanan upstream dan batas aksesnya. Credentials n8n/GitHub serta isi vault tidak termasuk payload distribusi.
+
+Installer npm yang dibundel menggunakan Artistic-2.0. Dukungan TypeScript opsional (`typescript` dan `typescript-language-server`) menggunakan Apache-2.0. Package Codegraph dipakai melalui engine native; hook, prompt, dan installer plugin Claude tidak dimasukkan ke runtime CCode.
+
 ## Default skills yang dibundel (`src/skills`)
 
 32 skill ikut dipaketkan ke aplikasi lewat `glm/packages/bundled-skills/skills` (dipromosikan oleh `make apply`; lihat ARCHITECTURE bagian **Default skills**). Tiga kelompok, dengan status lisensi berbeda:

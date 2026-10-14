@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 """Build the patch from a pinned upstream archive; output is staged, never live."""
-import hashlib,json,pathlib,shutil,sys
+import hashlib,json,pathlib,shutil,subprocess,sys
 from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once
-from local_only import storage,cloud,catalog,branding,skills_plugin
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 def stage_skill_pack(skill_source,installed,output):
@@ -43,15 +43,21 @@ def main():
  s+='\n'+(ROOT/'src/renderer/voice-input.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/activity-panel.js').read_text()+'\n'
  s=skills_plugin.patch_renderer(s)
+ s+='\n'+(ROOT/'src/renderer/mcp-catalog.js').read_text()+'\n'
+ s=mcp_catalog.patch_renderer(s)
  main=archive.read(manifest['main_asset']).decode()+'''\nimport {app as zcodeVoiceApp,ipcMain as zcodeVoiceIpcMain} from "electron";
 import {createRequire as zcodeVoiceCreateRequire} from "node:module";
 const zcodeVoiceRequire=zcodeVoiceCreateRequire(import.meta.url);
 if(process.platform==="linux"){zcodeVoiceRequire(process.resourcesPath+"/voice/main.cjs").register({app:zcodeVoiceApp,ipcMain:zcodeVoiceIpcMain});}
 zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcodeVoiceApp,ipcMain:zcodeVoiceIpcMain});
+zcodeVoiceRequire(process.resourcesPath+"/mcp/main.cjs").register({app:zcodeVoiceApp,ipcMain:zcodeVoiceIpcMain});
 '''
- preload=archive.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("zcodeVoice",{start:(options)=>ipcRenderer.invoke("zcode-voice:start",options),stop:()=>ipcRenderer.invoke("zcode-voice:stop"),cancel:()=>ipcRenderer.invoke("zcode-voice:cancel")});contextBridge.exposeInMainWorld("zcodeActivity",{summary:(options)=>ipcRenderer.invoke("zcode-activity:summary",options)});contextBridge.exposeInMainWorld("zcodeDetect",{run:()=>ipcRenderer.invoke("zcode-detect:run")});})();\n'''
+ preload=archive.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("zcodeVoice",{start:(options)=>ipcRenderer.invoke("zcode-voice:start",options),stop:()=>ipcRenderer.invoke("zcode-voice:stop"),cancel:()=>ipcRenderer.invoke("zcode-voice:cancel")});contextBridge.exposeInMainWorld("zcodeActivity",{summary:(options)=>ipcRenderer.invoke("zcode-activity:summary",options)});contextBridge.exposeInMainWorld("zcodeDetect",{run:()=>ipcRenderer.invoke("zcode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("zcode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("zcode-mcp-catalog:install",options),test:(options)=>ipcRenderer.invoke("zcode-mcp-catalog:test",options)});})();\n'''
  replacements={renderer:s.encode(),manifest['main_asset']:main.encode(),manifest['preload_asset']:preload.encode()}
  storage.patch_archive(archive,replacements,renderer)
+ early_main='out/main/chunk-HH7N2YVI.js'
+ replacements[early_main]=replace_once(replacements[early_main].decode(),storage.ESM_BOOTSTRAP,storage.ESM_BOOTSTRAP+
+  'import {createRequire as zcodeMcpBootstrapRequire} from "node:module";\nzcodeMcpBootstrapRequire(import.meta.url)(process.resourcesPath+"/mcp/main.cjs").bootstrap();\n').encode()
  cloud.patch_archive(archive,replacements,renderer)
  replacements[cloud.HOST]=skills_plugin.patch_host(replacements[cloud.HOST].decode()).encode()
  branding.patch_archive(archive,replacements,{'renderer':renderer,'intl':manifest['renderer_intl_asset'],'icon':manifest['renderer_icon_asset']})
@@ -71,7 +77,9 @@ zcodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:zcod
  (output/'config/provider/zcode-builtin.json').write_text(catalog.patch_catalog(catalog_source.read_text()))
  for name,source in branding.PACKAGED_ICONS.items():shutil.copy2(branding.ICON_DIR/source,output/name)
  skills,pack_files=stage_skill_pack(ROOT/'src/skills',ROOT/'app/resources/glm/packages'/skills_plugin.PACK_DIR,output)
- files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*pack_files]
+ subprocess.run(['node',str(ROOT/'services/mcp/stage.cjs'),str(output/'mcp')],check=True,cwd=ROOT)
+ mcp_files=sorted(str(path.relative_to(output)) for path in (output/'mcp').rglob('*') if path.is_file())
+ files=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json',*branding.PACKAGED_ICONS,*pack_files,*mcp_files]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
         'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}

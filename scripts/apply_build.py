@@ -16,6 +16,39 @@ APP_RUN_BIN='BIN="$APPDIR/zcode"'
 FILES=['app.asar','glm/zcode.cjs','voice/main.cjs','activity/main.cjs','config/provider/zcode-builtin.json']
 SKILL_PACK='glm/packages/'+skills_plugin.PACK_DIR
 LEGACY_SKILL_PLUGIN='glm/packages/ccode-skills-plugin'
+MCP_RESOURCE='mcp'
+def verify_mcp_tree(staged,proof):
+ root=staged/MCP_RESOURCE
+ if not root.is_dir() or root.is_symlink():raise ValueError('Missing staged MCP resource directory')
+ files=sorted(name for name in proof['sha256'] if name.startswith(MCP_RESOURCE+'/'))
+ actual=[]
+ for path in root.rglob('*'):
+  if path.is_symlink() and not path.resolve().is_relative_to(root.resolve()):
+   raise ValueError('Staged MCP resource symlink escapes directory: '+str(path))
+  if path.is_file():actual.append(str(path.relative_to(staged)))
+  elif not path.is_dir():raise ValueError('Invalid staged MCP resource: '+str(path))
+ if not files or files!=sorted(actual):raise ValueError('Staged MCP resource file inventory mismatch')
+ for required in ('main.cjs','launch.cjs','catalog.json','runtime/package.json','runtime/package-lock.json'):
+  if MCP_RESOURCE+'/'+required not in files:raise ValueError('Missing staged MCP resource: '+required)
+ for name in files:
+  if hashlib.sha256((staged/name).read_bytes()).hexdigest()!=proof['sha256'][name]:
+   raise ValueError('Staged MCP resource checksum mismatch: '+name)
+def promote_mcp_tree(staged,target,backup):
+ destination=target/MCP_RESOURCE
+ if destination.exists():
+  snapshot=backup/(MCP_RESOURCE+'.part')
+  shutil.copytree(destination,snapshot,symlinks=True)
+  os.rename(snapshot,backup/MCP_RESOURCE)
+ else:(backup/(MCP_RESOURCE+'.absent')).touch()
+ if destination.exists():shutil.rmtree(destination)
+ shutil.copytree(staged/MCP_RESOURCE,destination,symlinks=True)
+def restore_mcp_tree(target,backup):
+ archived=backup/MCP_RESOURCE
+ if archived.exists():
+  shutil.rmtree(target/MCP_RESOURCE,ignore_errors=True)
+  shutil.copytree(archived,target/MCP_RESOURCE,symlinks=True)
+ elif (backup/(MCP_RESOURCE+'.absent')).exists():
+  shutil.rmtree(target/MCP_RESOURCE,ignore_errors=True)
 def promote_skill_pack(staged,target,proof,backup):
  """Verify the native pack, snapshot both owned resources, then retire the old plugin."""
  if proof.get('bundled_skill_pack')!=skills_plugin.PACK_DIR:
@@ -162,6 +195,7 @@ def main():
   if hashlib.sha256((staged/name).read_bytes()).hexdigest()!=proof['sha256'][name]:raise ValueError('Staged build checksum mismatch: '+name)
  identity=json.loads(Archive(staged/'app.asar').read('package.json'))
  if identity['name']!=manifest['application_name']:raise ValueError('Missing standalone application identity')
+ verify_mcp_tree(staged,proof)
  backup=ROOT/'runtime/backups'/datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f');backup.mkdir(parents=True,mode=0o700)
  promoted=[]
  try:
@@ -173,11 +207,14 @@ def main():
   for name in files:
    dst=target/name;os.replace(dst.with_name(dst.name+'.new'),dst);promoted.append(name)
   skills=promote_skill_pack(staged,target,proof,backup)
+  promote_mcp_tree(staged,target,backup)
+  refreshed=refresh_derived_catalogs(backup)
  except BaseException:
   for name in reversed(promoted):
    if (backup/name).exists():shutil.copy2(backup/name,target/name)
    else:(target/name).unlink()
   restore_skill_pack(target,backup)
+  restore_mcp_tree(target,backup)
   raise
  finally:
   for name in files:
@@ -185,7 +222,6 @@ def main():
    if temp.exists():temp.unlink()
  shutil.copy2(staged/'build-manifest.json',backup/'applied-build.json')
  identity_notes=appdir_identity(ROOT/'app',backup)
- refreshed=refresh_derived_catalogs(backup)
  removed_markers=remove_stale_catalog_markers()
  pruned=prune_backups(ROOT/'runtime/backups',backup)
  print('Build applied. Previous resources:',backup)

@@ -105,8 +105,21 @@ class PromotionTests(unittest.TestCase):
         for rel, data in self.pack_previous.items():
             (self.pack_target / rel).parent.mkdir(parents=True, exist_ok=True)
             (self.pack_target / rel).write_bytes(data)
-        staged_names = [*self.names, *(str(path.relative_to(self.staged)) for path in sorted(self.pack_staged.rglob('*'))
-                                 if path.is_file())]
+        self.mcp_staged = self.staged / apply_build.MCP_RESOURCE
+        self.mcp_target = self.target / apply_build.MCP_RESOURCE
+        self.mcp_previous = {'main.cjs': b'old MCP main\n', 'obsolete.cjs': b'old MCP dependency\n'}
+        mcp_files = {'main.cjs': b'new MCP main\n', 'launch.cjs': b'new MCP launcher\n', 'catalog.json': b'[]\n',
+                     'runtime/package.json': b'{"private":true}\n', 'runtime/package-lock.json': b'{}\n',
+                     'runtime/node_modules/server/index.js': b'new bundled server\n'}
+        for base, files in ((self.mcp_staged, mcp_files), (self.mcp_target, self.mcp_previous)):
+            for rel, data in files.items():
+                (base / rel).parent.mkdir(parents=True, exist_ok=True)
+                (base / rel).write_bytes(data)
+        self.unowned = self.target / 'other-resource/personal.txt'
+        self.unowned.parent.mkdir()
+        self.unowned.write_bytes(b'preserved resource\n')
+        staged_names = [*self.names, *(str(path.relative_to(self.staged)) for tree in (self.pack_staged, self.mcp_staged)
+                                     for path in sorted(tree.rglob('*')) if path.is_file())]
         proof = {'application_name': 'ccode', 'bundled_skill_pack': apply_build.skills_plugin.PACK_DIR,
                  'bundled_skills': ['alpha', 'beta'], 'sha256': {
             name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest() for name in staged_names}}
@@ -152,6 +165,7 @@ class PromotionTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(OSError, 'simulated cache failure'):
                 apply_build.main()
         self.assertEqual(self.cache.read_text(), self.cache_before)
+        self.assert_previous_resources()
 
     def test_partial_promotion_restores_all_previous_resources(self):
         real_replace = apply_build.os.replace
@@ -176,6 +190,9 @@ class PromotionTests(unittest.TestCase):
         self.assertEqual((self.pack_target / 'skills/dynamic-workflows/examples.md').read_bytes(), b'vendor examples\n')
         self.assertFalse(self.legacy.exists())
         self.assertFalse((self.pack_target / '.zcode-plugin').exists())
+        self.assertEqual((self.mcp_target / 'runtime/node_modules/server/index.js').read_bytes(), b'new bundled server\n')
+        self.assertFalse((self.mcp_target / 'obsolete.cjs').exists())
+        self.assertEqual(self.unowned.read_bytes(), b'preserved resource\n')
         for rel, data in self.user_previous.items():
             self.assertEqual((self.user_skills / rel).read_bytes(), data)
 
@@ -195,6 +212,9 @@ class PromotionTests(unittest.TestCase):
             self.assertEqual((self.user_skills / rel).read_bytes(), data)
 
     def assert_previous_resources(self):
+        for rel, data in self.mcp_previous.items():
+            self.assertEqual((self.mcp_target / rel).read_bytes(), data, rel)
+        self.assertEqual(self.unowned.read_bytes(), b'preserved resource\n')
         for base, files in ((self.pack_target, self.pack_previous), (self.legacy, self.legacy_previous),
                             (self.user_skills, self.user_previous)):
             for rel, data in files.items():
@@ -252,6 +272,59 @@ class PromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'wrong bundled skill pack'):
             apply_build.main()
         self.assert_previous_resources()
+
+    def test_corrupt_mcp_tree_is_rejected_before_promoting_any_resource(self):
+        dependency = self.mcp_staged / 'runtime/node_modules/server/index.js'
+        original = dependency.read_bytes()
+        for mutation in ('checksum', 'unhashed', 'missing'):
+            with self.subTest(mutation=mutation):
+                dependency.write_bytes(original)
+                extra = self.mcp_staged / 'runtime/unhashed.js'
+                if extra.exists():
+                    extra.unlink()
+                if mutation == 'checksum':
+                    dependency.write_bytes(b'corrupt dependency')
+                elif mutation == 'unhashed':
+                    extra.write_bytes(b'unhashed dependency')
+                else:
+                    dependency.unlink()
+                with self.assertRaisesRegex(ValueError, 'Staged MCP resource (checksum|file inventory) mismatch'):
+                    apply_build.main()
+                self.assert_previous_resources()
+
+    def test_partial_mcp_copy_restores_existing_and_fresh_resources(self):
+        real_copytree = apply_build.shutil.copytree
+        for fresh in (False, True):
+            with self.subTest(fresh=fresh):
+                if fresh:
+                    apply_build.shutil.rmtree(self.mcp_target)
+                copies = {'count': 0}
+
+                def flaky(source, destination, *args, **kwargs):
+                    if pathlib.Path(destination) == self.mcp_target:
+                        copies['count'] += 1
+                        if copies['count'] == 1:
+                            pathlib.Path(destination).mkdir(parents=True)
+                            (pathlib.Path(destination) / 'partial').write_bytes(b'partial MCP tree')
+                            raise OSError('simulated MCP copy failure')
+                    return real_copytree(source, destination, *args, **kwargs)
+
+                with mock.patch.object(apply_build.shutil, 'copytree', side_effect=flaky):
+                    with self.assertRaisesRegex(OSError, 'MCP copy failure'):
+                        apply_build.main()
+                if fresh:
+                    self.assertFalse(self.mcp_target.exists())
+                    for name in self.names:
+                        self.assertEqual((self.target / name).read_bytes(), self.previous[name])
+                    for rel, data in self.pack_previous.items():
+                        self.assertEqual((self.pack_target / rel).read_bytes(), data)
+                    for rel, data in self.legacy_previous.items():
+                        self.assertEqual((self.legacy / rel).read_bytes(), data)
+                    self.assertEqual(self.unowned.read_bytes(), b'preserved resource\n')
+                else:
+                    self.assert_previous_resources()
+                self.assertEqual(self.cache.read_text(), self.cache_before)
+
 
     def test_failed_native_pack_copy_restores_previous_resources(self):
         real_copytree = apply_build.shutil.copytree

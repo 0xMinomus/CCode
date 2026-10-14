@@ -2,6 +2,16 @@
 
 ## 2026-10-14
 
+### MCP terpasang default dan katalog Install/Test di menu MCP
+
+- Context7, Websearch, dan Codegraph menjadi MCP bawaan dengan dependency yang dikirim dalam resource aplikasi. Tidak memakai konfigurasi Oh My Pi, key pribadi pengembang, atau alamat SearXNG localhost pengembang.
+- Settings → MCP Servers mendapat katalog lokal untuk memasang LSP, Ripgrep, GitHub, n8n, dan Obsidian. Daftar server, enable/disable, dan pengelolaan MCP native tetap dipakai.
+- Tombol Test menjalankan tool nyata. Integrasi yang membutuhkan credentials atau folder vault meminta konfigurasi sebelum dipasang. Hasil error tidak boleh memaparkan secret.
+- Penyemaian default menjaga konfigurasi user, disabled state, dan penghapusan yang disengaja. Resource MCP dipin, dicatat hash-nya, dan ikut snapshot/rollback saat apply.
+- Uji instance n8n ditunda atas keputusan user: endpoint ngrok lama offline (`ERR_NGROK_3200`). Instalasi n8n MCP dan pengambilan dokumentasi node Webhook berhasil; akses workflow tidak diklaim teruji. n8n tetap opsional di menu MCP, bukan plugin.
+- Pencarian keyless tetap bergantung pada layanan upstream. Uji menemukan Firecrawl HTTP 403, Exa sesekali tanpa hasil, dan DNS DuckDuckGo gagal; kegagalan ditampilkan dengan tahap tool serta klasifikasi aman. Operasi pencarian Exa dan fetch dokumentasi berhasil tanpa credentials; tidak ada retry atau hasil palsu untuk menyembunyikan error.
+- Verifikasi pada aplikasi terisolasi: `make build` + `make test` **169 tes** hijau (termasuk inventori/hash/promosi/rollback resource MCP, kegagalan parsial, dan sanitasi error). Menu MCP menampilkan 8 entri dengan 3 default **Default · Installed** dan 5 opsional; pengujian tool nyata berhasil untuk Context7 (dokumentasi), Websearch (pencarian + fetch), Codegraph (indeks + AST), LSP (diagnostics + symbols), Ripgrep (pencarian lokal), GitHub (get_me terautentikasi), dan Obsidian (vault sementara). Disable native tetap bertahan setelah restart dan tercermin di katalog. Instalasi opsional dari UI berjalan tanpa Node/npm sistem.
+
 ### 32 skills menjadi Default di menu Skills, tanpa plugin CCode Skills
 
 - Payload `src/skills/` kembali dikirim lewat pack native `glm/packages/bundled-skills`, dengan seed `dynamic-workflows` vendor tetap tersedia. Instalasi baru tidak memerlukan plugin CCode Skills.

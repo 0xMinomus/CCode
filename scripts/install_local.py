@@ -240,6 +240,11 @@ def main():
     try:
         namespace = namespace_root(args.root)
         provider = namespace / 'data/.zcode/v2/provider_config.json'
+        mcp_resources = ROOT / 'app/resources'
+        mcp_main = mcp_resources / 'mcp/main.cjs'
+        mcp_node = ROOT / 'app/ccode'
+        if not mcp_node.exists():
+            mcp_node = ROOT / 'app/zcode'
         config = namespace / 'data/.zcode/cli/config.json'
         imported = import_personal_provider(args.import_provider_from) if args.import_provider_from else None
         if imported is not None and safe_path(provider).exists():
@@ -274,6 +279,8 @@ def main():
             print('Data migration:', legacy, '->', namespace)
         if args.dry_run:
             return
+        if not mcp_main.is_file() or not mcp_node.is_file():
+            raise ValueError('Bundled MCP resources are missing; build and apply before installing')
         with namespace_lock(namespace):
             assert_offline(namespace)
             migrated = migrate_namespace(namespace)
@@ -312,6 +319,8 @@ def main():
                 finally:
                     temporary.unlink()
             atomic_json(config, data)
+            subprocess.run([str(mcp_node), str(mcp_main), '--bootstrap', str(namespace), str(mcp_resources)],
+                           env={**os.environ, 'ELECTRON_RUN_AS_NODE': '1'}, check=True)
             write_integration(launcher, desktop, namespace)
             write_integration(units / (UNIT_NAME + '.service'), service, namespace)
             write_integration(units / (UNIT_NAME + '.timer'), timer, namespace)

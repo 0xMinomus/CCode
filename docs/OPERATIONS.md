@@ -20,6 +20,14 @@ systemctl --user disable --now ccode-model-sync.path      # hentikan pengisian i
 systemctl --user disable --now ccode-model-sync.timer     # hentikan sync rutin
 ```
 
+## MCP di Settings
+
+Context7, Websearch, dan Codegraph tersedia setelah instalasi aplikasi. Buka **Settings → MCP Servers** untuk melihat server native dan katalog integrasi. Tombol **Test** menjalankan operasi MCP aktual dan menampilkan hasil atau kegagalan.
+
+MCP opsional dipasang lewat **Install** di katalog. LSP membutuhkan language server untuk bahasa proyek; Ripgrep mencari berkas lokal. GitHub membutuhkan token, n8n membutuhkan URL instance dan API key, dan Obsidian membutuhkan folder vault yang dipilih user. Jangan menyalin credentials dari konfigurasi agent lain.
+
+Default tidak berarti semua proses server berjalan terus. Runtime MCP tetap mengikuti pemuatan oleh agent. Context7 dan Websearch menggunakan jaringan saat tool dipanggil; Codegraph menyimpan indeks lokal proyek. Mematikan atau menghapus server melalui pengelolaan native tidak boleh dibatalkan oleh bootstrap berikutnya.
+
 ## Backup dan restore data standalone
 
 Tutup aplikasi lebih dulu; snapshot diambil offline agar index task, database sesi, dan file task konsisten sebagai satu set.
