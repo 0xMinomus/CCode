@@ -7,8 +7,10 @@ records, and leaves the user's workspace files alone. Snapshots first unless
 `--no-backup` is given.
 """
 import argparse
+import datetime
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 
@@ -18,7 +20,7 @@ from local_only import rebrand
 
 from data_backup import DEFAULT_ROOT, assert_offline, namespace_root
 
-SKIP_CONTENT = ('integration-backups',)
+SKIP_CONTENT = ('integration-backups', 'migration-backups')
 # The workspace holds user files: paths are renamed, contents are never rewritten.
 SKIP_CONTENT_PARTS = ('workspace',)
 DATABASES = ('data/.ccode/cli/db/db.sqlite', 'data/.ccode/v2/tasks-index.sqlite')
@@ -38,6 +40,51 @@ def app_running():
         if target.name == 'ccode' and (ROOT / 'app').resolve() in target.parents:
             return proc.name
     return None
+
+
+def snapshot(namespace, destination):
+    """Archive the state this migration rewrites; `data_backup.py` refuses the user workspace.
+
+    The workspace holds project files with symlinked node_modules, which the strict
+    snapshot validator rejects, and the migration never rewrites its contents.
+    """
+    import tarfile
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(destination, 'w:gz') as archive:
+        for path in sorted(namespace.rglob('*')):
+            relative = path.relative_to(namespace)
+            parts = relative.parts
+            if 'workspace' in parts or 'migration-backups' in parts or 'backups' in parts:
+                continue
+            archive.add(path, arcname=str(relative), recursive=False)
+    return destination
+
+
+def merge_layout(legacy, destination, backup):
+    """Move a legacy data layout into the new one, keeping the legacy files on conflict.
+
+    `make install` may already have seeded the new layout; the legacy tree holds the
+    real state, so it wins and the replaced file is archived first.
+    """
+    if not legacy.is_dir():
+        return []
+    moved = []
+    for path in sorted(legacy.rglob('*')):
+        relative = path.relative_to(legacy)
+        target = destination / relative
+        if path.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+        if target.exists():
+            archived = backup / relative
+            archived.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(target), str(archived))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(path), str(target))
+        moved.append(relative)
+    shutil.rmtree(legacy, ignore_errors=True)
+    return moved
 
 
 def rename_paths(root):
@@ -117,9 +164,8 @@ def main():
     assert_offline(namespace)
 
     layout = namespace / 'data' / '.ccode'
-    if not layout.is_dir():
-        layout = namespace / 'data' / rebrand.previous('.ccode')
-    if not layout.is_dir():
+    legacy_layout = namespace / 'data' / rebrand.previous('.ccode')
+    if not layout.is_dir() and not legacy_layout.is_dir():
         parser.exit(1, f'Standalone data layout not found under: {namespace}\n')
     if args.dry_run:
         stale = sorted(str(path.relative_to(namespace)) for path in namespace.rglob('*') if rebrand.leftover(path.name))
@@ -128,24 +174,21 @@ def main():
             print('  ', name)
         return
 
+    stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     if not args.no_backup:
-        subprocess.run([sys.executable, str(ROOT / 'scripts/data_backup.py'), 'backup', '--root', str(namespace)],
-                       check=True)
-
+        archived = snapshot(namespace, namespace / 'migration-backups' / f'{stamp}-pre.tar.gz')
+        print(f'Pre-migration snapshot: {archived}')
+    replaced = merge_layout(legacy_layout, layout, namespace / 'migration-backups' / stamp)
     renamed = rename_paths(namespace)
     rewritten = rewrite_contents(namespace)
     records = 0
     for relative in DATABASES:
         records += rewrite_database(namespace / relative)
-    stale_layout = namespace / 'data' / rebrand.previous('.ccode')
-    if stale_layout.is_dir() and not any(stale_layout.iterdir()):
-        stale_layout.rmdir()
     print(f'Namespace migrated: {namespace}')
+    print(f'  merged legacy entries: {len(replaced)}')
     print(f'  renamed paths: {len(renamed)}')
     print(f'  rewritten files: {len(rewritten)}')
     print(f'  rewritten records: {records}')
-    if stale_layout.exists():
-        print(f'  kept: {stale_layout} (not empty)')
 
 
 if __name__ == '__main__':

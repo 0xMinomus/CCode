@@ -2,19 +2,27 @@
 
 A new session started at the highest available reasoning level (`values.at(-1)`),
 so every step of a simple request paid the slowest effort. The preferred level is
-`low` when the model offers it, and the previous behaviour otherwise. The Harness
-lines give the model an explicit stopping rule, which is what keeps a status
-question from turning into a chain of re-checks.
+`low` when the model offers it, and the previous behaviour otherwise.
+
+The selection completers read the level out of an optional member chain, so the
+helper takes the level list itself: repeating the chain in a conditional would
+introduce a second, unguarded reference to the minified receiver.
 """
 
 from . import replace_once
 
-# Default effort for a new session: the cheapest productive level the model offers.
+# Default effort inside the agent bundle, where the level list is a plain local.
 AGENT_EFFORT = ('defaultLevel:s.values.at(-1)}',
                 'defaultLevel:s.values.includes("low")?"low":s.values.at(-1)}')
-# Same default when the host or the renderer completes a model selection.
-SELECTION_EFFORT = ('optionSpecs.reasoningLevel.values.at(-1)',
-                    'optionSpecs.reasoningLevel.values.includes("low")?"low":optionSpecs.reasoningLevel.values.at(-1)')
+HOST_SELECTION = ('let r=e.providers.find(o=>o.providerId===t.providerId)'
+                  '?.models.find(o=>o.modelId===t.modelId)?.config.optionSpecs.reasoningLevel.values.at(-1);',
+                  'let r=ccodePreferredReasoningLevel(e.providers.find(o=>o.providerId===t.providerId)'
+                  '?.models.find(o=>o.modelId===t.modelId)?.config.optionSpecs.reasoningLevel.values);')
+RENDERER_SELECTION = ('let n=(e.providers.find(e=>e.providerId===t.providerId)'
+                      '?.models.find(e=>e.modelId===t.modelId))?.config.optionSpecs.reasoningLevel.values.at(-1);',
+                      'let n=ccodePreferredReasoningLevel((e.providers.find(e=>e.providerId===t.providerId)'
+                      '?.models.find(e=>e.modelId===t.modelId))?.config.optionSpecs.reasoningLevel.values);')
+HELPER = '\nfunction ccodePreferredReasoningLevel(e){return e&&e.includes("low")?"low":e?.at(-1)}\n'
 HARNESS_HEAD = ('return["# Harness","- Text you output outside of tool use is displayed to the user '
                 'as Github-flavored markdown in a terminal.",')
 HARNESS_TAIL = ('return["# Harness",'
@@ -33,8 +41,8 @@ def patch_agent(text):
     return replace_once(text, HARNESS_HEAD, HARNESS_TAIL)
 
 
-def patch_archive(archive, replacements, assets):
-    """Apply the effort default wherever a model selection is completed."""
-    for name in assets:
-        text = replacements.get(name, archive.read(name)).decode()
-        replacements[name] = replace_once(text, *SELECTION_EFFORT).encode()
+def patch_archive(archive, replacements, host, renderer):
+    """Apply the effort default in the host and renderer selection completers."""
+    for name, anchor in ((host, HOST_SELECTION), (renderer, RENDERER_SELECTION)):
+        text = replace_once(replacements.get(name, archive.read(name)).decode(), *anchor)
+        replacements[name] = (text + HELPER).encode()

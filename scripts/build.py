@@ -94,7 +94,7 @@ ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcM
  cloud.patch_archive(view,replacements,renderer)
  token_savers.patch_archive(view,replacements,renderer,manifest['renderer_intl_asset'])
  replacements[cloud.HOST]=skills_plugin.patch_host(view.read(cloud.HOST).decode()).encode()
- runtime_tuning.patch_archive(view,replacements,[renderer,cloud.HOST])
+ runtime_tuning.patch_archive(view,replacements,cloud.HOST,renderer)
  branding.patch_archive(view,replacements,{'renderer':renderer,'intl':manifest['renderer_intl_asset'],'icon':manifest['renderer_icon_asset']})
  identity=json.loads(view.read('package.json'))
  identity.update({'name':manifest['application_name'],'productName':branding.PRODUCT,'description':branding.PRODUCT+' desktop application'})

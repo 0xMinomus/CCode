@@ -11,8 +11,12 @@ import pathlib
 import re
 
 RENAMES = (('ZCODE', 'CCODE'), ('ZCode', 'CCode'), ('zcode', 'ccode'))
+# The pre-rebrand two-word label collapses to the product name, as it did before
+# this module existed; the token pass alone would leave it as `CCode on Steroids`.
+LABELS = (('CCode on Steroids', 'CCode'),)
 _REPLACEMENTS = dict(RENAMES)
 _PATTERN = re.compile('|'.join(re.escape(source) for source, _ in RENAMES))
+_LABELS = tuple((re.compile(re.escape(label)), target) for label, target in LABELS)
 # Text assets inside the app archive. Source maps are skipped: their mappings
 # describe positions in the original file and renaming inside them corrupts them.
 TEXT_SUFFIXES = ('.js', '.cjs', '.mjs', '.json', '.html', '.css', '.txt', '.md', '.yml',
@@ -20,8 +24,11 @@ TEXT_SUFFIXES = ('.js', '.cjs', '.mjs', '.json', '.html', '.css', '.txt', '.md',
 
 
 def apply(text):
-    """Replace every upstream product token in one pass."""
-    return _PATTERN.sub(lambda match: _REPLACEMENTS[match.group(0)], text)
+    """Replace every upstream product token in one pass, then collapse the old label."""
+    text = _PATTERN.sub(lambda match: _REPLACEMENTS[match.group(0)], text)
+    for pattern, target in _LABELS:
+        text = pattern.sub(target, text)
+    return text
 
 
 def leftover(text):
