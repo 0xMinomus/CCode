@@ -2,6 +2,12 @@
 
 ## 2026-10-14
 
+### MCP: label `Optional` dihapus dan image_search dikecualikan
+
+- Baris LSP, Ripgrep, dan semua entri MCP non-default tidak lagi menampilkan label `Optional`; label `Default` tetap ada.
+- MCP `image_search` dari plugin resmi tidak diregistrasikan karena memerlukan autentikasi akun Z.ai yang tidak tersedia di build standalone.
+
+
 ### MCP: baris gaya native, hanya Context7 + Codegraph + LSP + Ripgrep
 
 - Permintaan user: hilangkan bagian "Server catalog" bergaya kartu. Entri opsional sekarang memakai baris milik daftar **Installed** yang sama; tombol **Install** mengisi slot kontrol, lalu baris native ber-switch on/off menggantikannya. Tidak ada lagi tombol Test di UI.

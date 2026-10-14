@@ -1,6 +1,8 @@
 import importlib
+import json
 import pathlib
 import re
+import subprocess
 import sys
 import unittest
 
@@ -269,6 +271,31 @@ class PatchedIntlBundleTests(unittest.TestCase):
         self.assertNotIn('请开通编程套餐', self.text)
 
 
+class McpCatalogRendererTests(unittest.TestCase):
+    def test_optional_entries_do_not_render_an_optional_badge(self):
+        script = r"""
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), vm = require('node:vm');
+const sandbox = {
+  Q: { useState: value => [value, () => {}] },
+  $: { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) },
+  Ps: 'Icon',
+  X: 'Button',
+  module: { exports: {} }
+};
+vm.runInNewContext(fs.readFileSync('./src/renderer/mcp-catalog.js', 'utf8'), sandbox);
+const { CCodeMcpCatalogRow } = sandbox.module.exports;
+for (const [id, name] of [['lsp', 'LSP'], ['ripgrep', 'Ripgrep'], ['other', 'Other MCP']]) {
+  const row = CCodeMcpCatalogRow({ entry: { id, name, default: false, description: '' }, onInstalled: async () => {} });
+  assert.equal(JSON.stringify(row).includes('Optional'), false, `${name} must not show an Optional badge`);
+}
+const defaultRow = CCodeMcpCatalogRow({ entry: { id: 'context7', name: 'Context7', default: true, description: '' }, onInstalled: async () => {} });
+assert.equal(JSON.stringify(defaultRow).includes('Default'), true);
+"""
+        result = subprocess.run(['node', '-e', script], cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+
 class PatchedAgentBundleTests(unittest.TestCase):
     """The marketplace catalog never carries paid-plan plugins."""
     baseline = ROOT / 'baselines' / 'zcode-3.14.5-original-agent.cjs'
@@ -293,6 +320,41 @@ class PatchedAgentBundleTests(unittest.TestCase):
                          'the catalog builder no longer keeps paid-plan entries')
         self.assertEqual(self.text.count('delete t.requiresPaidPlan'), 1, 'install manifest still strips the flag')
 
+
+    def test_image_search_mcp_is_excluded_without_filtering_other_plugins(self):
+        start = self.text.index('function Pat(e){')
+        end = self.text.index('function Q3s(e,t){', start)
+        resolver = self.text[start:end]
+        overview_start = self.text.index('function Qzs(e,t,n,o,s,a){')
+        overview_end = self.text.index('function e7s(e){', overview_start)
+        overview = self.text[overview_start:overview_end]
+        script = f"""
+function eBs() {{ return {{}}; }}
+function Q3s(loaded, key) {{ return `plugin:${{loaded.manifest.name}}:${{key}}`; }}
+function nBs(config) {{ return config; }}
+function gre() {{ throw new Error('unexpected MCP config read'); }}
+function BOe() {{ return null; }}
+function Oat() {{ return []; }}
+{resolver}
+{overview}
+const imageSearch = Pat({{loaded:{{id:'image-search@zcode-plugins-official',manifest:{{name:'image-search'}}}},definitions:{{image_search:{{type:'http'}},other:{{type:'stdio'}}}},diagnostics:[]}});
+const otherPlugin = Pat({{loaded:{{id:'other',manifest:{{name:'other'}}}},definitions:{{image_search:{{type:'http'}}}},diagnostics:[]}});
+function pluginOverview(name) {{
+  return Qzs(
+    {{id:`${{name}}@zcode-plugins-official`,manifest:{{author:null,homepage:'',name,description:name,version:'1.0.0'}},manifestPath:'/plugin/manifest.json',marketplace:'zcode-plugins-official',rootPath:'/plugin',source:'official'}},
+    {{commandRoots:[],hookDetails:[],skillCount:0,skillRoots:[],mcpServers:{{}}}},
+    '/data',true,['image_search'],{{}}
+  );
+}}
+console.log(JSON.stringify({{imageSearch,otherPlugin,imageSearchOverview:pluginOverview('image-search'),otherOverview:pluginOverview('other')}}));
+"""
+        result = subprocess.run(['node', '-e', script], cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        servers = json.loads(result.stdout)
+        self.assertEqual(servers['imageSearch'], {'plugin:image-search:other': {'type': 'stdio'}})
+        self.assertEqual(servers['otherPlugin'], {'plugin:other:image_search': {'type': 'http'}})
+        self.assertEqual(servers['imageSearchOverview']['declaredMcpServerNames'], [])
+        self.assertEqual(servers['otherOverview']['declaredMcpServerNames'], ['image_search'])
 
 if __name__ == '__main__':
     unittest.main()

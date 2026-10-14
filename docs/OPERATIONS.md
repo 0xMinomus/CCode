@@ -22,13 +22,13 @@ systemctl --user disable --now ccode-model-sync.timer     # hentikan sync rutin
 
 ## MCP di Settings
 
-Context7 dan Codegraph tersedia setelah instalasi aplikasi. **Settings → MCP Servers** menampilkan daftar **Installed** server native; entri opsional **LSP** dan **Ripgrep** muncul sebagai baris di daftar yang sama dengan tombol **Install** pada slot switch-nya. Setelah di-Install, baris native dengan switch on/off menggantikan baris itu.
+Context7 dan Codegraph tersedia setelah instalasi aplikasi. **Settings → MCP Servers** menampilkan daftar **Installed** server native; LSP dan Ripgrep tersedia sebagai baris katalog dengan tombol **Install** di slot switch, tanpa label `Optional`. Setelah di-Install, baris native dengan switch on/off menggantikan baris katalog.
 
-LSP membutuhkan language server untuk bahasa proyek (TypeScript/JavaScript dipasang bersama entri ini). Ripgrep mencari berkas lokal. Instalasi opsional memakai registry npm dan direktori privat di dalam namespace (`mcp/packages`), tanpa Node/npm sistem.
+LSP membutuhkan language server untuk bahasa proyek (TypeScript/JavaScript dipasang bersama entri ini). Ripgrep mencari berkas lokal. Pemasangan melalui tombol **Install** memakai registry npm dan direktori privat di dalam namespace (`mcp/packages`), tanpa Node/npm sistem.
 
 Default tidak berarti semua proses server berjalan terus; runtime MCP tetap mengikuti pemuatan oleh agent. Context7 memakai jaringan saat tool dokumentasi dipanggil. Codegraph menyimpan indeks lokal proyek. Mematikan atau menghapus server lewat pengelolaan native tidak dibatalkan oleh bootstrap berikutnya.
 
-MCP lain (mis. n8n atau GitHub) dapat ditambahkan sendiri lewat tombol **New** di halaman yang sama; tidak ada entri bawaan untuk keduanya.
+MCP lain (mis. n8n atau GitHub) dapat ditambahkan sendiri lewat tombol **New** di halaman yang sama; tidak ada entri bawaan untuk keduanya. MCP resmi `image_search` tidak dimuat karena memerlukan autentikasi akun Z.ai.
 
 ## Backup dan restore data standalone
 

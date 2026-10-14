@@ -509,4 +509,15 @@ def patch_agent(text):
     text = replace_once(text, 'Ye.start(),I?.start(),L=DXo(Tt,Fe=>Ye.send(Fe),u),', 'Ye.start(),')
     text = replace_once(text, ',n("telemetry",()=>Iwt())', '')
     text = replace_once(text, 'zcodeBuiltinProviders:t.providers,', 'zcodeBuiltinProviders:uw.empty(),')
+    text = replace_once(
+        text,
+        'for(let[s,a]of Object.entries(t))try{o[Q3s(e.loaded,s)]=nBs(a,n,{mcpKey:s,pluginId:e.loaded.id})}',
+        'for(let[s,a]of Object.entries(t))if(!(e.loaded.manifest.name==="image-search"&&s==="image_search"))try{o[Q3s(e.loaded,s)]=nBs(a,n,{mcpKey:s,pluginId:e.loaded.id})}',
+    )
+    text = replace_once(
+        text,
+        'declaredMcpServerNames:s,description:e.manifest.description',
+        'declaredMcpServerNames:e.manifest.name==="image-search"?s.filter(n=>n!=="image_search"):s,'
+        'description:e.manifest.description',
+    )
     return text

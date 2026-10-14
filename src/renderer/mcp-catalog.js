@@ -44,7 +44,7 @@ function CCodeMcpCatalogRow({entry,onInstalled}){
   $.jsxs('div',{className:'min-w-0',children:[
    $.jsxs('div',{className:'flex flex-wrap items-center gap-2',children:[
     $.jsx('span',{className:'truncate text-ui-base font-medium text-foreground',children:entry.name}),
-    $.jsx('span',{className:'inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtle ring-1 ring-border',children:entry.default?'Default':'Optional'})]}),
+    entry.default?$.jsx('span',{className:'inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtle ring-1 ring-border',children:'Default'}):null]}),
    $.jsx('div',{className:'mt-1 truncate text-ui-sm text-foreground-subtle',children:entry.description}),
    error?$.jsx('div',{role:'alert',className:'mt-1 text-ui-sm text-destructive',style:{overflowWrap:'anywhere'},children:error}):null]}),
   $.jsx('div',{className:'flex shrink-0 items-center gap-2',children:$.jsx(X,{type:'button',variant:'outline',size:'sm',disabled:busy,'aria-label':`Install ${entry.name}`,onClick:()=>void install(),children:busy?'Installing…':'Install'})})]});
