@@ -71,6 +71,14 @@ class RenameTests(unittest.TestCase):
         self.assertEqual(rebrand.previous('ccode-on-steroids'), 'zcode-on-steroids')
         self.assertEqual(rebrand.previous(rebrand.apply('.zcode ZCode ZCODE')), '.zcode ZCode ZCODE')
 
+    def test_absolute_urls_are_kept_verbatim(self):
+        source = 'see https://cdn-zcode.z.ai/zcode/official-plugin/assets/x/icon.png and ZCode'
+        self.assertEqual(rebrand.apply(source),
+                         'see https://cdn-zcode.z.ai/zcode/official-plugin/assets/x/icon.png and CCode')
+        self.assertEqual(rebrand.leftover(source), ['ZCode'])
+        self.assertEqual(rebrand.leftover('https://cdn-zcode.z.ai/zcode/x'), [])
+        rebrand.assert_clean('fetch("https://cdn-zcode.z.ai/zcode/x")', 'out/main/index.js')
+
     def test_guard_checks_only_the_upstream_mark(self):
         branding.guard('a=`About CCode`;b=`CCode Protocol`', 't')
         with self.assertRaisesRegex(ValueError, 'Upstream product mark'):

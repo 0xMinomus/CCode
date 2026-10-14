@@ -11,12 +11,18 @@ import pathlib
 import re
 
 RENAMES = (('ZCODE', 'CCODE'), ('ZCode', 'CCode'), ('Zcode', 'Ccode'), ('zcode', 'ccode'))
+# Absolute URLs are network contracts, not labels: the upstream asset and API hosts
+# only answer to their real spelling, so every `http(s)://…` run is left verbatim.
+URL = re.compile(r'https?://[^\s"\'`<>)\]}\\]+')
+_MASK = '\x00rebrand-mask-'
+_MASK_CLOSE = '\x00'
 # The pre-rebrand two-word label collapses to the product name, as it did before
 # this module existed; the token pass alone would leave it as `CCode on Steroids`.
 LABELS = (('CCode on Steroids', 'CCode'),)
 _REPLACEMENTS = dict(RENAMES)
 _PATTERN = re.compile('|'.join(re.escape(source) for source, _ in RENAMES))
 _LABELS = tuple((re.compile(re.escape(label)), target) for label, target in LABELS)
+_MASKED = re.compile(r'\x00rebrand-mask-(\d+)\x00')
 # Text assets inside the app archive. Source maps are skipped: their mappings
 # describe positions in the original file and renaming inside them corrupts them.
 TEXT_SUFFIXES = ('.js', '.cjs', '.mjs', '.json', '.html', '.css', '.txt', '.md', '.yml',
@@ -24,16 +30,24 @@ TEXT_SUFFIXES = ('.js', '.cjs', '.mjs', '.json', '.html', '.css', '.txt', '.md',
 
 
 def apply(text):
-    """Replace every upstream product token in one pass, then collapse the old label."""
-    text = _PATTERN.sub(lambda match: _REPLACEMENTS[match.group(0)], text)
+    """Replace every upstream product token, leaving absolute URLs untouched."""
+    urls = []
+
+    def mask(match):
+        urls.append(match.group(0))
+        return f'{_MASK}{len(urls) - 1}' + _MASK_CLOSE
+
+    text = _PATTERN.sub(lambda match: _REPLACEMENTS[match.group(0)], URL.sub(mask, text))
     for pattern, target in _LABELS:
         text = pattern.sub(target, text)
-    return text
+    if not urls:
+        return text
+    return _MASKED.sub(lambda match: urls[int(match.group(1))], text)
 
 
 def leftover(text):
-    """Upstream tokens still present in `text`, as a sorted unique list."""
-    return sorted(set(_PATTERN.findall(text)))
+    """Upstream tokens still present in `text`, ignoring absolute URLs."""
+    return sorted(set(_PATTERN.findall(URL.sub(' ', text))))
 
 
 _REVERSE_MAP = {target: source for source, target in RENAMES}
