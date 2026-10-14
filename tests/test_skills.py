@@ -77,8 +77,8 @@ class NativeSkillVisibilityTests(unittest.TestCase):
     def setUpClass(cls):
         sys.path.insert(0, str(ROOT / 'scripts'))
         from asar import Archive
-        baseline = ROOT / 'baselines/zcode-3.14.5-original.asar'
-        agent = ROOT / 'baselines/zcode-3.14.5-original-agent.cjs'
+        baseline = ROOT / 'baselines/ccode-3.14.5-original.asar'
+        agent = ROOT / 'baselines/ccode-3.14.5-original-agent.cjs'
         if not baseline.is_file() or not agent.is_file():
             raise unittest.SkipTest('pinned upstream artifacts are unavailable')
         cls.archive = Archive(baseline)
@@ -143,22 +143,22 @@ class NativeSkillVisibilityTests(unittest.TestCase):
             + json.dumps({'workspacePath': str(self.workspace), 'provider': 'glm'}) + ')));', esm=True)
 
     def test_actual_skills_service_lists_native_defaults_and_keeps_user_skills(self):
-        self.write_skill(self.home / '.zcode/skills/my-user-skill', 'my-user-skill')
-        self.write_skill(self.workspace / '.zcode/skills/my-project-skill', 'my-project-skill')
-        legacy = self.home / '.zcode/cli/plugins/cache/zcode-plugins-official/ccode-skills/1.0.0'
+        self.write_skill(self.home / '.ccode/skills/my-user-skill', 'my-user-skill')
+        self.write_skill(self.workspace / '.ccode/skills/my-project-skill', 'my-project-skill')
+        legacy = self.home / '.ccode/cli/plugins/cache/ccode-plugins-official/ccode-skills/1.0.0'
         self.write_skill(legacy / 'skills/antislop', 'antislop')
-        (legacy / '.zcode-plugin').mkdir()
-        manifest = legacy / '.zcode-plugin/plugin.json'
+        (legacy / '.ccode-plugin').mkdir()
+        manifest = legacy / '.ccode-plugin/plugin.json'
         manifest.write_text(json.dumps({'name': 'ccode-skills', 'skills': 'skills'}))
         custom = self.root / 'user-plugin'
         self.write_skill(custom / 'skills/custom-workflow', 'custom-workflow')
-        (custom / '.zcode-plugin').mkdir()
-        (custom / '.zcode-plugin/plugin.json').write_text(
+        (custom / '.ccode-plugin').mkdir()
+        (custom / '.ccode-plugin/plugin.json').write_text(
             json.dumps({'name': 'ccode-skills', 'skills': 'skills'}))
-        config = self.home / '.zcode/cli/config.json'
+        config = self.home / '.ccode/cli/config.json'
         config.write_text(json.dumps({'plugins': {
             'dirs': [str(custom)],
-            'enabledPlugins': {'ccode-skills@zcode-plugins-official': True}}}))
+            'enabledPlugins': {'ccode-skills@ccode-plugins-official': True}}}))
         original_config, original_manifest = config.read_bytes(), manifest.read_bytes()
         result = self.host_listing()
         defaults = [skill for skill in result['skills'] if skill.get('source') == 'bundled']
@@ -169,14 +169,14 @@ class NativeSkillVisibilityTests(unittest.TestCase):
                          {'my-user-skill', 'my-project-skill', 'custom-workflow'})
         self.assertEqual(next(skill for skill in result['skills'] if skill['name'] == 'custom-workflow')['pluginId'],
                          'ccode-skills@inline')
-        self.assertFalse(any(skill.get('pluginId') == 'ccode-skills@zcode-plugins-official'
+        self.assertFalse(any(skill.get('pluginId') == 'ccode-skills@ccode-plugins-official'
                              for skill in result['skills']))
         self.assertEqual(config.read_bytes(), original_config)
         self.assertEqual(manifest.read_bytes(), original_manifest)
         self.assertTrue((legacy / 'skills/antislop/SKILL.md').is_file())
 
     def test_renderer_routes_all_native_rows_to_default_not_installed_or_plugin(self):
-        self.write_skill(self.home / '.zcode/skills/my-user-skill', 'my-user-skill')
+        self.write_skill(self.home / '.ccode/skills/my-user-skill', 'my-user-skill')
         rows = self.host_listing()['skills']
         source = 'const X7=s=>s.trim().toLowerCase();\n'
         for name, following in [('fEn', 'pEn'), ('I0', 'R4t'), ('R4t', 'z4t')]:
@@ -197,8 +197,8 @@ class NativeSkillVisibilityTests(unittest.TestCase):
             {'name': name, 'path': '/resources/glm/packages/bundled-skills/skills/' + name + '/SKILL.md',
              'description': 'bundled default', 'scope': 'system', 'source': 'bundled'}
             for name in SELECTED] + [
-            {'name': 'my-user-skill', 'path': '/home/user/.zcode/skills/my-user-skill/SKILL.md',
-             'description': 'user skill', 'scope': 'user', 'source': 'zcode'}]}
+            {'name': 'my-user-skill', 'path': '/home/user/.ccode/skills/my-user-skill/SKILL.md',
+             'description': 'user skill', 'scope': 'user', 'source': 'ccode'}]}
         source = self.function(self.agent, 'LZo', 'YXa')
         start = self.agent.index('function YXa(')
         source += self.agent[start:self.agent.index('var jZo=', start)]
@@ -215,24 +215,24 @@ class NativeSkillVisibilityTests(unittest.TestCase):
         electron = ROOT / 'app/ccode'
         if not electron.is_file():
             self.skipTest('packaged Electron runtime is unavailable')
-        agent = self.resources / 'glm/zcode.cjs'
+        agent = self.resources / 'glm/ccode.cjs'
         agent.write_text(self.agent)
         self.write_skill(self.pack / 'dynamic-workflows', 'dynamic-workflows')
         for name in ('patterns.md', 'examples.md'):
             (self.pack / 'dynamic-workflows' / name).write_text('Vendor workflow seed.\n')
-        self.write_skill(self.home / '.zcode/skills/my-user-skill', 'my-user-skill')
-        legacy = self.home / '.zcode/cli/plugins/cache/zcode-plugins-official/ccode-skills/1.0.0'
+        self.write_skill(self.home / '.ccode/skills/my-user-skill', 'my-user-skill')
+        legacy = self.home / '.ccode/cli/plugins/cache/ccode-plugins-official/ccode-skills/1.0.0'
         self.write_skill(legacy / 'skills/antislop', 'antislop')
-        (legacy / '.zcode-plugin').mkdir()
-        (legacy / '.zcode-plugin/plugin.json').write_text(json.dumps(
+        (legacy / '.ccode-plugin').mkdir()
+        (legacy / '.ccode-plugin/plugin.json').write_text(json.dumps(
             {'name': 'ccode-skills', 'version': '1.0.0', 'skills': 'skills'}))
-        config = self.home / '.zcode/cli/config.json'
+        config = self.home / '.ccode/cli/config.json'
         config.write_text(json.dumps({'plugins': {
-            'enabledPlugins': {'ccode-skills@zcode-plugins-official': True}}}))
+            'enabledPlugins': {'ccode-skills@ccode-plugins-official': True}}}))
         before = config.read_bytes()
         env = {**os.environ, 'HOME': str(self.home), 'ELECTRON_RUN_AS_NODE': '1',
-               'ZCODE_STORAGE_DIR': str(self.home / '.zcode'),
-               'STORAGE_DIR': str(self.home / '.zcode')}
+               'CCODE_STORAGE_DIR': str(self.home / '.ccode'),
+               'STORAGE_DIR': str(self.home / '.ccode')}
         result = subprocess.run(
             [str(electron), str(agent), 'skills', 'list', '--json'],
             cwd=self.workspace, env=env, capture_output=True, text=True, check=True, timeout=30)
@@ -246,7 +246,7 @@ class NativeSkillVisibilityTests(unittest.TestCase):
         plugins = subprocess.run(
             [str(electron), str(agent), 'plugins', 'list'],
             cwd=self.workspace, env=env, capture_output=True, text=True, check=True, timeout=30)
-        self.assertNotIn('ccode-skills@zcode-plugins-official', plugins.stdout)
+        self.assertNotIn('ccode-skills@ccode-plugins-official', plugins.stdout)
         self.assertEqual(config.read_bytes(), before)
         self.assertTrue((legacy / 'skills/antislop/SKILL.md').is_file())
 

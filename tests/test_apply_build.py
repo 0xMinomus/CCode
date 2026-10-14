@@ -40,9 +40,10 @@ class PromotionTests(unittest.TestCase):
         self.root = pathlib.Path(self.temp.name)
         self.staged = self.root / 'runtime/build/resources'
         self.target = self.root / 'app/resources'
-        self.names = ['app.asar', 'glm/zcode.cjs', 'voice/main.cjs', 'activity/main.cjs',
+        self.names = ['app.asar', 'glm/ccode.cjs', 'glm/.node-bundle-meta.json', 'app-update.yml',
+                      'voice/main.cjs', 'activity/main.cjs',
                       'token-savers/main.cjs', 'token-savers/token-savers-runtime.cjs',
-                      'config/provider/zcode-builtin.json', 'icon.png', 'icon_512x512.png', 'icon_windows.png']
+                      'config/provider/ccode-builtin.json', 'icon.png', 'icon_512x512.png', 'icon_windows.png']
         self.previous = {}
         for name in self.names:
             old = ('previous:' + name).encode()
@@ -60,7 +61,7 @@ class PromotionTests(unittest.TestCase):
         (self.app_dir / 'zcode').write_bytes(b'electron-binary')
         (self.app_dir / 'zcode.png').symlink_to('usr/share/icons/hicolor/1024x1024/apps/zcode.png')
         self.namespace = self.root / 'namespace'
-        self.cache = self.namespace / 'data/.zcode/v2/runtime/provider/linux-x86_64/3.14.5/endpoint-test/zcode-builtin.json'
+        self.cache = self.namespace / 'data/.ccode/v2/runtime/provider/linux-x86_64/3.14.5/endpoint-test/ccode-builtin.json'
         self.cache.parent.mkdir(parents=True, exist_ok=True)
         cache_document = {"schemaVersion": 1, "revision": 30, "config": {"providerConfigRules": {"templateRules": [
             {"templateId": "zai-api", "config": {"access": {"type": "zhipu-coding-plan-api-key"},
@@ -69,7 +70,7 @@ class PromotionTests(unittest.TestCase):
             "providerRules": []}, "modelConfigRules": {"modelRules": []}}}
         self.cache.write_text(json.dumps(cache_document))
         self.cache_before = self.cache.read_text()
-        env = mock.patch.dict(os.environ, {'ZCODE_STANDALONE_ROOT': str(self.namespace)})
+        env = mock.patch.dict(os.environ, {'CCODE_STANDALONE_ROOT': str(self.namespace)})
         env.start()
         self.addCleanup(env.stop)
         self.pack_staged = self.staged / apply_build.SKILL_PACK
@@ -90,12 +91,12 @@ class PromotionTests(unittest.TestCase):
             'skills/stale/SKILL.md': b'old stale body\n',
         }
         self.legacy = self.target / apply_build.LEGACY_SKILL_PLUGIN
-        self.legacy_previous = {'.zcode-plugin/plugin.json': b'{"name": "ccode-skills", "skills": "skills"}\n',
+        self.legacy_previous = {'.ccode-plugin/plugin.json': b'{"name": "ccode-skills", "skills": "skills"}\n',
                                 'skills/alpha/SKILL.md': b'legacy alpha body\n'}
         for rel, data in self.legacy_previous.items():
             (self.legacy / rel).parent.mkdir(parents=True, exist_ok=True)
             (self.legacy / rel).write_bytes(data)
-        self.user_skills = self.namespace / 'data/.zcode/skills'
+        self.user_skills = self.namespace / 'data/.ccode/skills'
         self.user_previous = {'alpha/SKILL.md': b'user alpha\n', 'personal/SKILL.md': b'user personal\n'}
         for rel, data in self.user_previous.items():
             (self.user_skills / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -119,10 +120,40 @@ class PromotionTests(unittest.TestCase):
         self.unowned = self.target / 'other-resource/personal.txt'
         self.unowned.parent.mkdir()
         self.unowned.write_bytes(b'preserved resource\n')
-        staged_names = [*self.names, *(str(path.relative_to(self.staged)) for tree in (self.pack_staged, self.mcp_staged)
-                                     for path in sorted(tree.rglob('*')) if path.is_file())]
+        self.payload_staged = {
+            'glm/packages/ccode-cua-plugin/plugin.json': b'new cua plugin\n',
+            'glm/packages/documents-plugin/plugin.json': b'new documents plugin\n',
+            'glm/packages/new-plugin/index.md': b'new plugin index\n',
+            'glm/packages/zz-last/plugin.json': b'last plugin\n',
+        }
+        # The deployed payload still carries the pre-rebrand layout.
+        self.payload_previous = {
+            'glm/packages/zcode-cua-plugin/plugin.json': b'old cua plugin\n',
+            'glm/packages/image-search-plugin/index.js': b'old image search\n',
+            'glm/packages/documents-plugin/plugin.json': b'old documents plugin\n',
+        }
+        for rel, data in self.payload_staged.items():
+            (self.staged / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.staged / rel).write_bytes(data)
+        for rel, data in self.payload_previous.items():
+            (self.target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.target / rel).write_bytes(data)
+        # Deployed resources still named after the upstream product.
+        self.legacy_files = {name: ('previous:' + name).encode() for name in apply_build.LEGACY_FILES}
+        for rel, data in self.legacy_files.items():
+            (self.target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.target / rel).write_bytes(data)
+        staged_names = [*self.names, *self.payload_staged,
+                        *(str(path.relative_to(self.staged)) for tree in (self.pack_staged, self.mcp_staged)
+                          for path in sorted(tree.rglob('*')) if path.is_file())]
         proof = {'application_name': 'ccode', 'bundled_skill_pack': apply_build.skills_plugin.PACK_DIR,
-                 'bundled_skills': ['alpha', 'beta'], 'sha256': {
+                 'bundled_skills': ['alpha', 'beta'],
+                 'plugin_payload': {
+                     'files': {name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest()
+                               for name in self.payload_staged},
+                     'renames': [['zcode-cua-plugin', 'ccode-cua-plugin']],
+                     'removals': ['image-search-plugin']},
+                 'sha256': {
             name: hashlib.sha256((self.staged / name).read_bytes()).hexdigest() for name in staged_names}}
         (self.staged / 'build-manifest.json').write_text(json.dumps(proof))
         patch = mock.patch.object(apply_build, 'ROOT', self.root)
@@ -130,7 +161,7 @@ class PromotionTests(unittest.TestCase):
         self.addCleanup(patch.stop)
 
     def test_modified_staged_resource_cannot_replace_current_app(self):
-        (self.staged / 'glm/zcode.cjs').write_bytes(b'corrupt')
+        (self.staged / 'glm/ccode.cjs').write_bytes(b'corrupt')
         with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
             apply_build.main()
         for name in self.names:
@@ -157,7 +188,7 @@ class PromotionTests(unittest.TestCase):
         patched = json.loads(self.cache.read_text())
         templates = [rule.get('templateId') for rule in patched['config']['providerConfigRules']['templateRules']]
         self.assertEqual(templates, ['9router'])
-        backups = list((self.root / 'runtime/backups').glob('*/derived/**/zcode-builtin.json'))
+        backups = list((self.root / 'runtime/backups').glob('*/derived/**/ccode-builtin.json'))
         self.assertEqual(len(backups), 1, 'previous cache is kept for rollback')
         self.assertEqual(backups[0].read_text(), self.cache_before)
 
@@ -172,7 +203,7 @@ class PromotionTests(unittest.TestCase):
         real_replace = apply_build.os.replace
 
         def fail_second_resource(source, destination):
-            if pathlib.Path(destination) == self.target / 'glm/zcode.cjs':
+            if pathlib.Path(destination) == self.target / 'glm/ccode.cjs':
                 raise OSError('simulated filesystem failure')
             return real_replace(source, destination)
 
@@ -183,6 +214,28 @@ class PromotionTests(unittest.TestCase):
             self.assertEqual((self.target / name).read_bytes(), self.previous[name])
             self.assertFalse((self.target / name).with_name(pathlib.Path(name).name + '.new').exists())
 
+    def test_failed_payload_promotion_restores_renamed_removed_and_rewritten_payload(self):
+        plan = json.loads((self.staged / 'build-manifest.json').read_text())['plugin_payload']
+        # The last staged payload file disappears after verification, so the write
+        # pass fails after the rename and removal passes are already journaled.
+        (self.staged / 'glm/packages/zz-last/plugin.json').unlink()
+        backup = self.root / 'payload-backup'
+        backup.mkdir()
+        with self.assertRaises(FileNotFoundError):
+            apply_build.promote_payload(self.staged, self.target, plan, backup)
+        apply_build.restore_payload(self.target, backup)
+        self.assertFalse((self.target / 'glm/packages/ccode-cua-plugin').exists(),
+                         'renamed directory is reversed')
+        self.assertEqual((self.target / 'glm/packages/zcode-cua-plugin/plugin.json').read_bytes(),
+                         b'old cua plugin\n')
+        self.assertEqual((self.target / 'glm/packages/image-search-plugin/index.js').read_bytes(),
+                         b'old image search\n', 'removed payload is restored')
+        self.assertEqual((self.target / 'glm/packages/documents-plugin/plugin.json').read_bytes(),
+                         b'old documents plugin\n', 'rewritten file is restored')
+        self.assertFalse((self.target / 'glm/packages/new-plugin/index.md').exists(),
+                         'freshly written file is dropped')
+        self.assertFalse((backup / apply_build.PAYLOAD_JOURNAL).exists())
+
     def test_fresh_install_promotes_native_pack_without_a_plugin(self):
         apply_build.shutil.rmtree(self.pack_target)
         apply_build.shutil.rmtree(self.legacy)
@@ -192,7 +245,7 @@ class PromotionTests(unittest.TestCase):
         self.assertEqual((self.pack_target / 'skills/alpha/SKILL.md').read_bytes(), b'new alpha body\n')
         self.assertEqual((self.pack_target / 'skills/dynamic-workflows/examples.md').read_bytes(), b'vendor examples\n')
         self.assertFalse(self.legacy.exists())
-        self.assertFalse((self.pack_target / '.zcode-plugin').exists())
+        self.assertFalse((self.pack_target / '.ccode-plugin').exists())
         self.assertEqual((self.mcp_target / 'runtime/node_modules/server/index.js').read_bytes(), b'new bundled server\n')
         self.assertFalse((self.mcp_target / 'obsolete.cjs').exists())
         self.assertEqual(self.unowned.read_bytes(), b'preserved resource\n')
@@ -235,12 +288,17 @@ class PromotionTests(unittest.TestCase):
                 self.assertEqual((self.pack_target / rel).read_bytes(), data, rel)
         for rel, data in self.user_previous.items():
             self.assertEqual((self.user_skills / rel).read_bytes(), data)
-        self.assertFalse((self.pack_target / '.zcode-plugin').exists())
+        self.assertFalse((self.pack_target / '.ccode-plugin').exists())
         self.assertFalse(self.legacy.exists())
         backups = list((self.root / 'runtime/backups').glob('*/' + apply_build.LEGACY_SKILL_PLUGIN))
         self.assertEqual(len(backups), 1)
         for rel, data in self.legacy_previous.items():
             self.assertEqual((backups[0] / rel).read_bytes(), data)
+        for rel, data in self.legacy_files.items():
+            self.assertFalse((self.target / rel).exists(), rel)
+            archived = list((self.root / 'runtime/backups').glob('*/legacy/' + rel))
+            self.assertEqual(len(archived), 1, rel)
+            self.assertEqual(archived[0].read_bytes(), data)
 
     def test_corrupt_staged_skill_cannot_replace_deployed_resources(self):
         (self.pack_staged / 'skills/beta/SKILL.md').write_bytes(b'corrupt')
@@ -418,7 +476,7 @@ class PromotionTests(unittest.TestCase):
         old = ['20200101-000000-000000', '20200102-000000-000000', '20200103-000000-000000']
         for stamp in old:
             (backups / stamp).mkdir(parents=True)
-        marker = self.cache.with_name('zcode-builtin-refresh.json')
+        marker = self.cache.with_name('ccode-builtin-refresh.json')
         marker.write_text('{}')
         apply_build.main()
         remaining = sorted(p.name for p in backups.iterdir())
@@ -471,7 +529,7 @@ class SkillPackStagingTests(unittest.TestCase):
         for rel, data in self.vendor.items():
             self.assertEqual((self.pack / rel).read_bytes(), data)
         self.assertFalse(stale_plugin.exists())
-        self.assertFalse((self.pack / '.zcode-plugin').exists())
+        self.assertFalse((self.pack / '.ccode-plugin').exists())
         self.assertEqual(files, sorted(str(path.relative_to(self.output)) for path in self.pack.rglob('*') if path.is_file()))
 
     def test_missing_ownership_marker_preserves_all_noncanonical_skills(self):
@@ -538,26 +596,26 @@ class MaintenanceTests(unittest.TestCase):
         self.assertEqual(apply_build.prune_backups(empty, empty / 'run'), [])
 
     def endpoint_under(self, namespace):
-        endpoint = namespace / 'data/.zcode/v2/runtime/provider/linux-x86_64/3.14.5/endpoint-test'
+        endpoint = namespace / 'data/.ccode/v2/runtime/provider/linux-x86_64/3.14.5/endpoint-test'
         endpoint.mkdir(parents=True)
         return endpoint
 
     def test_stale_catalog_markers_removed_catalog_kept(self):
         namespace = self.root / 'namespace'
         endpoint = self.endpoint_under(namespace)
-        (endpoint / 'zcode-builtin.json').write_text('{}')
-        marker = endpoint / 'zcode-builtin-refresh.json'
+        (endpoint / 'ccode-builtin.json').write_text('{}')
+        marker = endpoint / 'ccode-builtin-refresh.json'
         marker.write_text('{}')
-        env = mock.patch.dict(os.environ, {'ZCODE_STANDALONE_ROOT': str(namespace)})
+        env = mock.patch.dict(os.environ, {'CCODE_STANDALONE_ROOT': str(namespace)})
         env.start()
         self.addCleanup(env.stop)
         removed = apply_build.remove_stale_catalog_markers()
-        self.assertEqual([p.name for p in removed], ['zcode-builtin-refresh.json'])
+        self.assertEqual([p.name for p in removed], ['ccode-builtin-refresh.json'])
         self.assertFalse(marker.exists())
-        self.assertTrue((endpoint / 'zcode-builtin.json').exists())
+        self.assertTrue((endpoint / 'ccode-builtin.json').exists())
 
     def test_stale_catalog_markers_tolerate_missing_namespace(self):
-        env = mock.patch.dict(os.environ, {'ZCODE_STANDALONE_ROOT': str(self.root / 'absent')})
+        env = mock.patch.dict(os.environ, {'CCODE_STANDALONE_ROOT': str(self.root / 'absent')})
         env.start()
         self.addCleanup(env.stop)
         self.assertEqual(apply_build.remove_stale_catalog_markers(), [])

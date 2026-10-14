@@ -114,7 +114,7 @@ def refresh_catalog(cache_root=None):
     path=(cache_root or ROOT)/'catalog.json'
     if path.exists() and time.time()-path.stat().st_mtime<86400:return load(path,{})
     try:
-        req=urllib.request.Request(CATALOG_URL,headers={'User-Agent':'ZCode-Vansrouter-Metadata-Sync/1.0'})
+        req=urllib.request.Request(CATALOG_URL,headers={'User-Agent':'CCode-Vansrouter-Metadata-Sync/1.0'})
         with urllib.request.urlopen(req,timeout=20) as r:catalog=json.load(r)
         if not isinstance(catalog,dict) or 'opencode' not in catalog:raise ValueError('invalid catalog')
         atomic(path,catalog)
@@ -124,7 +124,7 @@ def refresh_catalog(cache_root=None):
 
 def gateway_models(base_url=GATEWAY_BASE_URL, timeout=15):
     """Model entries the local gateway reports. Raises when it is unreachable."""
-    request=urllib.request.Request(base_url.rstrip('/')+'/models',headers={'User-Agent':'ZCode-Standalone-Model-Discovery/1.0'})
+    request=urllib.request.Request(base_url.rstrip('/')+'/models',headers={'User-Agent':'CCode-Standalone-Model-Discovery/1.0'})
     with urllib.request.urlopen(request,timeout=timeout) as response:payload=json.load(response)
     entries=payload.get('data') if isinstance(payload,dict) else payload
     if not isinstance(entries,list):raise ValueError('Gateway model list is not a list')
@@ -204,7 +204,7 @@ def discovery_model_config(entry, catalog=None):
 def catalog_model_matches():
     """Model patterns the bundled provider catalog still describes, or None if unknown."""
     try:
-        path=ROOT.parents[1]/'app/resources/config/provider/zcode-builtin.json'
+        path=ROOT.parents[1]/'app/resources/config/provider/ccode-builtin.json'
         data=json.loads(path.read_text())
         entries=((data.get('config') or {}).get('modelConfigRules') or {}).get('modelRules') or []
     except (OSError,ValueError):
@@ -383,18 +383,18 @@ def discovery_merge(data, models, state, catalog=None, base_url=GATEWAY_BASE_URL
 
 
 def storage_paths():
-    config=os.environ.get('ZCODE_MODEL_SYNC_CONFIG')
-    state=os.environ.get('ZCODE_MODEL_SYNC_STATE')
+    config=os.environ.get('CCODE_MODEL_SYNC_CONFIG')
+    state=os.environ.get('CCODE_MODEL_SYNC_STATE')
     if bool(config)!=bool(state):
-        raise ValueError('Set both ZCODE_MODEL_SYNC_CONFIG and ZCODE_MODEL_SYNC_STATE')
+        raise ValueError('Set both CCODE_MODEL_SYNC_CONFIG and CCODE_MODEL_SYNC_STATE')
     if config:
         config=safe_path(config);state=safe_path(state)
-        root=namespace_root(os.environ.get('ZCODE_STANDALONE_ROOT') or state.parent)
+        root=namespace_root(os.environ.get('CCODE_STANDALONE_ROOT') or state.parent)
         if root not in config.parents or root not in state.parents:
             raise ValueError('Standalone sync paths must be inside their namespace')
         return config,state,root
     # The existing upstream timer intentionally keeps its original config and state.
-    return pathlib.Path.home()/'.zcode/v2/provider_config.json',ROOT,None
+    return pathlib.Path.home()/'.ccode/v2/provider_config.json',ROOT,None
 
 def parse_args(argv=None):
     import argparse

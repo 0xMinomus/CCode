@@ -1,6 +1,6 @@
 """Provider catalog boundary for the standalone variant.
 
-The native provider catalog (`resources/config/provider/zcode-builtin.json`) ships
+The native provider catalog (`resources/config/provider/ccode-builtin.json`) ships
 account-owned Zhipu providers and their templates. This patch drops them and adds
 a native 9Router template so the app offers the local gateway the same way it
 offers OpenAI/DeepSeek, without the manual custom-provider flow.

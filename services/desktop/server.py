@@ -2101,9 +2101,9 @@ def main():
         os._exit(0)
 
 
-if os.environ.get("MCP_SCREEN_PROFILE") == "zcode-fast":
-    from zcode_fast_profile import install as install_zcode_fast
-    install_zcode_fast(globals())
+if os.environ.get("MCP_SCREEN_PROFILE") == "ccode-fast":
+    from ccode_fast_profile import install as install_ccode_fast
+    install_ccode_fast(globals())
 
 if __name__ == "__main__":
     main()

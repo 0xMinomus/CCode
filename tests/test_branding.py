@@ -5,7 +5,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
-from local_only import branding
+from local_only import branding, rebrand
 
 
 class BrandSourceTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class BrandSourceTests(unittest.TestCase):
         for path in branding.glyph_paths():
             self.assertIn(path, component)
         self.assertIn('viewBox:`', component)
-        self.assertNotIn('ZCode', component)
+        self.assertNotIn('CCode', component)
         self.assertEqual(component.count('$.jsx'), 4)
 
     def test_lockup_and_mark_data_uris_are_self_contained(self):
@@ -51,32 +51,32 @@ class BrandSourceTests(unittest.TestCase):
 
 
 class RenameTests(unittest.TestCase):
-    def test_visible_copy_is_renamed(self):
-        self.assertEqual(branding._rename('title:"About ZCode"', 't'), 'title:"About CCode"')
-        self.assertEqual(branding._rename('`ZCode / ${hd(F)}`', 't'), '`CCode / ${hd(F)}`')
+    def test_rename_covers_every_contract_shape(self):
+        source = 'ZCODE_TAP=1;ccode-vansrouter;.zcode;xZCodeY;ZCode'
+        self.assertEqual(rebrand.apply(source), 'CCODE_TAP=1;ccode-vansrouter;.ccode;xCCodeY;CCode')
 
-    def test_legacy_product_name_collapses(self):
-        self.assertEqual(branding._rename('`ZCode on Steroids`', 't'), '`CCode`')
+    def test_rename_is_single_pass_and_does_not_double_substitute(self):
+        once = rebrand.apply('zcode ZCode ZCODE')
+        self.assertEqual(once, 'ccode CCode CCODE')
+        self.assertEqual(rebrand.apply(once), once)
 
-    def test_identifiers_symbols_and_keys_are_untouched(self):
-        source = 'a=ti.ZCodeTask;b=`settings.zcodeMcp`;c={"toggleZCodeStdioTap":"ZCode"}'
-        self.assertEqual(branding._rename(source, 't'), source.replace(':"ZCode"', ':"CCode"'))
-        self.assertEqual(branding._rename('a=`ZCode Protocol/1`;b=`ZCode`', 't'), 'a=`ZCode Protocol/1`;b=`CCode`')
-        self.assertEqual(branding._rename('q(o,"ZCode","Local Storage","leveldb");b="ZCode"', 't'),
-                         'q(o,"ZCode","Local Storage","leveldb");b="CCode"')
-
-    def test_rename_refuses_a_bundle_without_the_product_name(self):
-        with self.assertRaisesRegex(ValueError, 'No product name to rename'):
-            branding._rename('const a=1;', 't')
-
-    def test_guard_reports_unprotected_leftovers(self):
-        branding.guard('a=`CCode`;b=`ZCode Protocol`', 't')
+    def test_leftover_and_assert_clean_report_a_survivor(self):
+        self.assertEqual(rebrand.leftover('x ZCode y zcode z'), ['ZCode', 'zcode'])
+        self.assertEqual(rebrand.leftover('CCODE ccode'), [])
+        rebrand.assert_clean('CCODE ccode', 'out/main/index.cjs')
         with self.assertRaisesRegex(ValueError, 'Unbranded product name'):
-            branding.guard('a=`About ZCode`', 't')
+            rebrand.assert_clean('a=`About ZCode`', 'out/renderer/index.html')
 
-    def test_regex_literals_and_comments_are_not_strings(self):
-        source = 'const re=/[\'"]ZCode/;// "ZCode"\nconst s="ZCode";'
-        self.assertEqual(branding._rename(source, 't'), 'const re=/[\'"]ZCode/;// "ZCode"\nconst s="CCode";')
+    def test_previous_restores_the_upstream_spelling(self):
+        self.assertEqual(rebrand.previous('ccode-on-steroids'), 'zcode-on-steroids')
+        self.assertEqual(rebrand.previous(rebrand.apply('.zcode ZCode ZCODE')), '.zcode ZCode ZCODE')
+
+    def test_guard_checks_only_the_upstream_mark(self):
+        branding.guard('a=`About CCode`;b=`CCode Protocol`', 't')
+        with self.assertRaisesRegex(ValueError, 'Upstream product mark'):
+            branding.guard(f'<path d="{branding.LEGACY_MARK_PREFIXES[0]}Z"/>', 't')
+        with self.assertRaisesRegex(ValueError, 'mark viewBox'):
+            branding.guard(f'<svg viewBox="{branding.LEGACY_VIEW_BOX}"/>', 't')
 
 
 class LegacyMarkTests(unittest.TestCase):

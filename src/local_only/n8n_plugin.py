@@ -2,8 +2,8 @@
 import json
 from . import replace_once
 
-PLUGIN_ID = 'n8n@zcode-plugins-official'
-REGISTRY_ANCHOR = 'G7a=["skills/zcode-configuration-guide/SKILL.md"],u9=['
+PLUGIN_ID = 'n8n@ccode-plugins-official'
+REGISTRY_ANCHOR = 'G7a=["skills/ccode-configuration-guide/SKILL.md"],u9=['
 
 
 def patch_agent(text):

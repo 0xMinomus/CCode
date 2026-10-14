@@ -44,8 +44,8 @@ function validateSettings(value) {
 }
 
 function settingsPath(env = process.env) {
-  const dataRoot = typeof env.ZCODE_DATA_BASE_DIR === 'string' ? env.ZCODE_DATA_BASE_DIR.trim() : '';
-  return dataRoot ? path.join(dataRoot, '.zcode', 'v2', 'token-savers.json') : null;
+  const dataRoot = typeof env.CCODE_DATA_BASE_DIR === 'string' ? env.CCODE_DATA_BASE_DIR.trim() : '';
+  return dataRoot ? path.join(dataRoot, '.ccode', 'v2', 'token-savers.json') : null;
 }
 
 function readSettings(env = process.env) {

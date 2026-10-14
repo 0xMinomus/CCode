@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 from local_only import catalog  # noqa: E402
 
-CATALOG = ROOT / 'app/resources/config/provider/zcode-builtin.json'
+CATALOG = ROOT / 'app/resources/config/provider/ccode-builtin.json'
 
 
 def fixture():
@@ -111,7 +111,7 @@ class InstalledCatalogTests(unittest.TestCase):
         self.assertTrue([t for t in rules['templateRules'] if t['templateId'] == 'deepseek'], 'other providers stay')
         hosts = json.dumps(self.after['config']['modelConfigRules'], ensure_ascii=False)
         self.assertNotIn('api.z.ai', hosts)
-        self.assertNotIn('zcode.z.ai', hosts)
+        self.assertNotIn('ccode.z.ai', hosts)
 
 
 if __name__ == '__main__':

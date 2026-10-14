@@ -18,13 +18,30 @@ class Archive:
   entry=self.index.get(name)
   if entry is None:raise KeyError(name)
   with self.path.open('rb') as f:f.seek(self.start+int(entry['offset']));return f.read(entry['size'])
- def write(self,destination,replacements):
+ def write(self,destination,replacements,renames=None,transform=None):
+  renames=dict(renames or {})
   unknown=set(replacements)-{n for n,_ in self.entries()}
   if unknown:raise KeyError('Unknown ASAR entries: '+str(unknown))
-  header=copy.deepcopy(self.header);payloads=[];offset=0
+  header=copy.deepcopy(self.header)
+  for source,target in renames.items():
+   if source not in self.index:raise KeyError('Unknown ASAR entry to rename: '+source)
+   if target in self.index or target==source:raise ValueError('ASAR rename target is not free: '+target)
+  for source,target in renames.items():
+   source_parts=source.split('/');target_parts=target.split('/')
+   tree=header
+   for part in source_parts[:-1]:tree=tree['files'][part]
+   entry=tree['files'].pop(source_parts[-1])
+   tree=header
+   for part in target_parts[:-1]:
+    tree=tree['files'].setdefault(part,{'files':{}})
+   tree['files'][target_parts[-1]]=entry
+  originals={target:source for source,target in renames.items()}
+  payloads=[];offset=0
   for name,entry in self.entries(header):
-   data=replacements.get(name)
-   if data is None:data=self.read(name)
+   original=originals.get(name,name)
+   data=replacements.get(original)
+   if data is None:data=self.read(original)
+   if transform is not None:data=transform(name,data)
    entry['offset']=str(offset);entry['size']=len(data);offset+=len(data);payloads.append(data)
    if 'integrity' in entry:
     block=entry['integrity'].get('blockSize',4194304)

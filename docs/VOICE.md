@@ -6,7 +6,7 @@ Source UI: `src/renderer/voice-input.js`. Rekaman/IPC: `src/main/voice.cjs`. Tra
 - EN mengutamakan Inggris; Auto memilih ID/EN berdasarkan deteksi. Jangan mengubah nama aplikasi atau maksud umum dengan penggantian luas.
 - Teks antarmuka Voice seluruhnya berbahasa Inggris — label tombol (`Voice`, `Stop recording`, `Transcribing…`), dropdown pengaturan, keterangan bahasa, tooltip, pilihan mode kirim, dan pesan galat perekaman/transkripsi/penyisipan. Bahasa antarmuka ini terpisah dari bahasa pengenalan: Indonesian + English tetap memakai nilai `id`, English + Indonesian memakai `en`, dan Auto detect memakai `auto`; default tetap `id`.
 - Pilihan kirim dan bahasa memakai localStorage profil Electron standalone (`~/.local/share/ccode/electron`). Cek teks adalah default; auto-send hanya setelah user memilihnya.
-- Audio tidak dikirim ke provider. Teks yang dikirim ke chat mengikuti model ZCode yang dipilih, seperti teks diketik.
+- Audio tidak dikirim ke provider. Teks yang dikirim ke chat mengikuti model CCode yang dipilih, seperti teks diketik.
 - Model kecil multilingual tersimpan di `services/voice/model`, venv di `.venv`. Worker hangat bertahan selama app hidup; tutup/buka app untuk memuat kode/model baru.
 - Main frame lokal divalidasi sebelum IPC; recorder dimiliki satu window, timeout 60 detik, dan temporary audio dibersihkan. Jangan menghapus pemeriksaan ini saat merapikan UI.
 

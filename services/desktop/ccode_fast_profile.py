@@ -1,6 +1,6 @@
-"""Local ZCode desktop profile: text-first perception, element-accurate clicks, non-blocking pointer policy.
+"""Local CCode desktop profile: text-first perception, element-accurate clicks, non-blocking pointer policy.
 
-Loaded by server.py when MCP_SCREEN_PROFILE=zcode-fast, with the server's module globals as
+Loaded by server.py when MCP_SCREEN_PROFILE=ccode-fast, with the server's module globals as
 `ns`, so this file is the only seam we edit: the vendored screen-mcp modules stay untouched.
 """
 import json
@@ -11,10 +11,10 @@ import time
 # A parked pointer is not a takeover: the user may move the mouse and leave it elsewhere while
 # the agent works. Only continuous driving counts, and input is injected once the pointer is
 # quiet. See classify_pointer_window.
-IDLE_PX = float(os.environ.get("ZCODE_CUA_IDLE_PX", "8"))
-IDLE_MS = int(os.environ.get("ZCODE_CUA_IDLE_MS", "600"))
-TAKEOVER_MS = int(os.environ.get("ZCODE_CUA_TAKEOVER_MS", "2500"))
-POLL_S = float(os.environ.get("ZCODE_CUA_POLL_S", "0.1"))
+IDLE_PX = float(os.environ.get("CCODE_CUA_IDLE_PX", "8"))
+IDLE_MS = int(os.environ.get("CCODE_CUA_IDLE_MS", "600"))
+TAKEOVER_MS = int(os.environ.get("CCODE_CUA_TAKEOVER_MS", "2500"))
+POLL_S = float(os.environ.get("CCODE_CUA_POLL_S", "0.1"))
 
 PERCEPTION_TOOLS = {
     "screen_read_text",
@@ -105,7 +105,7 @@ def install_pointer_policy(ns):
                 return
             time.sleep(POLL_S)
 
-    guard_user.policy = "zcode-fast-hysteresis"
+    guard_user.policy = "ccode-fast-hysteresis"
     inp.guard_user = guard_user
 
 
@@ -123,7 +123,7 @@ def install_observation_policy(ns):
 
     def maybe_shot(args, content, t0):
         out = original(args, content, t0)
-        if os.environ.get("ZCODE_CUA_SKIP_UNCHANGED_SHOT", "1") == "0":
+        if os.environ.get("CCODE_CUA_SKIP_UNCHANGED_SHOT", "1") == "0":
             return out
         noop = any(
             isinstance(item, dict)
@@ -143,7 +143,7 @@ def install_observation_policy(ns):
         )
         return kept
 
-    maybe_shot.policy = "zcode-fast-noop-skip"
+    maybe_shot.policy = "ccode-fast-noop-skip"
     ns["_maybe_shot"] = maybe_shot
 
 
@@ -153,10 +153,10 @@ def install_lazy_warmup(ns):
     server.main() starts grounding.warmup() on a background thread to hide the model load
     from the first annotate(). The sessions are built on demand anyway (double-checked locks
     in ocr_boxes/_omni_session), so warming is a pure prefetch: it costs ~60 MB for every MCP
-    session that never perceives anything. Set ZCODE_CUA_WARMUP=1 to restore the prefetch for
+    session that never perceives anything. Set CCODE_CUA_WARMUP=1 to restore the prefetch for
     latency-sensitive use.
     """
-    if os.environ.get("ZCODE_CUA_WARMUP") == "1":
+    if os.environ.get("CCODE_CUA_WARMUP") == "1":
         return
     grounding = ns["grounding"]
     grounding.warmup = lambda *a, **k: None

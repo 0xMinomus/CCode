@@ -11,13 +11,17 @@ import pathlib
 import shutil
 import sqlite3
 import stat
+import sys
 import tempfile
 import urllib.parse
 
 PROJECT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT / 'src'))
+from local_only import rebrand
+
 DEFAULT_ROOT = pathlib.Path.home() / '.local/share/ccode'
-# Namespace of the ZCode-era standalone variant; `install_local.py` migrates it once.
-DEFAULT_LEGACY_ROOT = pathlib.Path.home() / '.local/share/zcode-on-steroids'
+# Namespace of the pre-rebrand standalone variant; `install_local.py` migrates it once.
+DEFAULT_LEGACY_ROOT = pathlib.Path.home() / '.local/share' / rebrand.PREVIOUS_NAMESPACE
 TRANSIENT = {'SingletonLock', 'SingletonSocket', 'SingletonCookie'}
 
 
@@ -30,7 +34,7 @@ def safe_path(value):
 
 
 def namespace_root(value=None):
-    path = safe_path(value or os.environ.get('ZCODE_STANDALONE_ROOT') or DEFAULT_ROOT)
+    path = safe_path(value or os.environ.get('CCODE_STANDALONE_ROOT') or DEFAULT_ROOT)
     if path in (pathlib.Path('/'), pathlib.Path.home(), PROJECT):
         raise ValueError('Refusing an unsafe namespace root')
     return path
@@ -78,7 +82,7 @@ def namespace_lock(root, exclusive=True):
 def assert_offline(root):
     """Refuse when a process uses this namespace, including a direct-launched default app."""
     executable = str((PROJECT / 'app/ccode').resolve())
-    marker = ('ZCODE_STANDALONE_ROOT=' + str(root)).encode()
+    marker = ('CCODE_STANDALONE_ROOT=' + str(root)).encode()
     default = pathlib.Path(DEFAULT_ROOT)
     same_default = pathlib.Path(root) == default
     for process in pathlib.Path('/proc').iterdir():
@@ -90,7 +94,7 @@ def assert_offline(root):
             if not same_default or os.readlink(process / 'exe') != executable:
                 continue
             overrides = [value for value in (process / 'environ').read_bytes().split(b'\0')
-                         if value.startswith(b'ZCODE_STANDALONE_ROOT=')]
+                         if value.startswith(b'CCODE_STANDALONE_ROOT=')]
             if not overrides:
                 # A direct launch sets no environment, so it always uses the default root.
                 raise ValueError('Close the standalone app before restoring data')

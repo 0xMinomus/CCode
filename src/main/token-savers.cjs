@@ -27,11 +27,11 @@ function register({ ipcMain }) {
     const frame = event.senderFrame;
     return frame === event.sender.mainFrame && frame.url.startsWith('file://') && frame.url.includes('/out/renderer/index.html');
   }
-  ipcMain.handle('zcode-token-savers:snapshot', async event => {
+  ipcMain.handle('ccode-token-savers:snapshot', async event => {
     if (!trusted(event)) throw Error('Token savers are only available in the local CCode window.');
     return snapshot();
   });
-  ipcMain.handle('zcode-token-savers:save', async (event, settings) => {
+  ipcMain.handle('ccode-token-savers:save', async (event, settings) => {
     if (!trusted(event)) throw Error('Token savers are only available in the local CCode window.');
     return runtime.writeSettings(settings);
   });

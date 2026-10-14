@@ -35,9 +35,10 @@ Every change relative to the pinned upstream build is recorded in [`docs/CHANGEL
   in [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md); several of them declare no license upstream.
 - **MCP catalog**: Context7, Websearch, and Codegraph ship as preinstalled servers. Optional integrations can be
   installed and checked from the MCP settings page. Upstream package licenses remain applicable.
-- **Compatibility identifiers intentionally retained** — `ZCODE_*` environment variables, `zcode-*` IPC channels, the
-  `zcode://` URL scheme, the `.zcode` storage layout, and the cross-process protocol strings are unchanged so that the
-  packaged host and agent backend keep working.
+- **Identity** — every shipped contract carries the CCode name: environment variables (`CCODE_*`), IPC channels, the
+  `ccode://` URL scheme, the `.ccode` storage layout, plugin ids and directories, process titles, and the agent system
+  prompt. The upstream spelling survives only in the pinned upstream artifacts (never edited, verified by checksum) and
+  in the rename map at `src/local_only/rebrand.py`, which records the old name for migration.
 
 Source files added or rewritten by CCode live under `src/`, `services/`, `scripts/`, `tests/`, and `assets/`.
 

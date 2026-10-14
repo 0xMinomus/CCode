@@ -52,7 +52,7 @@ def run_node(script, extra_env=None):
         raise unittest.SkipTest('no node runtime with node:sqlite available')
     env = dict(os.environ)
     env.update(extra_env or {})
-    if command[0].endswith('zcode'):
+    if command[0].endswith('ccode'):
         env['ELECTRON_RUN_AS_NODE'] = '1'
     result = subprocess.run(command + ['-e', script], capture_output=True, text=True, env=env, timeout=120)
     if result.returncode != 0:
@@ -129,8 +129,8 @@ class AutoDetectTests(unittest.TestCase):
         paths = json.loads(run_node(
             f"const a=require({json.dumps(str(MODULE))});"
             "console.log(JSON.stringify(a.namespacePaths()))",
-            extra_env={'ZCODE_STANDALONE_ROOT': '/tmp/ns-root'}))
-        self.assertEqual(paths['config'], '/tmp/ns-root/data/.zcode/v2/provider_config.json')
+            extra_env={'CCODE_STANDALONE_ROOT': '/tmp/ns-root'}))
+        self.assertEqual(paths['config'], '/tmp/ns-root/data/.ccode/v2/provider_config.json')
         self.assertEqual(paths['state'], '/tmp/ns-root/model-sync')
 
 
@@ -201,8 +201,8 @@ class ActivityDatabaseTests(unittest.TestCase):
             f"const a=require({json.dumps(str(MODULE))});"
             "console.log(JSON.stringify(a.sessionDbPath()))"
         )
-        env = {'ZCODE_SESSION_DB_PATH': '', 'ZCODE_STORAGE_DIR': '/tmp/zcode-activity-test'}
-        self.assertEqual(json.loads(run_node(script, env)), '/tmp/zcode-activity-test/cli/db/db.sqlite')
+        env = {'CCODE_SESSION_DB_PATH': '', 'CCODE_STORAGE_DIR': '/tmp/ccode-activity-test'}
+        self.assertEqual(json.loads(run_node(script, env)), '/tmp/ccode-activity-test/cli/db/db.sqlite')
 
 
 PANEL_LOADER = ("const fs=require('fs');const mod={exports:{}};"
@@ -217,7 +217,7 @@ class ActivityPanelTests(unittest.TestCase):
     def grid(self, counts, year):
         script = self.panel_script(
             f"const counts=new Map(Object.entries({json.dumps(counts)}));"
-            f"const grid=p.ZCodeActivityGrid(counts,{json.dumps(year)});"
+            f"const grid=p.CCodeActivityGrid(counts,{json.dumps(year)});"
             "console.log(JSON.stringify({weeks:grid.weeks.length,months:grid.months,"
             "days:grid.weeks.flat().filter(Boolean).map(c=>c.day),"
             "filled:grid.weeks.flat().filter(c=>c&&c.prompts).map(c=>c.day)}))"
@@ -242,9 +242,9 @@ class ActivityPanelTests(unittest.TestCase):
 
     def test_month_labels_are_english_and_cover_every_column(self):
         script = self.panel_script(
-            "const grid=p.ZCodeActivityGrid(new Map(),'2026');"
-            "const spans=p.ZCodeActivityMonthSpans(grid.months);"
-            "console.log(JSON.stringify({names:p.ZCodeActivityMonthNames,"
+            "const grid=p.CCodeActivityGrid(new Map(),'2026');"
+            "const spans=p.CCodeActivityMonthSpans(grid.months);"
+            "console.log(JSON.stringify({names:p.CCodeActivityMonthNames,"
             "labels:grid.months.filter(Boolean),spans:spans.map(g=>[g.label,g.span]),"
             "covered:spans.reduce((s,g)=>s+g.span,0),weeks:grid.weeks.length}))"
         )
@@ -260,10 +260,10 @@ class ActivityPanelTests(unittest.TestCase):
     def test_year_segments_follow_history_and_end_on_the_current_year(self):
         script = self.panel_script(
             "console.log(JSON.stringify({"
-            "history:p.ZCodeActivityYears([{year:'2025',prompts:2},{year:'2026',prompts:4}],2026),"
-            "currentOnly:p.ZCodeActivityYears([],2027),"
-            "deduped:p.ZCodeActivityYears([{year:'2026'},{year:'2024'},{year:'2026'}],2026),"
-            "noHistory:p.ZCodeActivityYears(undefined,2026)}))"
+            "history:p.CCodeActivityYears([{year:'2025',prompts:2},{year:'2026',prompts:4}],2026),"
+            "currentOnly:p.CCodeActivityYears([],2027),"
+            "deduped:p.CCodeActivityYears([{year:'2026'},{year:'2024'},{year:'2026'}],2026),"
+            "noHistory:p.CCodeActivityYears(undefined,2026)}))"
         )
         years = json.loads(run_node(script))
         self.assertEqual(years['history'], ['2025', '2026'])
@@ -272,7 +272,7 @@ class ActivityPanelTests(unittest.TestCase):
         self.assertEqual(years['deduped'], ['2024', '2026'])
         self.assertEqual(years['noHistory'], ['2026'])
 
-    def test_cells_hover_with_the_bundled_zcode_tooltip(self):
+    def test_cells_hover_with_the_bundled_ccode_tooltip(self):
         stub = (
             "const jsx=(type,props)=>({type,props});"
             "const Q={Fragment:'f',useState:()=>[null,()=>{}],useMemo:fn=>fn(),useEffect:()=>{}};"
@@ -282,8 +282,8 @@ class ActivityPanelTests(unittest.TestCase):
             "(rendered,rendered.exports,{jsx,jsxs:jsx},Q,Tooltip);"
         )
         script = f"const fs=require('fs');const PANEL_PATH={json.dumps(str(PANEL))};" + stub + (
-            "const solid=rendered.exports.ZCodeActivityCell({cell:{day:'2026-10-05',prompts:4}});"
-            "const empty=rendered.exports.ZCodeActivityCell({cell:{day:'2026-01-02',prompts:0}});"
+            "const solid=rendered.exports.CCodeActivityCell({cell:{day:'2026-10-05',prompts:4}});"
+            "const empty=rendered.exports.CCodeActivityCell({cell:{day:'2026-01-02',prompts:0}});"
             "console.log(JSON.stringify({"
             "wrapper:solid.type&&solid.type.isTooltip===true,tooltip:solid.props.title,"
             "boxClass:solid.props.children.props.className,boxTitle:solid.props.children.props.title??null,"
@@ -300,7 +300,7 @@ class ActivityPanelTests(unittest.TestCase):
 
     def test_stats_render_prompt_metrics_with_day_units(self):
         script = self.panel_script(
-            "console.log(JSON.stringify(p.ZCodeActivityStats("
+            "console.log(JSON.stringify(p.CCodeActivityStats("
             "{today:2,currentStreak:3,longestStreak:5,activeDays:7,total:1234})"
             ".map(s=>[s.label,s.value])))"
         )
@@ -314,14 +314,14 @@ class ActivityPanelTests(unittest.TestCase):
     def test_number_labels_are_english(self):
         script = self.panel_script(
             "console.log(JSON.stringify(["
-            "p.ZCodeActivityNumber(0,'en-US'),p.ZCodeActivityNumber(24,'en-US'),"
-            "p.ZCodeActivityNumber(1234,'en-US'),p.ZCodeActivityNumber(1200000,'en-US')]))"
+            "p.CCodeActivityNumber(0,'en-US'),p.CCodeActivityNumber(24,'en-US'),"
+            "p.CCodeActivityNumber(1234,'en-US'),p.CCodeActivityNumber(1200000,'en-US')]))"
         )
         self.assertEqual(json.loads(run_node(script)), ['0', '24', '1.2K', '1.2M'])
 
     def test_heat_colors_use_the_upstream_usage_ramp(self):
         script = self.panel_script(
-            "console.log(JSON.stringify([0,1,3,6,10].map(p.ZCodeActivityHeatColor)))"
+            "console.log(JSON.stringify([0,1,3,6,10].map(p.CCodeActivityHeatColor)))"
         )
         self.assertEqual(json.loads(run_node(script)),
                          [f'var(--color-usage-heatmap-{level})' for level in range(5)])

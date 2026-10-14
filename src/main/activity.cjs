@@ -64,9 +64,9 @@ function summarize(counts, today = dayKey(new Date())) {
 }
 
 function sessionDbPath() {
-  const fromEnv = process.env.ZCODE_SESSION_DB_PATH?.trim();
+  const fromEnv = process.env.CCODE_SESSION_DB_PATH?.trim();
   if (fromEnv) return fromEnv;
-  const storage = process.env.ZCODE_STORAGE_DIR?.trim();
+  const storage = process.env.CCODE_STORAGE_DIR?.trim();
   if (storage) return path.join(storage, 'cli', 'db', 'db.sqlite');
   return null;
 }
@@ -83,11 +83,11 @@ let detection = null;
 function projectRoot() { return path.resolve(__dirname, '..', '..', '..'); }
 
 function namespacePaths() {
-  const root = process.env.ZCODE_STANDALONE_ROOT?.trim();
+  const root = process.env.CCODE_STANDALONE_ROOT?.trim();
   if (!root) return null;
   return {
     root,
-    config: path.join(root, 'data', '.zcode', 'v2', 'provider_config.json'),
+    config: path.join(root, 'data', '.ccode', 'v2', 'provider_config.json'),
     state: path.join(root, 'model-sync'),
   };
 }
@@ -124,7 +124,7 @@ function runDetection() {
     const started = Date.now();
     const result = await new Promise(resolve => {
       const child = spawn('/usr/bin/python3', [script, '--discover', '--bootstrap'], {
-        env: { ...process.env, ZCODE_STANDALONE_ROOT: paths.root, ZCODE_MODEL_SYNC_CONFIG: paths.config, ZCODE_MODEL_SYNC_STATE: paths.state },
+        env: { ...process.env, CCODE_STANDALONE_ROOT: paths.root, CCODE_MODEL_SYNC_CONFIG: paths.config, CCODE_MODEL_SYNC_STATE: paths.state },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let text = '';
@@ -158,7 +158,7 @@ function readTimestamps(dbPath) {
   } catch (error) {
     // A WAL database can refuse a read-only handle while the agent writes: take a
     // snapshot copy instead of ever touching the live file.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zcode-activity-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ccode-activity-'));
     const copy = path.join(dir, 'snapshot.sqlite');
     const source = new DatabaseSync(dbPath);
     try {
@@ -188,7 +188,7 @@ exports.register = ({ app, ipcMain }) => {
     const frame = event.senderFrame;
     return frame === event.sender.mainFrame && frame.url.startsWith('file://') && frame.url.includes('/out/renderer/index.html');
   }
-  ipcMain.handle('zcode-activity:summary', async event => {
+  ipcMain.handle('ccode-activity:summary', async event => {
     if (!trusted(event)) throw Error('Activity is only available in the local CCode window.');
     if (cache.value && Date.now() - cache.at < CACHE_MS) return cache.value;
     const dbPath = sessionDbPath();
@@ -201,7 +201,7 @@ exports.register = ({ app, ipcMain }) => {
       return { available: false, error: `Activity could not read local history: ${error?.message ?? error}` };
     }
   });
-  ipcMain.handle('zcode-detect:run', async event => {
+  ipcMain.handle('ccode-detect:run', async event => {
     if (!trusted(event)) throw Error('Auto Detect is only available in the local CCode window.');
     try {
       return await runDetection();

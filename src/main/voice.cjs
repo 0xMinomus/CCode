@@ -27,19 +27,19 @@ exports.register=({app,ipcMain})=>{
    await Promise.race([done,new Promise(r=>setTimeout(()=>{rec.proc.kill('SIGKILL');r()},2000))]);
   }
  }
- ipcMain.handle('zcode-voice:start',async (event,options)=>{
+ ipcMain.handle('ccode-voice:start',async (event,options)=>{
   requireTrusted(event);if(recording)throw Error('A voice recording is already in progress.');
-  startWorker();const dir=fs.mkdtempSync(path.join(os.tmpdir(),'zcode-voice-'));const file=path.join(dir,'input.wav');
+  startWorker();const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ccode-voice-'));const file=path.join(dir,'input.wav');
   const proc=spawn('/usr/bin/pw-record',['--rate','16000','--channels','1','--format','s16',file],{stdio:['ignore','ignore','pipe']});
   const rec={proc,dir,file,owner:event.sender.id,language:['id','en','auto'].includes(options?.language)?options.language:'id',timer:null};recording=rec;
   proc.stderr.on('data',()=>{});proc.once('error',()=>{if(recording===rec)recording=null;cleanup(rec)});
-  rec.timer=setTimeout(async()=>{if(recording===rec){recording=null;await stopRecorder(rec);cleanup(rec);if(!event.sender.isDestroyed())event.sender.send('zcode-voice:timeout')}},60000);
+  rec.timer=setTimeout(async()=>{if(recording===rec){recording=null;await stopRecorder(rec);cleanup(rec);if(!event.sender.isDestroyed())event.sender.send('ccode-voice:timeout')}},60000);
   event.sender.once('destroyed',async()=>{if(recording===rec){recording=null;await stopRecorder(rec);cleanup(rec)}});
   await new Promise(r=>setTimeout(r,150));
   if(proc.exitCode!==null){recording=null;cleanup(rec);throw Error('Microphone could not start. Check the Fedora input device.');}
   return {recording:true};
  });
- ipcMain.handle('zcode-voice:stop',async event=>{
+ ipcMain.handle('ccode-voice:stop',async event=>{
   requireTrusted(event);const rec=recording;if(!rec||rec.owner!==event.sender.id)throw Error('No voice recording is active in this window.');recording=null;
   try{
    await stopRecorder(rec);if(!fs.existsSync(rec.file)||fs.statSync(rec.file).size<1000)return {text:''};
@@ -47,6 +47,6 @@ exports.register=({app,ipcMain})=>{
    return await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{jobs.delete(id);reject(Error('Transcription timed out.'))},60000);jobs.set(id,{resolve,reject,timer});worker.stdin.write(JSON.stringify({id,path:rec.file,language:rec.language})+'\n');});
   }finally{cleanup(rec)}
  });
- ipcMain.handle('zcode-voice:cancel',async event=>{requireTrusted(event);const rec=recording;if(rec&&rec.owner===event.sender.id){recording=null;await stopRecorder(rec);cleanup(rec)}return {cancelled:true};});
+ ipcMain.handle('ccode-voice:cancel',async event=>{requireTrusted(event);const rec=recording;if(rec&&rec.owner===event.sender.id){recording=null;await stopRecorder(rec);cleanup(rec)}return {cancelled:true};});
  app.on('before-quit',()=>{if(recording){recording.proc.kill('SIGINT');cleanup(recording);recording=null}worker?.kill('SIGTERM')});
 };

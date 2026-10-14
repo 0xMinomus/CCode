@@ -1,7 +1,7 @@
 function fedoraCuaLocal(p){return typeof navigator!=="undefined"&&/Linux/.test(navigator.userAgent)&&!p.remoteSessionId&&!p.remoteTarget&&!(p.workspaceIdentity?.trim()&&Xa(p.workspaceIdentity.trim()));}
 function useFedoraCua(p){
  const services=Dg();
- const server=Iv(s=>s.servers.find(x=>x.name==="fedora-desktop"&&x.source==="zcodeagentmcp"));
+ const server=Iv(s=>s.servers.find(x=>x.name==="fedora-desktop"&&x.source==="ccodeagentmcp"));
  const [busy,setBusy]=Q.useState(false),[error,setError]=Q.useState(null);
  Q.useEffect(()=>{Iv.getState().ensureLoadedForWorkspace(p.workspacePath,services.mcpSyncService,p.workspaceIdentity).catch(e=>setError(String(e)));},[p.workspacePath,p.workspaceIdentity,services.mcpSyncService]);
  const toggle=async enabled=>{if(!server)return;setBusy(true);setError(null);try{await Iv.getState().toggleServer(server.id,enabled);}catch(e){setError(String(e));}finally{setBusy(false);}};

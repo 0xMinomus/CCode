@@ -1,4 +1,4 @@
-"""Profile zcode-fast: tool surface, post-shot defaults, dan kebijakan pointer.
+"""Profile ccode-fast: tool surface, post-shot defaults, dan kebijakan pointer.
 
 Tes di sini menjalankan kode profil yang benar-benar dipakai backend desktop (bukan menyalin
 logikanya), dengan modul server/input/capture palsu supaya tidak perlu portal atau gi.
@@ -13,13 +13,13 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DESKTOP = ROOT / 'services/desktop'
 
-os.environ.setdefault('ZCODE_CUA_POLL_S', '0')
-os.environ.setdefault('ZCODE_CUA_IDLE_MS', '120')
-os.environ.setdefault('ZCODE_CUA_TAKEOVER_MS', '400')
+os.environ.setdefault('CCODE_CUA_POLL_S', '0')
+os.environ.setdefault('CCODE_CUA_IDLE_MS', '120')
+os.environ.setdefault('CCODE_CUA_TAKEOVER_MS', '400')
 os.environ.pop('MCP_SCREEN_WAIT_MODE', None)
 
 sys.path.insert(0, str(DESKTOP))
-profile = importlib.import_module('zcode_fast_profile')
+profile = importlib.import_module('ccode_fast_profile')
 
 
 class _UserControlError(RuntimeError):
@@ -183,7 +183,7 @@ class ObservationPolicy(unittest.TestCase):
         self.assertTrue(any(item.get('type') == 'image' for item in self._run(content)))
 
     def test_kill_switch_keeps_the_image(self):
-        os.environ['ZCODE_CUA_SKIP_UNCHANGED_SHOT'] = '0'
+        os.environ['CCODE_CUA_SKIP_UNCHANGED_SHOT'] = '0'
         try:
             content = [
                 {'type': 'text', 'text': 'SENSE {}\nhints: nothing changed — nope'},
@@ -191,7 +191,7 @@ class ObservationPolicy(unittest.TestCase):
             ]
             self.assertTrue(any(item.get('type') == 'image' for item in self._run(content)))
         finally:
-            os.environ.pop('ZCODE_CUA_SKIP_UNCHANGED_SHOT', None)
+            os.environ.pop('CCODE_CUA_SKIP_UNCHANGED_SHOT', None)
 
 
 class LazyWarmup(unittest.TestCase):
@@ -203,14 +203,14 @@ class LazyWarmup(unittest.TestCase):
         ns['grounding'].warmup()  # must be callable and harmless
 
     def test_env_keeps_the_prefetch(self):
-        os.environ['ZCODE_CUA_WARMUP'] = '1'
+        os.environ['CCODE_CUA_WARMUP'] = '1'
         try:
             ns = _build_ns([])
             before = ns['grounding'].warmup
             profile.install_lazy_warmup(ns)
             self.assertIs(ns['grounding'].warmup, before)
         finally:
-            os.environ.pop('ZCODE_CUA_WARMUP', None)
+            os.environ.pop('CCODE_CUA_WARMUP', None)
 
 
 class ToolSurface(unittest.TestCase):

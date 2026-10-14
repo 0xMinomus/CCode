@@ -32,7 +32,7 @@
     "n8n": {
       "type": "stdio",
       "command": "node",
-      "args": ["${ZCODE_PLUGIN_ROOT}/dist/mcp/server.js"],
+      "args": ["${CCODE_PLUGIN_ROOT}/dist/mcp/server.js"],
       "env": {
         "N8N_API_URL": "${user_config.api_url}",
         "N8N_API_KEY": "${user_config.api_key}",

@@ -106,7 +106,7 @@ class MainGuardTests(unittest.TestCase):
 
 class PatchedMainBundleTests(unittest.TestCase):
     """The removed services must leave no reachable reference in the built bundle."""
-    baseline = ROOT / 'baselines' / 'zcode-3.14.5-original.asar'
+    baseline = ROOT / 'baselines' / 'ccode-3.14.5-original.asar'
 
     @classmethod
     def setUpClass(cls):
@@ -147,7 +147,7 @@ class HostServiceStubTests(unittest.TestCase):
 
 class PatchedHostBundleTests(unittest.TestCase):
     """Channels the local UI still reads must answer instead of timing out."""
-    baseline = ROOT / 'baselines' / 'zcode-3.14.5-original.asar'
+    baseline = ROOT / 'baselines' / 'ccode-3.14.5-original.asar'
 
     @classmethod
     def setUpClass(cls):
@@ -172,7 +172,7 @@ class PatchedHostBundleTests(unittest.TestCase):
         # The remote release is written over the active catalog cache, so a
         # standalone fetch could replace the patched catalog and costs a network
         # round trip on every provider-settings refresh.
-        self.assertIn('refreshZCodeBuiltin(t){return Promise.resolve("skipped")}', self.text)
+        self.assertIn('refreshCCodeBuiltin(t){return Promise.resolve("skipped")}', self.text)
         self.assertIn('refresh(t={}){return Promise.resolve("skipped");', self.text)
         self.assertNotIn(cloud.BUILTIN_REFRESH_FACADE, self.text)
         self.assertNotIn(cloud.BUILTIN_REFRESH_SYNC, self.text)
@@ -180,7 +180,7 @@ class PatchedHostBundleTests(unittest.TestCase):
 
 class PatchedRendererBundleTests(unittest.TestCase):
     """Account surfaces and paid-plan labels are gone from the renderer."""
-    baseline = ROOT / 'baselines' / 'zcode-3.14.5-original.asar'
+    baseline = ROOT / 'baselines' / 'ccode-3.14.5-original.asar'
 
     @classmethod
     def setUpClass(cls):
@@ -191,7 +191,7 @@ class PatchedRendererBundleTests(unittest.TestCase):
         cls.text = cloud._renderer(Archive(cls.baseline).read('out/renderer/assets/styles-C4MhEMbW.js').decode())
 
     def test_draft_greeting_background_is_plain(self):
-        # The faded ZCode mark behind the draft greeting is replaced by a null child;
+        # The faded CCode mark behind the draft greeting is replaced by a null child;
         # the greeting paragraph itself must stay in place.
         self.assertNotIn('children:(0,$.jsx)(Qgt,{className:`h-full w-full`})', self.text)
         self.assertIn('"data-v4-draft-greeting":`true`', self.text)
@@ -218,7 +218,7 @@ class PatchedRendererBundleTests(unittest.TestCase):
         self.assertIn('{id:`other`,templates:e.filter(e=>!u.includes(e.templateId))}', self.text)
 
     def test_usage_page_renders_the_local_activity_panel(self):
-        self.assertIn('function Xwn({activeTab:e,providerSourcesLoading:t,workspaceIdentity:n,workspacePath:r,selectedCodingPlanSource:i}){return $.jsx(ZCodeActivityPanel,{})}', self.text)
+        self.assertIn('function Xwn({activeTab:e,providerSourcesLoading:t,workspaceIdentity:n,workspacePath:r,selectedCodingPlanSource:i}){return $.jsx(CCodeActivityPanel,{})}', self.text)
         self.assertNotIn('b===`usage`?(0,$.jsx)(YOn,', self.text, 'app/coding-plan tab bar is gone')
 
     def test_model_settings_navigation_has_no_account_preset_group(self):
@@ -241,15 +241,15 @@ class PatchedRendererBundleTests(unittest.TestCase):
         # No provider configured => no selectable nav item => upstream keeps the
         # detail pane on its common.loading card forever. Standalone must render
         # the empty state instead, and only while the picker is closed.
-        self.assertIn('!ie&&(p?.length??0)===0?(0,$.jsx)(ZCodeProviderEmptyState,{}):ie?', self.text)
-        self.assertIn('function ZCodeProviderEmptyState(){', self.text)
+        self.assertIn('!ie&&(p?.length??0)===0?(0,$.jsx)(CCodeProviderEmptyState,{}):ie?', self.text)
+        self.assertIn('function CCodeProviderEmptyState(){', self.text)
         self.assertIn('settings.modelProvider.empty', self.text)
         self.assertIn('settings.modelProvider.addProviderDescription', self.text)
 
 
 class PatchedIntlBundleTests(unittest.TestCase):
     """Account-era labels are renamed for the local Activity feature."""
-    baseline = ROOT / 'baselines' / 'zcode-3.14.5-original.asar'
+    baseline = ROOT / 'baselines' / 'ccode-3.14.5-original.asar'
 
     @classmethod
     def setUpClass(cls):
@@ -298,7 +298,7 @@ assert.equal(JSON.stringify(defaultRow).includes('Default'), true);
 
 class PatchedAgentBundleTests(unittest.TestCase):
     """The marketplace catalog never carries paid-plan plugins."""
-    baseline = ROOT / 'baselines' / 'zcode-3.14.5-original-agent.cjs'
+    baseline = ROOT / 'baselines' / 'ccode-3.14.5-original-agent.cjs'
 
     @classmethod
     def setUpClass(cls):
@@ -337,11 +337,11 @@ function BOe() {{ return null; }}
 function Oat() {{ return []; }}
 {resolver}
 {overview}
-const imageSearch = Pat({{loaded:{{id:'image-search@zcode-plugins-official',manifest:{{name:'image-search'}}}},definitions:{{image_search:{{type:'http'}},other:{{type:'stdio'}}}},diagnostics:[]}});
+const imageSearch = Pat({{loaded:{{id:'image-search@ccode-plugins-official',manifest:{{name:'image-search'}}}},definitions:{{image_search:{{type:'http'}},other:{{type:'stdio'}}}},diagnostics:[]}});
 const otherPlugin = Pat({{loaded:{{id:'other',manifest:{{name:'other'}}}},definitions:{{image_search:{{type:'http'}}}},diagnostics:[]}});
 function pluginOverview(name) {{
   return Qzs(
-    {{id:`${{name}}@zcode-plugins-official`,manifest:{{author:null,homepage:'',name,description:name,version:'1.0.0'}},manifestPath:'/plugin/manifest.json',marketplace:'zcode-plugins-official',rootPath:'/plugin',source:'official'}},
+    {{id:`${{name}}@ccode-plugins-official`,manifest:{{author:null,homepage:'',name,description:name,version:'1.0.0'}},manifestPath:'/plugin/manifest.json',marketplace:'ccode-plugins-official',rootPath:'/plugin',source:'official'}},
     {{commandRoots:[],hookDetails:[],skillCount:0,skillRoots:[],mcpServers:{{}}}},
     '/data',true,['image_search'],{{}}
   );

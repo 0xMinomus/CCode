@@ -4,7 +4,7 @@
 
 ## Kesimpulan
 
-ZCode packaged 3.14.5 dapat membuka workspace dan menggunakan provider mandiri tanpa kredensial akun ZCode. Jalur bawaan `Use API key → Skip for now` sudah mendukung ini. Menghapus login wajib tidak memerlukan penulisan ulang harness dasar.
+CCode packaged 3.14.5 dapat membuka workspace dan menggunakan provider mandiri tanpa kredensial akun CCode. Jalur bawaan `Use API key → Skip for now` sudah mendukung ini. Menghapus login wajib tidak memerlukan penulisan ulang harness dasar.
 
 Belum ada perubahan login pada aplikasi produksi. Eksperimen ada di `runtime/no-login`, dan script persiapannya di `scripts/experiments`.
 
@@ -32,7 +32,7 @@ Belum ada perubahan login pada aplikasi produksi. Eksperimen ada di `runtime/no-
 
 ## Batas dan pekerjaan berikutnya
 
-1. Ini bukan audit semua trafik internet. Backend akun utama dibuat tidak tersedia, tetapi telemetry/CDN/updater atau domain hardcoded lain belum diaudit secara menyeluruh. Jangan menyebutnya aplikasi yang seluruh koneksi ZCode-nya sudah dihapus.
+1. Ini bukan audit semua trafik internet. Backend akun utama dibuat tidak tersedia, tetapi telemetry/CDN/updater atau domain hardcoded lain belum diaudit secara menyeluruh. Jangan menyebutnya aplikasi yang seluruh koneksi CCode-nya sudah dihapus.
 2. Aplikasi masih mencoba `/api/v1/client/configs`, `/api/v1/client/scenes`, `/api/v1/event/report`, dan `/api/v1/marketing/touch`. Mode local-only seharusnya tidak memanggil jalur ini.
 3. Environment direktori data tidak menjadi sandbox filesystem penuh. Legacy scanner memasukkan 14 metadata task dari instalasi pengguna ke indeks tes, walaupun task tes memakai workspace tersendiri. Indeks utama berisi 14 task saat pemeriksaan; task tes tersimpan di indeks eksperimen. Sebelum fork mandiri, pisahkan namespace data dan nonaktifkan/minta opt-in untuk migrasi lintas instalasi.
 4. Yang diuji adalah teks/chat/provider dasar. Seluruh plugin, remote/cloud features, updater, dan deployment distribusi belum dibuktikan bekerja tanpa layanan akun.
@@ -44,7 +44,7 @@ Belum ada perubahan login pada aplikasi produksi. Eksperimen ada di `runtime/no-
 - Gunakan jalur account-skip yang sudah ada, lalu hapus welcome/login wajib dari pengalaman local-only tanpa menganggap pengguna sudah authenticated.
 - Account services, analytics, marketing, client-scenes/config polls, serta cloud-only features dihentikan/dinonaktifkan dalam mode tersebut.
 - Provider membawa autentikasinya sendiri. Jangan memberi entitlement Z.ai/BigModel pada pengguna yang tidak login.
-- Gunakan app identity dan direktori data khusus agar tidak berbagi/mengimpor data ZCode asli tanpa pilihan pengguna.
+- Gunakan app identity dan direktori data khusus agar tidak berbagi/mengimpor data CCode asli tanpa pilihan pengguna.
 - Uji lagi cold start, restart, streaming, tool permission, MCP, dan backup setelah perubahan.
 
 ## Artefak

@@ -11,9 +11,9 @@ function configure(env) {
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   if (url.protocol !== 'https:' && !local)
     throw Error('Use HTTPS for a remote n8n instance to protect the API key.');
-  if (!env.ZCODE_PLUGIN_DATA || !path.isAbsolute(env.ZCODE_PLUGIN_DATA))
+  if (!env.CCODE_PLUGIN_DATA || !path.isAbsolute(env.CCODE_PLUGIN_DATA))
     throw Error('The n8n plugin requires its private data directory.');
-  const home = env.ZCODE_PLUGIN_DATA;
+  const home = env.CCODE_PLUGIN_DATA;
   return {
     N8N_API_URL: url.toString().replace(/\/+$/, ''),
     N8N_API_KEY: apiKey,

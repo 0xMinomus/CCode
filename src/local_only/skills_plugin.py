@@ -6,7 +6,7 @@ filesystem scanner, so both catalogs and the renderer need pinned patches.
 from . import replace_once
 
 PACK_DIR = 'bundled-skills'
-LEGACY_PLUGIN_ID = 'ccode-skills@zcode-plugins-official'
+LEGACY_PLUGIN_ID = 'ccode-skills@ccode-plugins-official'
 
 AGENT_DISCOVERY_ANCHOR = 'if(!I||I.source==="official"&&t.config.suppressedBuiltins.includes(I.id))continue;'
 AGENT_INSTALLED_ANCHOR = 'f=X7(n),g=new Set(f.map(L=>L.id)),_=[];'

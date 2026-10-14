@@ -5,8 +5,8 @@ const { pathToFileURL, fileURLToPath } = require('node:url');
 const active = new Set(), busy = new Set();
 function paths(options = {}) {
   const resources = path.resolve(options.resourcesPath || process.resourcesPath || path.join(__dirname, '../../app/resources'));
-  const root = path.resolve(options.root || process.env.ZCODE_STANDALONE_ROOT || path.join(os.homedir(), '.local/share/ccode'));
-  return { resources, root, payload: path.join(resources, 'mcp'), state: path.join(root, 'mcp'), config: path.join(root, 'data/.zcode/cli/config.json'), node: options.node || process.execPath };
+  const root = path.resolve(options.root || process.env.CCODE_STANDALONE_ROOT || path.join(os.homedir(), '.local/share/ccode'));
+  return { resources, root, payload: path.join(resources, 'mcp'), state: path.join(root, 'mcp'), config: path.join(root, 'data/.ccode/cli/config.json'), node: options.node || process.execPath };
 }
 function catalog(p) { return JSON.parse(fs.readFileSync(path.join(p.payload, 'catalog.json'), 'utf8')); }
 function object(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
@@ -225,7 +225,7 @@ function trusted(event) {
 }
 function register({ app, ipcMain }) {
   bootstrap();
-  for (const [name, operation] of [['list', list], ['install', install]]) ipcMain.handle('zcode-mcp-catalog:' + name, async (event, request) => {
+  for (const [name, operation] of [['list', list], ['install', install]]) ipcMain.handle('ccode-mcp-catalog:' + name, async (event, request) => {
     if (!trusted(event)) throw Error('MCP catalog is only available in the local CCode window.');
     return name === 'list' ? operation() : operation(request);
   });

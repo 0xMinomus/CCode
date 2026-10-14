@@ -77,8 +77,8 @@ Port daftar patch yang sekarang hidup di `src/local_only/` + `src/main/` + `src/
 4. **Katalog provider** (`catalog.py`): tanpa keluarga Zhipu, plus template **9Router**.
 5. **Activity lokal** (`src/main/activity.cjs` + `src/renderer/activity-panel.js`), **Voice** (`src/main/voice.cjs` + `services/voice`), **Computer Use Linux** (`src/renderer/linux-computer-use.js` + `services/desktop`).
 6. **Model sync** (`services/model-sync`), penjadwalan: systemd timer di Linux, padanan per OS saat F4.
-7. **Deep-link/desktop self-install**: `sl="zcode.desktop"` + `iconName:"zcode"` harus jadi `ccode.*` (kalau tidak, aplikasi akan menulis entri `zcode.desktop` bernama CCode dengan ikon lama).
-8. Opsional: standarisasi env internal jadi `CCODE_*` (sekarang masih `ZCODE_*` demi kompatibilitas binary) dan skema URL sendiri.
+7. ✅ **Selesai 2026-10-14 — Deep-link/desktop self-install**: `sl`/`iconName` dan seluruh nama file kini ditulis ulang `rebrand.apply()` menjadi `ccode.*`, dan `make apply`/`make install` mengganti nama identitas AppDir/launcher/unit yang sudah terpasang.
+8. ✅ **Selesai 2026-10-14 — Standarisasi env internal dan skema URL**: env (`CCODE_*`), kanal IPC (`ccode-*`), skema `ccode://`, layout `.ccode`, id/direktori plugin, dan judul proses memakai ejaan CCode (lihat `docs/CHANGELOG.md` 2026-10-14); `rebrand.previous()` menyediakan ejaan lama untuk kode migrasi.
 Kriteria selesai: build dari sumber setara dengan hasil patch sekarang pada daftar uji perilaku di `docs/NO_LOGIN_TEST.md` + smoke test di `docs/DEVELOPMENT.md`.
 
 ### F3 — Packaging per platform
@@ -104,7 +104,7 @@ Kriteria selesai: orang lain bisa download → pakai tanpa menghubungi pemilik r
 
 - [ ] `make test` hijau (patch workspace) **dan** `pnpm test` hijau (fork sumber).
 - [ ] Smoke test root terisolasi: judul CCode, tanpa layar login, 0 `Unknown channel`, 0 `No handler registered`, 0 `ReferenceError`/`TypeError`.
-- [ ] Tidak ada sisa mark/nama lama di UI: 0 `ZCode` di luar daftar yang sengaja dipertahankan (protokol/transport, env internal, layout `.zcode`, skema URL).
+- [x] Tidak ada sisa mark/nama lama di UI (**selesai 2026-10-14**): `rebrand.assert_clean()`/`branding.guard()` menolak build bila sisa ejaan/mark upstream ada di asset yang dikirim; ejaan lama hanya tersisa di artifact upstream yang dipin dan di kode migrasi (`rebrand.PREVIOUS_*`).
 - [ ] Ikon: `Icon=ccode` resolve di tema user (ugrep + Gtk.IconTheme), cache ikon disegarkan installer.
 - [ ] Data terpisah: rilis tidak membaca/menulis `~/.zcode`, `~/.config/ZCode`.
 - [ ] LICENSE + NOTICE.md + THIRD-PARTY-NOTICES.md + provenance commit upstream tercatat.

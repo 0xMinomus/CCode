@@ -8,6 +8,9 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'src'))
+from local_only import rebrand
+
 DEFAULT_VAULT = pathlib.Path.home() / 'orca/chessrpg'
 MCP_CONFIG = pathlib.Path.home() / '.omp/agent/mcp.json'
 FOLDER = 'CCode'
@@ -75,7 +78,7 @@ def with_frontmatter(relative, content):
 
 def latest_snapshot():
     parent = pathlib.Path.home() / '.local/share'
-    candidates = sorted([*parent.glob('ccode-backups/*'), *parent.glob('zcode-on-steroids-backups/*')], reverse=True)
+    candidates = sorted([*parent.glob('ccode-backups/*'), *parent.glob(rebrand.PREVIOUS_BACKUPS + '/*')], reverse=True)
     # Snapshots taken before the rename stay readable; report the directory that holds them.
     return f'{candidates[0].parent.name}/{candidates[0].name}' if candidates else 'belum ada snapshot'
 
@@ -88,7 +91,7 @@ def key_facts(vault, mode):
 - Vault: `{vault}`
 - Data aplikasi: `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`)
 - Launcher: `ccode.desktop`; timer: `ccode-model-sync.timer`
-- Data lama `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis
+- Data lama `~/{rebrand.PREVIOUS_APPDATA}` dan `~/.config/{rebrand.PREVIOUS_APPCONFIG}` tidak disentuh dan tidak diimpor otomatis
 - Build: `make build && make test`; promote: `make apply` (aplikasi harus tertutup)
 - Backup/restore: `python3 scripts/data_backup.py backup|verify|restore`
 - Snapshot terakhir: `~/.local/share/{latest_snapshot()}`
@@ -113,7 +116,7 @@ tags: [ccode, fedora, project]
 ---
 # CCode
 
-Branding CCode untuk workspace patch **ZCode 3.14.5** di Fedora: varian mandiri tanpa akun ZCode, Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
+Branding CCode untuk workspace patch upstream **3.14.5** di Fedora: varian mandiri tanpa akun, Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
 
 {intro}
 

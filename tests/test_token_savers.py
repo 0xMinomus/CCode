@@ -35,8 +35,8 @@ const saved=a.writeSettings(input);
 assert.deepEqual(a.readSettings(),input);
 console.log(JSON.stringify({{saved,path:a.settingsPath()}}));'''
             data_root = pathlib.Path(folder) / 'data'
-            result = run_node(script, {'ZCODE_DATA_BASE_DIR': str(data_root)})
-            expected = data_root / '.zcode/v2/token-savers.json'
+            result = run_node(script, {'CCODE_DATA_BASE_DIR': str(data_root)})
+            expected = data_root / '.ccode/v2/token-savers.json'
             self.assertEqual(pathlib.Path(result['path']), expected)
             self.assertEqual(result['saved']['caveman'], {'enabled': True, 'level': 'ultra'})
             self.assertEqual(expected.stat().st_mode & 0o777, 0o600)
@@ -45,7 +45,7 @@ console.log(JSON.stringify({{saved,path:a.settingsPath()}}));'''
         with tempfile.TemporaryDirectory() as folder:
             script = f'''const a=require({json.dumps(str(RUNTIME))});
 const assert=require('node:assert/strict');
-const env={{...process.env,ZCODE_DATA_BASE_DIR:{json.dumps(folder)}}};
+const env={{...process.env,CCODE_DATA_BASE_DIR:{json.dumps(folder)}}};
 const original={{content:'Workspace rules',bytesRead:14,sources:[{{fileName:'AGENTS.md'}}]}};
 assert.equal(a.applyPromptModes(original,env),original);
 a.writeSettings({{rtk:{{enabled:false}},caveman:{{enabled:true,level:'full'}},ponytail:{{enabled:true,level:'ultra'}}}},env);
@@ -67,7 +67,7 @@ console.log(JSON.stringify({{content:result.content}}));'''
 const assert=require('node:assert/strict');
 assert.throws(()=>a.writeSettings({{rtk:{{enabled:false}},caveman:{{enabled:true,level:'max'}},ponytail:{{enabled:false,level:'full'}}}}),/level is invalid/);
 console.log(JSON.stringify({{path:a.settingsPath()}}));'''
-            result = run_node(script, {'ZCODE_DATA_BASE_DIR': folder})
+            result = run_node(script, {'CCODE_DATA_BASE_DIR': folder})
             self.assertFalse(pathlib.Path(result['path']).exists())
 
 
@@ -79,7 +79,7 @@ class TokenSaversRtkTests(unittest.TestCase):
             binary.chmod(0o700)
             script = f'''const a=require({json.dumps(str(RUNTIME))});
 const assert=require('node:assert/strict');
-const env={{PATH:{json.dumps(folder)},HOME:{json.dumps(folder)},ZCODE_DATA_BASE_DIR:{json.dumps(folder)},RTK_TEST_STATUS:'0'}};
+const env={{PATH:{json.dumps(folder)},HOME:{json.dumps(folder)},CCODE_DATA_BASE_DIR:{json.dumps(folder)},RTK_TEST_STATUS:'0'}};
 a.writeSettings({{rtk:{{enabled:true}},caveman:{{enabled:false,level:'full'}},ponytail:{{enabled:false,level:'full'}}}},env);
 (async()=>{{
  const input={{command:'rg report'}}, context={{toolCallId:'call-1'}};
@@ -91,7 +91,7 @@ a.writeSettings({{rtk:{{enabled:true}},caveman:{{enabled:false,level:'full'}},po
  const statusTwo=await a.needsShellApproval({{command:'rm -rf target'}},context,false,{{cwd:{json.dumps(folder)},env:{{...env,RTK_TEST_STATUS:'2'}}}}).then(()=>null,error=>error.message);
  const statusThreeInput={{command:'rg report'}};
  const statusThree=await a.needsShellApproval(statusThreeInput,context,async()=>true,{{cwd:{json.dumps(folder)},env:{{...env,RTK_TEST_STATUS:'3'}}}});
- const disabledEnv={{...env,RTK_TEST_STATUS:'2',ZCODE_DATA_BASE_DIR:{json.dumps(str(pathlib.Path(folder) / 'disabled'))}}};
+ const disabledEnv={{...env,RTK_TEST_STATUS:'2',CCODE_DATA_BASE_DIR:{json.dumps(str(pathlib.Path(folder) / 'disabled'))}}};
  const disabled=await a.rewriteShellCommand('rm -rf target',{{cwd:{json.dumps(folder)},env:disabledEnv}});
  assert.equal(allowed,true);
  assert.equal(input.command,'rtk rg --smart-case');
@@ -128,9 +128,9 @@ main.register({{ipcMain:{{handle:(channel,handler)=>handlers.set(channel,handler
  const trusted={{senderFrame:frame,sender:{{mainFrame:frame}}}};
  const untrusted={{senderFrame:{{url:frame.url}},sender:{{mainFrame:{{url:frame.url}}}}}};
  const settings={{version:1,rtk:{{enabled:true}},caveman:{{enabled:false,level:'full'}},ponytail:{{enabled:true,level:'lite'}}}};
- await assert.rejects(()=>handlers.get('zcode-token-savers:save')(untrusted,settings),/only available/);
- const saved=await handlers.get('zcode-token-savers:save')(trusted,settings);
- const data=await handlers.get('zcode-token-savers:snapshot')(trusted);
+ await assert.rejects(()=>handlers.get('ccode-token-savers:save')(untrusted,settings),/only available/);
+ const saved=await handlers.get('ccode-token-savers:save')(trusted,settings);
+ const data=await handlers.get('ccode-token-savers:snapshot')(trusted);
  assert.deepEqual(saved,settings);
  assert.deepEqual(data.settings,settings);
  assert.equal(data.rtk.totalSaved,5);
@@ -140,7 +140,7 @@ main.register({{ipcMain:{{handle:(channel,handler)=>handlers.set(channel,handler
             result = run_node(script, {
                 'PATH': folder,
                 'HOME': folder,
-                'ZCODE_DATA_BASE_DIR': str(pathlib.Path(folder) / 'data'),
+                'CCODE_DATA_BASE_DIR': str(pathlib.Path(folder) / 'data'),
             })
             self.assertEqual(result['settings']['ponytail'], {'enabled': True, 'level': 'lite'})
             self.assertEqual(result['totalSaved'], 5)
@@ -155,7 +155,7 @@ const data=r.parseRtkAnalytics({{summary:{{total_saved:7}},daily:[
  {{date:'2025-12-31',saved_tokens:4}},{{date:'2025-12-31',saved_tokens:2}},{{date:'2026-01-02',saved_tokens:1}},
  {{date:'2026-02-30',saved_tokens:99}},{{date:'2026-01-01',saved_tokens:-5}}
 ]}});
-const chart=p.ZCodeTokenSaversChartSeries(data.daily,'2026-01-02');
+const chart=p.CCodeTokenSaversChartSeries(data.daily,'2026-01-02');
 assert.equal(chart.length,30);
 assert.equal(chart[0].day,'2025-12-04');
 assert.equal(chart[27].savedTokens,6);

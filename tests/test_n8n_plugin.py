@@ -15,7 +15,7 @@ from local_only import n8n_plugin, storage
 
 class N8nPluginLifecycleTests(unittest.TestCase):
     def test_activation_controls_mcp_and_all_skills(self):
-        baseline = ROOT / 'baselines/zcode-3.14.5-original-agent.cjs'
+        baseline = ROOT / 'baselines/ccode-3.14.5-original-agent.cjs'
         executable = ROOT / 'app/ccode'
         if not baseline.is_file() or not executable.is_file():
             self.skipTest('pinned agent and Electron runtime are unavailable')
@@ -23,11 +23,11 @@ class N8nPluginLifecycleTests(unittest.TestCase):
                           if (path / 'SKILL.md').is_file())
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
-            agent = root / 'resources/glm/zcode.cjs'
+            agent = root / 'resources/glm/ccode.cjs'
             agent.parent.mkdir(parents=True)
             agent.write_text(n8n_plugin.patch_agent(storage.patch_agent(baseline.read_text())))
             shutil.copytree(ROOT / 'src/plugins/n8n', root / 'resources/mcp/plugins/n8n')
-            env = {**os.environ, 'ZCODE_STANDALONE_ROOT': str(root / 'namespace'), 'ELECTRON_RUN_AS_NODE': '1'}
+            env = {**os.environ, 'CCODE_STANDALONE_ROOT': str(root / 'namespace'), 'ELECTRON_RUN_AS_NODE': '1'}
 
             def cli(*args):
                 result = subprocess.run([str(executable), str(agent), *args], cwd=root, env=env,
@@ -53,7 +53,7 @@ class N8nPluginLifecycleTests(unittest.TestCase):
             self.assertEqual(skills(), [])
 
     def test_host_skills_follow_standalone_plugin_enablement(self):
-        baseline = ROOT / 'baselines/zcode-3.14.5-original.asar'
+        baseline = ROOT / 'baselines/ccode-3.14.5-original.asar'
         if not baseline.is_file():
             self.skipTest('pinned app baseline is unavailable')
         sys.path.insert(0, str(ROOT / 'scripts'))
@@ -70,11 +70,11 @@ class N8nPluginLifecycleTests(unittest.TestCase):
             root = pathlib.Path(temporary)
             data = root / 'namespace/data'
             home = root / 'unrelated-home'
-            cache = data / '.zcode/cli/plugins/cache/zcode-plugins-official/n8n/1.0.0'
+            cache = data / '.ccode/cli/plugins/cache/ccode-plugins-official/n8n/1.0.0'
             shutil.copytree(ROOT / 'src/plugins/n8n', cache)
-            config = data / '.zcode/cli/config.json'
+            config = data / '.ccode/cli/config.json'
             config.write_text(json.dumps({'plugins': {'enabledPlugins': {n8n_plugin.PLUGIN_ID: True}}}))
-            unrelated = home / '.zcode/cli/config.json'
+            unrelated = home / '.ccode/cli/config.json'
             unrelated.parent.mkdir(parents=True)
             unrelated.write_text(json.dumps({'plugins': {'enabledPlugins': {n8n_plugin.PLUGIN_ID: False}}}))
             original_unrelated = unrelated.read_bytes()
@@ -88,14 +88,14 @@ class N8nPluginLifecycleTests(unittest.TestCase):
             script.parent.mkdir(parents=True)
             script.write_text(
                 'const i=value=>value,y=()=>{},Hs="SKILL.md",ul=10,pc=name=>!name.startsWith("."),uc=new Set(),'
-                'Ai=()=>process.env.ZCODE_DATA_BASE_DIR;\n' + host[start:end] +
+                'Ai=()=>process.env.CCODE_DATA_BASE_DIR;\n' + host[start:end] +
                 '\nconst service=tR({isDesktopRuntime:true});'
-                'const enabled=await service.list({workspacePath:process.env.ZCODE_DATA_BASE_DIR,provider:"glm"});'
-                'await import("node:fs/promises").then(fs=>fs.writeFile(WK,JSON.stringify({plugins:{enabledPlugins:{"n8n@zcode-plugins-official":false}}})));'
-                'const disabled=await service.list({workspacePath:process.env.ZCODE_DATA_BASE_DIR,provider:"glm"});'
+                'const enabled=await service.list({workspacePath:process.env.CCODE_DATA_BASE_DIR,provider:"glm"});'
+                'await import("node:fs/promises").then(fs=>fs.writeFile(WK,JSON.stringify({plugins:{enabledPlugins:{"n8n@ccode-plugins-official":false}}})));'
+                'const disabled=await service.list({workspacePath:process.env.CCODE_DATA_BASE_DIR,provider:"glm"});'
                 'console.log(JSON.stringify({enabled,disabled}));')
-            env = {**os.environ, 'HOME': str(home), 'ZCODE_DATA_BASE_DIR': str(data),
-                   'ZCODE_STORAGE_DIR': str(data / '.zcode')}
+            env = {**os.environ, 'HOME': str(home), 'CCODE_DATA_BASE_DIR': str(data),
+                   'CCODE_STORAGE_DIR': str(data / '.ccode')}
             result = subprocess.run(['node', str(script)], env=env, capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stderr)
             listings = json.loads(result.stdout)

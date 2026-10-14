@@ -1,8 +1,8 @@
-function ZCodeVoiceInput({disabled=false}){
- const [status,setStatus]=Q.useState('idle'),[error,setError]=Q.useState(''),[auto,setAuto]=Q.useState(()=>localStorage.getItem('zcode-voice-send-mode')==='auto');
- const [language,setLanguage]=Q.useState(()=>localStorage.getItem('zcode-voice-language')||'id');
+function CCodeVoiceInput({disabled=false}){
+ const [status,setStatus]=Q.useState('idle'),[error,setError]=Q.useState(''),[auto,setAuto]=Q.useState(()=>localStorage.getItem('ccode-voice-send-mode')==='auto');
+ const [language,setLanguage]=Q.useState(()=>localStorage.getItem('ccode-voice-language')||'id');
  const live=Q.useRef(true),target=Q.useRef(null),timer=Q.useRef(null),inFlight=Q.useRef(false);
- const api=typeof window==='undefined'?null:window.zcodeVoice;
+ const api=typeof window==='undefined'?null:window.ccodeVoice;
  Q.useEffect(()=>{live.current=true;return()=>{live.current=false;clearTimeout(timer.current);api?.cancel().catch(()=>{});};},[]);
  async function toggle(event){
   if(inFlight.current)return;setError('');inFlight.current=true;
@@ -30,14 +30,14 @@ function ZCodeVoiceInput({disabled=false}){
  const modeLabel=auto?'Send':'Review';
  const option=(value,title,description)=>$.jsx(EA,{value,className:'py-2',children:$.jsxs('div',{className:'flex flex-col gap-0.5',children:[$.jsx('span',{className:'text-ui-base',children:title}),$.jsx('span',{className:'text-ui-xs text-foreground-subtle',children:description})]})},value);
  return $.jsxs('div',{className:'relative flex shrink-0 items-center gap-0.5',children:[
- $.jsxs(X,{type:'button',variant:'ghost',size:'default','data-testid':'zcode-voice-button','aria-label':label,title:label,disabled:disabled||status==='transcribing',onClick:toggle,className:'h-8 rounded-lg px-2.5 gap-2 text-ui-base '+(status==='recording'?'bg-destructive/10 text-destructive':''),children:[$.jsx('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.5,className:'shrink-0','aria-hidden':true,children:$.jsx('path',{d:status==='recording'?'M7 7h10v10H7z':'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0V5zm-3 6v1a6 6 0 0 0 12 0v-1M12 18v4M8 22h8'})}),$.jsx('span',{children:status==='recording'?'Stop':status==='transcribing'?'Transcribing…':'Voice'})]}),
+ $.jsxs(X,{type:'button',variant:'ghost',size:'default','data-testid':'ccode-voice-button','aria-label':label,title:label,disabled:disabled||status==='transcribing',onClick:toggle,className:'h-8 rounded-lg px-2.5 gap-2 text-ui-base '+(status==='recording'?'bg-destructive/10 text-destructive':''),children:[$.jsx('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.5,className:'shrink-0','aria-hidden':true,children:$.jsx('path',{d:status==='recording'?'M7 7h10v10H7z':'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0V5zm-3 6v1a6 6 0 0 0 12 0v-1M12 18v4M8 22h8'})}),$.jsx('span',{children:status==='recording'?'Stop':status==='transcribing'?'Transcribing…':'Voice'})]}),
  $.jsxs(bA,{children:[
- $.jsx(xA,{asChild:true,children:$.jsxs(X,{type:'button',variant:'ghost',size:'default','aria-label':'Voice settings','data-testid':'zcode-voice-settings',title:'Speech language and send mode',disabled:status!=='idle',className:'h-8 rounded-lg px-2 gap-1.5 text-ui-base text-foreground-subtle',children:[$.jsx('span',{children:languageLabel}),$.jsx('span',{className:'text-foreground-subtlest',children:'·'}),$.jsx('span',{children:modeLabel}),$.jsx(Rs,{className:'size-3.5 shrink-0'})]})}),
+ $.jsx(xA,{asChild:true,children:$.jsxs(X,{type:'button',variant:'ghost',size:'default','aria-label':'Voice settings','data-testid':'ccode-voice-settings',title:'Speech language and send mode',disabled:status!=='idle',className:'h-8 rounded-lg px-2 gap-1.5 text-ui-base text-foreground-subtle',children:[$.jsx('span',{children:languageLabel}),$.jsx('span',{className:'text-foreground-subtlest',children:'·'}),$.jsx('span',{children:modeLabel}),$.jsx(Rs,{className:'size-3.5 shrink-0'})]})}),
  $.jsxs(SA,{side:'top',align:'start',sideOffset:8,className:'min-w-64',children:[
  $.jsx(DA,{children:'Speech language'}),
- $.jsxs(TA,{value:language,onValueChange:value=>{setLanguage(value);localStorage.setItem('zcode-voice-language',value);},children:[option('id','Indonesian + English','Prefer Indonesian, preserve English terms'),option('en','English + Indonesian','Prefer English, allow Indonesian speech'),option('auto','Auto detect','Choose the language based on speech')]}),
+ $.jsxs(TA,{value:language,onValueChange:value=>{setLanguage(value);localStorage.setItem('ccode-voice-language',value);},children:[option('id','Indonesian + English','Prefer Indonesian, preserve English terms'),option('en','English + Indonesian','Prefer English, allow Indonesian speech'),option('auto','Auto detect','Choose the language based on speech')]}),
  $.jsx(OA,{}),$.jsx(DA,{children:'After speaking'}),
- $.jsxs(TA,{value:auto?'auto':'review',onValueChange:value=>{const enabled=value==='auto';setAuto(enabled);localStorage.setItem('zcode-voice-send-mode',enabled?'auto':'review');},children:[option('review','Review first','Insert into the chat box for review'),option('auto','Send automatically','Send the command after transcription')]})
+ $.jsxs(TA,{value:auto?'auto':'review',onValueChange:value=>{const enabled=value==='auto';setAuto(enabled);localStorage.setItem('ccode-voice-send-mode',enabled?'auto':'review');},children:[option('review','Review first','Insert into the chat box for review'),option('auto','Send automatically','Send the command after transcription')]})
  ]})
  ]}),
  error?$.jsx('div',{role:'status',className:'absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border border-border bg-surface p-3 text-ui-sm text-destructive shadow-lg',children:error}):null

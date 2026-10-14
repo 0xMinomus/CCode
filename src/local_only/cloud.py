@@ -37,7 +37,7 @@ REMOVED_MAIN_SYMBOLS = ("Eg", "Gr", "jo", "Rk", "VP", "zP")
 # Remote (account-owned) refresh of the built-in provider catalog. The settings
 # facade is the only entry point and the synchronizer is what it delegates to;
 # both must answer locally so no call path fetches from the removed endpoint.
-BUILTIN_REFRESH_FACADE = ('refreshZCodeBuiltin(t){return this.#r?Promise.resolve("disposed"):'
+BUILTIN_REFRESH_FACADE = ('refreshCCodeBuiltin(t){return this.#r?Promise.resolve("disposed"):'
                           'this.#e instanceof Ac?this.#e.refresh(t):this.#n?.refresh(t)??Promise.resolve("skipped")}')
 BUILTIN_REFRESH_SYNC = 'refresh(t={}){if(this.#o)return Promise.resolve("disposed")'
 # Model settings renders this when no provider is configured yet. It reuses the
@@ -45,21 +45,21 @@ BUILTIN_REFRESH_SYNC = 'refresh(t={}){if(this.#o)return Promise.resolve("dispose
 # the same surface/border tokens as the neighbouring settings panes, so it stays
 # one family with the rest of the UI without inventing new strings.
 PROVIDER_EMPTY_STATE = '''
-function ZCodeProviderEmptyState(){const{intl:e}=q();return $.jsx("div",{className:"flex min-h-[14rem] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-6 text-center","data-provider-empty-state":`true`,children:[$.jsx("p",{className:"text-ui-base font-medium text-foreground",children:e.formatMessage({id:`settings.modelProvider.empty`})}),$.jsx("p",{className:"text-ui-sm text-foreground-subtlest",children:e.formatMessage({id:`settings.modelProvider.addProviderDescription`})})]})}
+function CCodeProviderEmptyState(){const{intl:e}=q();return $.jsx("div",{className:"flex min-h-[14rem] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-6 text-center","data-provider-empty-state":`true`,children:[$.jsx("p",{className:"text-ui-base font-medium text-foreground",children:e.formatMessage({id:`settings.modelProvider.empty`})}),$.jsx("p",{className:"text-ui-sm text-foreground-subtlest",children:e.formatMessage({id:`settings.modelProvider.addProviderDescription`})})]})}
 '''
 # "Auto Detect" sits beside "+ Add model" in the Model list header: it runs the
-# local model-sync discovery (IPC zcode-detect:run) and reports what it added. The
+# local model-sync discovery (IPC ccode-detect:run) and reports what it added. The
 # button reuses the same Button variant/refresh icon as the settings header so it
 # stays one family with the rest of Model settings.
 ADD_MODEL_BUTTON = ('(0,$.jsxs)(X,{type:`button`,variant:`secondary`,size:`default`,className:`rounded-lg`,'
                     '"data-testid":Kee,onClick:E,children:[(0,$.jsx)(qc,{"data-icon":`inline-start`,"aria-hidden":`true`}),'
                     'f.formatMessage({id:`settings.modelProvider.addModel`})]})')
 ADD_MODEL_BUTTON_WITH_DETECT = ('(0,$.jsxs)("div",{className:"flex min-w-0 flex-1 items-center justify-end gap-2",children:['
-                                '(0,$.jsx)(ZCodeAutoDetect,{}),' + ADD_MODEL_BUTTON + ']})')
+                                '(0,$.jsx)(CCodeAutoDetect,{}),' + ADD_MODEL_BUTTON + ']})')
 AUTO_DETECT_BUTTON = '''
-function ZCodeAutoDetect(){const{intl:e}=q(),{providerSettingsService:t}=Dg(),[n,r]=Q.useState(null);const i=n?.kind===`running`;async function a(){r({kind:`running`});try{const s=await (typeof window.zcodeDetect?.run===`function`?window.zcodeDetect.run():Promise.resolve({ok:!1,error:`Auto Detect is unavailable in this window.`}));if(!s?.ok){r({kind:`failed`,error:s?.error||`Unknown error`});return}r({kind:`done`,providers:s.providers??0,models:s.models??0,skipped:s.skipped??null});try{await t?.refresh?.(`auto-detect`)}catch{}}catch(s){r({kind:`failed`,error:String(s?.message??s)})}}const s=i?e.formatMessage({id:`settings.modelProvider.autoDetect.running`}):n?.kind===`done`?e.formatMessage({id:`settings.modelProvider.autoDetect.done`},{providers:String(n.providers),models:String(n.models)}):n?.kind===`failed`?e.formatMessage({id:`settings.modelProvider.autoDetect.failed`},{reason:n.error??``}):``;return $.jsxs("span",{className:"flex min-w-0 flex-1 items-center justify-end gap-2","data-provider-auto-detect":`true`,children:[$.jsx("span",{role:`status`,className:"min-w-0 truncate text-right text-ui-sm "+(n?.kind===`failed`?"text-destructive":"text-foreground-subtle"),"data-provider-auto-detect-status":n?.kind,title:s,children:s}),$.jsxs(X,{type:`button`,variant:`outline`,size:`default`,className:`shrink-0 rounded-lg`,"data-testid":`model-provider-auto-detect`,disabled:i,onClick:a,children:[i?$.jsx(Ec,{className:`size-3.5 animate-spin`,"data-icon":`inline-start`,"aria-hidden":`true`}):$.jsx(Yc,{"data-icon":`inline-start`,"aria-hidden":`true`}),e.formatMessage({id:`settings.modelProvider.autoDetect`})]})]})}
+function CCodeAutoDetect(){const{intl:e}=q(),{providerSettingsService:t}=Dg(),[n,r]=Q.useState(null);const i=n?.kind===`running`;async function a(){r({kind:`running`});try{const s=await (typeof window.ccodeDetect?.run===`function`?window.ccodeDetect.run():Promise.resolve({ok:!1,error:`Auto Detect is unavailable in this window.`}));if(!s?.ok){r({kind:`failed`,error:s?.error||`Unknown error`});return}r({kind:`done`,providers:s.providers??0,models:s.models??0,skipped:s.skipped??null});try{await t?.refresh?.(`auto-detect`)}catch{}}catch(s){r({kind:`failed`,error:String(s?.message??s)})}}const s=i?e.formatMessage({id:`settings.modelProvider.autoDetect.running`}):n?.kind===`done`?e.formatMessage({id:`settings.modelProvider.autoDetect.done`},{providers:String(n.providers),models:String(n.models)}):n?.kind===`failed`?e.formatMessage({id:`settings.modelProvider.autoDetect.failed`},{reason:n.error??``}):``;return $.jsxs("span",{className:"flex min-w-0 flex-1 items-center justify-end gap-2","data-provider-auto-detect":`true`,children:[$.jsx("span",{role:`status`,className:"min-w-0 truncate text-right text-ui-sm "+(n?.kind===`failed`?"text-destructive":"text-foreground-subtle"),"data-provider-auto-detect-status":n?.kind,title:s,children:s}),$.jsxs(X,{type:`button`,variant:`outline`,size:`default`,className:`shrink-0 rounded-lg`,"data-testid":`model-provider-auto-detect`,disabled:i,onClick:a,children:[i?$.jsx(Ec,{className:`size-3.5 animate-spin`,"data-icon":`inline-start`,"aria-hidden":`true`}):$.jsx(Yc,{"data-icon":`inline-start`,"aria-hidden":`true`}),e.formatMessage({id:`settings.modelProvider.autoDetect`})]})]})}
 '''
-# An empty chat renders a large faded ZCode mark behind the draft greeting. The requested
+# An empty chat renders a large faded CCode mark behind the draft greeting. The requested
 # look is a plain background, so the decorative node is replaced with `null`: React renders
 # a null child as nothing and the greeting text underneath keeps its own layout.
 DRAFT_GREETING_MARK = ('(0,$.jsx)(`div`,{"aria-hidden":`true`,className:Z(`pointer-events-none absolute left-1/2 '
@@ -294,14 +294,14 @@ def _remote_ipc(text):
 
 def _host(text):
     text = apply_service_boundary(text, CLOUD_SERVICE_STUBS, CLOUD_SERVICES)
-    # The built-in provider catalog (resources/config/provider/zcode-builtin.json)
-    # is refreshed from the account endpoint (https://zcode.z.ai) and the release
+    # The built-in provider catalog (resources/config/provider/ccode-builtin.json)
+    # is refreshed from the account endpoint (https://ccode.z.ai) and the release
     # is written over the active cache copy. In the standalone build that owner is
     # gone: the fetch adds a network round trip to every provider-settings refresh
     # and a successful release would replace the patched catalog (Zhipu removed,
     # 9Router template added). Both the settings facade and the synchronizer
     # itself answer "skipped" so no caller can reach the removed endpoint.
-    text = replace_once(text, BUILTIN_REFRESH_FACADE, 'refreshZCodeBuiltin(t){return Promise.resolve("skipped")}')
+    text = replace_once(text, BUILTIN_REFRESH_FACADE, 'refreshCCodeBuiltin(t){return Promise.resolve("skipped")}')
     return replace_once(text, BUILTIN_REFRESH_SYNC, 'refresh(t={}){return Promise.resolve("skipped");')
 
 
@@ -321,7 +321,7 @@ def _renderer(text):
     # The Usage stats section becomes the local-only Activity page: the page
     # component renders our panel and the app/coding-plan tab bar is dropped.
     text = replace_once(text, 'function Xwn({activeTab:e,providerSourcesLoading:t,workspaceIdentity:n,workspacePath:r,selectedCodingPlanSource:i}){return e===`app`?(0,$.jsx)(Ewn,{}):(0,$.jsx)(Iwn,{loadingSources:t,workspaceIdentity:n,workspacePath:r,selectedSource:i})}',
-                        'function Xwn({activeTab:e,providerSourcesLoading:t,workspaceIdentity:n,workspacePath:r,selectedCodingPlanSource:i}){return $.jsx(ZCodeActivityPanel,{})}')
+                        'function Xwn({activeTab:e,providerSourcesLoading:t,workspaceIdentity:n,workspacePath:r,selectedCodingPlanSource:i}){return $.jsx(CCodeActivityPanel,{})}')
     text = replace_once(text, 'b===`usage`?(0,$.jsx)(YOn,{activeTab:he,codingPlanSources:ye,onTabChange:Ae}):null', 'null')
     # Web/Mobile remote control pairs through the account relay, so the titlebar
     # trigger and its dialog are deleted rather than answered.
@@ -354,7 +354,7 @@ def _renderer(text):
     # instead (label `settings.modelProvider.empty` ships with the app) and leaves
     # the template picker path untouched for when providers do exist.
     text = replace_once(text, 'ie?(0,$.jsx)(OCn,{templates:m,creating:oe,',
-                        '!ie&&(p?.length??0)===0?(0,$.jsx)(ZCodeProviderEmptyState,{}):ie?(0,$.jsx)(OCn,{templates:m,creating:oe,')
+                        '!ie&&(p?.length??0)===0?(0,$.jsx)(CCodeProviderEmptyState,{}):ie?(0,$.jsx)(OCn,{templates:m,creating:oe,')
     # "Auto Detect" beside "+ Add model": the model list header gains a button that
     # runs the local gateway discovery on demand.
     text = replace_once(text, ADD_MODEL_BUTTON, ADD_MODEL_BUTTON_WITH_DETECT)
@@ -402,7 +402,7 @@ def _renderer(text):
     # The footer menu keeps locale/theme/zoom/settings, but its trigger is no
     # longer an account entry: local label, local test id, no sign-in item.
     text = replace_once(text, 'function Ein(e,t){return e?Tin(e):t({id:`sidebar.profile.notLoggedIn`})}',
-                        'function Ein(e){return e?Tin(e):`ZCode on Steroids`}')
+                        'function Ein(e){return e?Tin(e):`CCode on Steroids`}')
     text = replace_once(text, 'Ein(u,v.formatMessage)', 'Ein(u)')
     text = replace_once(text, '"data-testid":fe,"aria-label":D,', '"data-testid":`app-menu`,"aria-label":D,')
     return text
@@ -497,6 +497,28 @@ def patch_archive(archive, replacements, renderer_asset):
     replacements[INTL] = _intl(text).encode()
 
 
+LOGIN_SWITCH = 'case"login":return await vTt(e,T,L,n.values["no-browser"]===!0);case"logout":return await bTt(e,T,L);'
+LOGIN_HELP = '  login      Sign in with Z.AI OAuth for model access\n  logout     Remove the shared Z.AI login credentials\n'
+NO_BROWSER_HELP = '  --no-browser     Print the OAuth URL without opening a browser\n'
+SLASH_HELP = '  /login                Sign in with Z.AI OAuth\n  /logout               Remove the shared Z.AI login credentials\n'
+LOGIN_REGISTRY = ('{details:["Opens a Coding Plan setup picker when called without arguments.",'
+                  '"Z.ai and BigModel Coding Plan login write the final API key to config.json.",'
+                  '"Manual API key variants accept the API key as an argument."],name:"login",'
+                  'summary:"Set up a Coding Plan provider.",usage:"/login [zai-coding-plan|bigmodel-coding-plan|'
+                  'zai-coding-plan-api-key <api-key>|bigmodel-coding-plan-api-key <api-key>]"},'
+                  '{details:["Deletes Z.ai OAuth credentials from the shared CCode credential store."],'
+                  'name:"logout",summary:"Remove the shared Z.ai login credentials.",usage:"/logout"},')
+LOGIN_PARSER = ('if(o==="login")return{args:s,name:"login",rawName:o,type:"known"};'
+                'if(o==="logout")return{args:s,name:"logout",rawName:o,type:"known"};')
+
+
+def patch_login_surface(text):
+    """Remove the account sign-in surface: CLI subcommands, slash commands, and their help."""
+    for anchor in (LOGIN_SWITCH, LOGIN_HELP, NO_BROWSER_HELP, SLASH_HELP, LOGIN_REGISTRY, LOGIN_PARSER):
+        text = replace_once(text, anchor, '')
+    return replace_span(text, 'if(s.name==="login"){', 'if(s.name==="compact"){', '')
+
+
 def patch_agent(text):
     # Marketplace entries that require a paid plan are dropped from the catalog
     # manifest, so neither the store nor the CLI can offer them.
@@ -508,7 +530,7 @@ def patch_agent(text):
     text = replace_span(text, 'let $=Vec(z),J=await N3e(', 'let ie=e.providerEndpointRoutingPort', 'let J=z,q;')
     text = replace_once(text, 'Ye.start(),I?.start(),L=DXo(Tt,Fe=>Ye.send(Fe),u),', 'Ye.start(),')
     text = replace_once(text, ',n("telemetry",()=>Iwt())', '')
-    text = replace_once(text, 'zcodeBuiltinProviders:t.providers,', 'zcodeBuiltinProviders:uw.empty(),')
+    text = replace_once(text, 'ccodeBuiltinProviders:t.providers,', 'ccodeBuiltinProviders:uw.empty(),')
     text = replace_once(
         text,
         'for(let[s,a]of Object.entries(t))try{o[Q3s(e.loaded,s)]=nBs(a,n,{mcpKey:s,pluginId:e.loaded.id})}',
@@ -520,4 +542,4 @@ def patch_agent(text):
         'declaredMcpServerNames:e.manifest.name==="image-search"?s.filter(n=>n!=="image_search"):s,'
         'description:e.manifest.description',
     )
-    return text
+    return patch_login_surface(text)

@@ -179,7 +179,7 @@ class DiscoveryTests(unittest.TestCase):
   # fill it immediately instead of waiting out the 12h discovery TTL.
   with tempfile.TemporaryDirectory() as folder:
     root=pathlib.Path(folder);state_root=root/'model-sync';state_root.mkdir(parents=True)
-    config_path=root/'data/.zcode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
+    config_path=root/'data/.ccode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
     (state_root/'catalog.json').write_text('{"opencode":{"models":{}}}')
     data=family_config()
     data['config']['providerConfigRules']['providerRules'].append({'providerId':'9router','providerName':'9Router','enabled':True,
@@ -187,14 +187,14 @@ class DiscoveryTests(unittest.TestCase):
                 'api':{'type':'openai-chat-completions','baseUrl':sync.GATEWAY_BASE_URL},'personalModelIds':[],'modelOrder':[]}})
     config_path.write_text(json.dumps(data))
     (state_root/'state.json').write_text(json.dumps({'managed':{},'discovery':{'fetchedAt':time.time()-60,'groups':{}}}))
-    saved=(os.environ.get('ZCODE_MODEL_SYNC_CONFIG'),os.environ.get('ZCODE_MODEL_SYNC_STATE'),os.environ.get('ZCODE_STANDALONE_ROOT'))
-    os.environ.update({'ZCODE_MODEL_SYNC_CONFIG':str(config_path),'ZCODE_MODEL_SYNC_STATE':str(state_root),'ZCODE_STANDALONE_ROOT':str(root)})
+    saved=(os.environ.get('CCODE_MODEL_SYNC_CONFIG'),os.environ.get('CCODE_MODEL_SYNC_STATE'),os.environ.get('CCODE_STANDALONE_ROOT'))
+    os.environ.update({'CCODE_MODEL_SYNC_CONFIG':str(config_path),'CCODE_MODEL_SYNC_STATE':str(state_root),'CCODE_STANDALONE_ROOT':str(root)})
     real=sync.gateway_models
     sync.gateway_models=lambda *a,**k:gateway_fixture()
     try:sync.main([])
     finally:
       sync.gateway_models=real
-      for key,value in zip(('ZCODE_MODEL_SYNC_CONFIG','ZCODE_MODEL_SYNC_STATE','ZCODE_STANDALONE_ROOT'),saved):
+      for key,value in zip(('CCODE_MODEL_SYNC_CONFIG','CCODE_MODEL_SYNC_STATE','CCODE_STANDALONE_ROOT'),saved):
         if value is None:os.environ.pop(key,None)
         else:os.environ[key]=value
     written=json.loads(config_path.read_text())
@@ -207,7 +207,7 @@ class DiscoveryTests(unittest.TestCase):
   # fill it immediately instead of waiting out the 12h discovery TTL.
   with tempfile.TemporaryDirectory() as folder:
     root=pathlib.Path(folder);state_root=root/'model-sync';state_root.mkdir(parents=True)
-    config_path=root/'data/.zcode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
+    config_path=root/'data/.ccode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
     (state_root/'catalog.json').write_text('{"opencode":{"models":{}}}')
     data=family_config()
     data['config']['providerConfigRules']['providerRules'].append({'providerId':'9router','providerName':'9Router','enabled':True,
@@ -215,14 +215,14 @@ class DiscoveryTests(unittest.TestCase):
                 'api':{'type':'openai-chat-completions','baseUrl':sync.GATEWAY_BASE_URL},'personalModelIds':[],'modelOrder':[]}})
     config_path.write_text(json.dumps(data))
     (state_root/'state.json').write_text(json.dumps({'managed':{},'discovery':{'fetchedAt':time.time()-60,'groups':{}}}))
-    saved=(os.environ.get('ZCODE_MODEL_SYNC_CONFIG'),os.environ.get('ZCODE_MODEL_SYNC_STATE'),os.environ.get('ZCODE_STANDALONE_ROOT'))
-    os.environ.update({'ZCODE_MODEL_SYNC_CONFIG':str(config_path),'ZCODE_MODEL_SYNC_STATE':str(state_root),'ZCODE_STANDALONE_ROOT':str(root)})
+    saved=(os.environ.get('CCODE_MODEL_SYNC_CONFIG'),os.environ.get('CCODE_MODEL_SYNC_STATE'),os.environ.get('CCODE_STANDALONE_ROOT'))
+    os.environ.update({'CCODE_MODEL_SYNC_CONFIG':str(config_path),'CCODE_MODEL_SYNC_STATE':str(state_root),'CCODE_STANDALONE_ROOT':str(root)})
     real=sync.gateway_models
     sync.gateway_models=lambda *a,**k:gateway_fixture()
     try:sync.main([])
     finally:
       sync.gateway_models=real
-      for key,value in zip(('ZCODE_MODEL_SYNC_CONFIG','ZCODE_MODEL_SYNC_STATE','ZCODE_STANDALONE_ROOT'),saved):
+      for key,value in zip(('CCODE_MODEL_SYNC_CONFIG','CCODE_MODEL_SYNC_STATE','CCODE_STANDALONE_ROOT'),saved):
         if value is None:os.environ.pop(key,None)
         else:os.environ[key]=value
     written=json.loads(config_path.read_text())
@@ -305,19 +305,19 @@ class DiscoveryTests(unittest.TestCase):
  def test_gateway_unreachable_keeps_config_and_sets_backoff(self):
   with tempfile.TemporaryDirectory() as folder:
     root=pathlib.Path(folder);state_root=root/'model-sync';state_root.mkdir(parents=True)
-    config_path=root/'data/.zcode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
+    config_path=root/'data/.ccode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
     (state_root/'catalog.json').write_text('{"opencode":{"models":{}}}')
     original=family_config();original['config']['providerConfigRules']['providerRules'].append({'providerId':'9router','providerName':'9Router','enabled':True,
       'config':{'group':'standard-personal','access':{'type':'api-key','apiKey':'local'},'api':{'type':'openai-chat-completions','baseUrl':sync.GATEWAY_BASE_URL},'personalModelIds':[],'modelOrder':[]}})
     config_path.write_text(json.dumps(original))
-    saved=(os.environ.get('ZCODE_MODEL_SYNC_CONFIG'),os.environ.get('ZCODE_MODEL_SYNC_STATE'),os.environ.get('ZCODE_STANDALONE_ROOT'))
-    os.environ.update({'ZCODE_MODEL_SYNC_CONFIG':str(config_path),'ZCODE_MODEL_SYNC_STATE':str(state_root),'ZCODE_STANDALONE_ROOT':str(root)})
+    saved=(os.environ.get('CCODE_MODEL_SYNC_CONFIG'),os.environ.get('CCODE_MODEL_SYNC_STATE'),os.environ.get('CCODE_STANDALONE_ROOT'))
+    os.environ.update({'CCODE_MODEL_SYNC_CONFIG':str(config_path),'CCODE_MODEL_SYNC_STATE':str(state_root),'CCODE_STANDALONE_ROOT':str(root)})
     real=sync.gateway_models
     sync.gateway_models=lambda *a,**k:(_ for _ in ()).throw(OSError('gateway down'))
     try:sync.main(['--discover'])
     finally:
       sync.gateway_models=real
-      for key,value in zip(('ZCODE_MODEL_SYNC_CONFIG','ZCODE_MODEL_SYNC_STATE','ZCODE_STANDALONE_ROOT'),saved):
+      for key,value in zip(('CCODE_MODEL_SYNC_CONFIG','CCODE_MODEL_SYNC_STATE','CCODE_STANDALONE_ROOT'),saved):
         if value is None:os.environ.pop(key,None)
         else:os.environ[key]=value
     self.assertEqual(json.loads(config_path.read_text()),original,'gateway down must not touch the config')
@@ -326,17 +326,17 @@ class DiscoveryTests(unittest.TestCase):
  def test_main_discovers_through_fixture_gateway(self):
   with tempfile.TemporaryDirectory() as folder:
     root=pathlib.Path(folder);state_root=root/'model-sync';state_root.mkdir(parents=True)
-    config_path=root/'data/.zcode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
+    config_path=root/'data/.ccode/v2/provider_config.json';config_path.parent.mkdir(parents=True)
     (state_root/'catalog.json').write_text('{"opencode":{"models":{}}}')
     config_path.write_text(json.dumps(family_config()))
-    saved=(os.environ.get('ZCODE_MODEL_SYNC_CONFIG'),os.environ.get('ZCODE_MODEL_SYNC_STATE'),os.environ.get('ZCODE_STANDALONE_ROOT'))
-    os.environ.update({'ZCODE_MODEL_SYNC_CONFIG':str(config_path),'ZCODE_MODEL_SYNC_STATE':str(state_root),'ZCODE_STANDALONE_ROOT':str(root)})
+    saved=(os.environ.get('CCODE_MODEL_SYNC_CONFIG'),os.environ.get('CCODE_MODEL_SYNC_STATE'),os.environ.get('CCODE_STANDALONE_ROOT'))
+    os.environ.update({'CCODE_MODEL_SYNC_CONFIG':str(config_path),'CCODE_MODEL_SYNC_STATE':str(state_root),'CCODE_STANDALONE_ROOT':str(root)})
     real=sync.gateway_models
     sync.gateway_models=lambda *a,**k:gateway_fixture()
     try:sync.main(['--discover','--bootstrap'])
     finally:
       sync.gateway_models=real
-      for key,value in zip(('ZCODE_MODEL_SYNC_CONFIG','ZCODE_MODEL_SYNC_STATE','ZCODE_STANDALONE_ROOT'),saved):
+      for key,value in zip(('CCODE_MODEL_SYNC_CONFIG','CCODE_MODEL_SYNC_STATE','CCODE_STANDALONE_ROOT'),saved):
         if value is None:os.environ.pop(key,None)
         else:os.environ[key]=value
     written=json.loads(config_path.read_text())

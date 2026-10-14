@@ -18,7 +18,7 @@ Chat with coding agents, drive your desktop, and keep every byte of data on your
 
 ## Why CCode exists
 
-CCode is a fork of **ZCode**, the agentic coding workspace by Z.AI, rebuilt around three ideas:
+CCode is a fork of **CCode**, the agentic coding workspace by Z.AI, rebuilt around three ideas:
 
 1. **No account, ever.** There is no sign-in screen, no account service, no plan or subscription surface. The app opens
    straight into a workspace and talks only to the model providers *you* configure.
@@ -65,7 +65,7 @@ Side by side, at a glance:
 | **Auto-update** | Polls the vendor update feed | Update channel removed; a release never overwrites your build |
 | **Startup network footprint** | Account and business-config calls, catalog refresh, update checks | None of the above; only the provider endpoints you configure, only when you use them |
 | **Performance & resource use** | Account/cloud round-trips during startup and for stats | No account/cloud/update round-trips; Activity is read-only local SQLite. The Computer Use MCP defers model loading to the first observation (~60 MB less per idle session, measured), and an optional Chromium low-memory switch saves ~128 MB PSS when enabled (documented, off by default) |
-| **Identity** | ZCode branding and vendor endpoints | CCode branding end to end, with the `zcode://` scheme, `.zcode` layout, `ZCODE_*` variables, and `zcode-*` IPC channels retained on purpose for host/agent compatibility |
+| **Identity** | CCode branding and vendor endpoints | CCode branding end to end, with the `ccode://` scheme, `.ccode` layout, `CCODE_*` variables, and `ccode-*` IPC channels used consistently across the host and agent |
 | **License** | Apache-2.0 — Copyright 2026 Z.AI Co., Ltd | Apache-2.0, same terms, attribution preserved |
 
 <sub>Performance figures come from the project's reference workstation and are recorded in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); a reproducible head-to-head benchmark suite is on the roadmap.</sub>
@@ -88,6 +88,7 @@ cd CCode-archive
 make build      # stage the patched bundle in runtime/build (upstream baseline verified by SHA-256)
 make test       # syntax checks for sources and patched assets, plus the unit test suite
 make apply      # promote the staged build into app/ (close the app first)
+make migrate    # move an existing pre-rebrand namespace and its stored paths to the CCode names
 make install    # launcher, icon theme entries, model-sync units, and the CCode data namespace
 make run        # launch
 ```
@@ -114,13 +115,14 @@ make dry-run        # show what the local integration would install
 | `src/skills/` | Default agent skills bundled into the app pack (`glm/packages/bundled-skills`) |
 | `src/plugins/n8n/` | Native n8n plugin manifest, MCP entrypoint, and all 15 activation-scoped n8n skills |
 | `src/main/` | Electron main-process modules: voice IPC, Activity data, Token savers, Auto Detect |
-| `src/local_only/` | Product patches: storage namespacing, account/cloud removal, CCode branding, provider catalog, Token savers agent integration |
+| `src/local_only/` | Product patches: `rebrand` (identity and runtime contracts, runs first), `branding` (mark, runs last), storage namespacing, account/cloud removal, bundled plugin payload, agent runtime tuning, provider catalog, Token savers agent integration |
 | `services/desktop/` | `screen-mcp` desktop backend and its fast profile |
 | `services/voice/` | Whisper worker, bilingual terminology, model |
 | `services/mcp/` | Pinned default MCP packages and optional integration catalog |
 | `services/model-sync/` | Gateway model discovery and reasoning-metadata sync |
-| `scripts/` | Build, verification, apply, install, backup/restore, icon generation, docs export |
+| `scripts/` | Build, verification, apply, install, namespace migration (`migrate_identity.py`), backup/restore, icon generation, docs export |
 | `assets/icons/` | Rasterized CCode icons committed for reproducible builds |
+| `baselines/` | Pinned upstream artifacts, never edited: `upstream-3.14.5-original.asar`, `upstream-3.14.5-original-agent.cjs`, `upstream-3.14.5-original-plugins/` (checksums in `project.json`) |
 | `ccode-logo.svg` | Single source of the CCode mark |
 | `docs/` | Architecture, operations, development, models, voice, and third-party notes (Indonesian) |
 | `project.json` | Pinned upstream identities, checksums, and patched asset names |

@@ -20,9 +20,9 @@ class DataBackupTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.folder = pathlib.Path(self.temporary.name)
         self.root = self.folder / 'standalone'
-        self.db = self.root / 'data/.zcode/cli/db/db.sqlite'
+        self.db = self.root / 'data/.ccode/cli/db/db.sqlite'
         self.db.parent.mkdir(parents=True)
-        self.task = self.root / 'data/.zcode/v2/workspace/task/messages.json'
+        self.task = self.root / 'data/.ccode/v2/workspace/task/messages.json'
         self.task.parent.mkdir(parents=True)
         self.task.write_text('{"messages":["local task"]}')
         self.profile = self.root / 'electron/Preferences'
@@ -45,12 +45,12 @@ class DataBackupTests(unittest.TestCase):
         self.assertTrue(self.db.with_name('db.sqlite-wal').exists())
         backup.backup(self.root, self.snapshot)
         manifest = backup.validate_snapshot(self.snapshot)
-        self.assertIn('data/.zcode/cli/db/db.sqlite-wal', manifest['omittedSqliteSidecars'])
-        copied = self.snapshot / 'files/data/.zcode/cli/db/db.sqlite'
+        self.assertIn('data/.ccode/cli/db/db.sqlite-wal', manifest['omittedSqliteSidecars'])
+        copied = self.snapshot / 'files/data/.ccode/cli/db/db.sqlite'
         with contextlib.closing(sqlite3.connect(copied)) as connection:
             self.assertEqual(connection.execute('SELECT message FROM tasks').fetchone(), ('committed in WAL',))
         self.assertFalse(copied.with_name('db.sqlite-wal').exists())
-        self.assertEqual((self.snapshot / 'files/data/.zcode/v2/workspace/task/messages.json').read_bytes(), self.task.read_bytes())
+        self.assertEqual((self.snapshot / 'files/data/.ccode/v2/workspace/task/messages.json').read_bytes(), self.task.read_bytes())
         self.assertEqual((self.snapshot / 'files/electron/Preferences').read_bytes(), self.profile.read_bytes())
         for path in (self.snapshot, *self.snapshot.rglob('*')):
             self.assertEqual(path.stat().st_mode & 0o077, 0, str(path))

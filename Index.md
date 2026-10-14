@@ -3,7 +3,7 @@ tags: [ccode, fedora, project]
 ---
 # CCode
 
-Branding CCode untuk workspace patch **ZCode 3.14.5** di Fedora: varian mandiri tanpa akun ZCode, Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
+Branding CCode untuk workspace patch upstream **3.14.5** di Fedora: varian mandiri tanpa akun, Computer Use lewat `fedora-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
 
 Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AGENTS.md`, dan `docs/` adalah file asli; `make obsidian` hanya menyegarkan note ini.
 
@@ -30,5 +30,5 @@ Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AG
 - Data lama `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis
 - Build: `make build && make test`; promote: `make apply` (aplikasi harus tertutup)
 - Backup/restore: `python3 scripts/data_backup.py backup|verify|restore`
-- Snapshot terakhir: `~/.local/share/zcode-on-steroids-backups/20261012-161210-600068`
+- Snapshot terakhir: `~/.local/share/belum ada snapshot`
 - Vault ini adalah folder project, jadi tidak ada salinan: catatan `README`, `AGENTS`, dan `docs/` adalah file asli repo.
