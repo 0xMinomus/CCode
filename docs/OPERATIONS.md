@@ -39,6 +39,10 @@ Verifikasi sebelum dipublikasikan: jalankan AppImage dengan root uji lewat `CCOD
 
 Stage menolak build bila jalur home mesin build atau `provider_config*.json` ikut terbawa, dan menormalkan izin berkas supaya tree dapat dibaca pengguna yang memasangnya. Venv layanan hanya membawa interpreter (`bin/python*`); console script, `pyvenv.cfg` yang memuat jalur build, cache `__pycache__`, dan state lokal model-sync dibuang. Computer Use masih memerlukan paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`) karena layer itu tidak dapat dibundel.
 
+## Computer Use: satu backend, dua tempat
+
+Computer Use Linux diatur dari **Settings → Computer Use**, dan entry yang sama (`linux-desktop`) juga tampil sebagai baris di **Settings → MCP Servers**. Keduanya bukan dua backend: keduanya menulis state `enabled` yang sama, jadi menyalakan/mematikan di salah satu tempat memberi hasil yang sama. Panel Computer Use menambahkan hal yang tidak ada di daftar MCP: status koneksi + jumlah tool, petunjuk izin, dan sakelar pintasan di kotak chat. Teks panel menyebut hal ini supaya tidak jadi pertanyaan "yang mana yang dipakai?".
+
 ## Computer Use: klik/ketik ditolak
 
 Gejala: agent melaporkan klik atau ketik gagal, dan `/tmp/screen_err.txt` memuat

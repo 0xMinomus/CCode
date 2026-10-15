@@ -21,7 +21,7 @@ function LinuxCuaSettings(p){
  $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:server?.status==="connected"?"Backend connected · "+(server.toolCount??22)+" tools":enabled?"linux-desktop is available to new chats. If you just enabled it, start a new chat.":"Turn it on to expose the desktop tools to new chats."}),
  $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"On first use, pick a screen and allow mouse/keyboard in the system dialog. Moving the mouse yourself stops the agent's control."}),
  $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Use a vision model. Example: use linux-desktop to take a screenshot, then open Files."}),
- $.jsx("p",{className:"text-ui-xs text-foreground-subtlest",children:"Local Linux integration: this panel drives the linux-desktop MCP; the macOS/Windows helper backends are not used."}),
+ $.jsx("p",{className:"text-ui-xs text-foreground-subtlest",children:"Local Linux integration: this switch is the linux-desktop entry you also see in Settings → MCP Servers; same backend, one state, either switch works. The macOS/Windows helper backends are not used."}),
  error?$.jsx("p",{className:"text-destructive",children:error}):null
  ]})
  ]});
