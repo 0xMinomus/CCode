@@ -2,6 +2,12 @@
 
 ## 2026-10-16
 
+### Verifikasi M1 pada PC Windows
+
+- ZIP pristine baseline diverifikasi terhadap `SHA256SUMS` dan seluruh 268 hash berkas, lalu diekstrak ke root checkout. Pin transfer cocok dengan `project.json`; tidak ada baseline yang diubah.
+- Kandidat M1 terpinsel dijalankan pada Windows 11 Home Single Language x64 build 26200 dengan namespace terisolasi. Workspace CCode terbuka tanpa login; terminal PowerShell menjalankan `cmd /c echo CCODE_M1_PTY_OK` dengan output yang benar. Pola error IPC/runtime gate tidak ditemukan pada stdout/stderr dua sesi awal. Uji restart penuh terpisah memeriksa persistensi onboarding; persistensi task/chat tidak diuji.
+- Gate runtime M1 kandidat tersebut lulus, bukan seluruh gate Windows. `make build` lokal gagal pada urutan digest path plugin lintas platform; `make test` gagal dengan 12 failure, 29 error, 10 skip. Pin/assertion tidak dilonggarkan, tidak ada apply/install atau binary baru dipublikasikan. Bukti dan batas pengujian ada di `windowsrelease.md`; M2–M5 belum dikerjakan.
+
 ### Windows hibrida: kandidat boot M1
 
 - Pemilik memilih jalur Windows hibrida M1–M5. Pekerjaan ini merakit kandidat boot M1, bukan menyatakan Windows siap rilis atau menyelesaikan port source fork.

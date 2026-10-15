@@ -89,7 +89,7 @@ n8n is a separate [Marketplace plugin download](https://github.com/0xMinomus/CCo
 
 ### Windows boot-test candidate
 
-An unsigned [Windows x64 M1 prerelease](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) is available for boot testing, not normal use or feature parity. Download its ZIP, choose **Extract All**, then double-click `app\CCode.exe`; no terminal is needed for the initial startup check. Direct launch stores test data in `%LOCALAPPDATA%\CCode`. Windows runtime verification is still open; see the release notes and [Windows milestone gates](windowsrelease.md).
+An unsigned [Windows x64 M1 prerelease](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) is available for boot testing, not normal use or feature parity. Download its ZIP, choose **Extract All**, then double-click `app\CCode.exe`; no terminal is needed for the initial startup check. Direct launch stores test data in `%LOCALAPPDATA%\CCode`. The pinned candidate passed isolated boot, namespace, runtime-log, and terminal/PTY checks on Windows 11 build 26200. Local Windows rebuilds and the test suite still fail; M2–M5 remain unverified. See the [Windows milestone evidence](windowsrelease.md#bukti-lokal-windows-m1-2026-10-16).
 
 
 ## Build and run

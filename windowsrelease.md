@@ -1,6 +1,6 @@
 # Rencana kerja rilis Windows x64
 
-Status: 2026-10-16. Pemilik mengizinkan eksekusi **Windows hibrida M1–M5**. Kandidat ZIP M1 sudah dirakit dan diperiksa di Linux; bukti boot/terminal Windows belum ada. M2–M5 menunggu gate tersebut. Rencana tingkat tinggi tetap di [releaseplan.md](releaseplan.md); pelaksanaan Linux ada di [linuxrelease.md](linuxrelease.md).
+Status: 2026-10-16. Pemilik mengizinkan eksekusi **Windows hibrida M1–M5**. Gate runtime M1 kandidat terpinsel lulus di PC Windows pemilik; build ulang dan suite Windows belum lulus. M2–M5 belum dijalankan. Rencana tingkat tinggi tetap di [releaseplan.md](releaseplan.md); pelaksanaan Linux ada di [linuxrelease.md](linuxrelease.md).
 
 Target: fitur Windows sama dengan rilis Linux 1.0.0 saat ini — tanpa akun, namespace data sendiri, provider BYOK + 9Router, 12 slash command, 32 skill Default, 12 subagent, Token savers, Activity, MCP katalog, Plugin Marketplace + n8n, backup/restore, dan Computer Use. Voice tetap dihapus.
 
@@ -279,7 +279,7 @@ Hasil ditulis sebagai catatan: versi Windows, nama artifact + SHA256, langkah, t
 | Rencana Windows (file ini) | ✅ selesai |
 | M0. Fakta + pin baseline vendor | ✅ selesai (SHA256 installer + isi tercatat) |
 | K1–K7. Keputusan pemilik | K1 hibrida dipilih; K2 namespace Windows diterapkan; K3–K5 mengikuti rekomendasi saat milestone terkait; K6 PC pemilik; K7 kandidat unsigned |
-| M1. Bukti boot di Windows (spike) | ⬜ belum — gate untuk lanjut ke M2 |
+| M1. Bukti boot di Windows (spike) | ✅ kandidat terpinsel lulus di Windows 11 build 26200; bukti di bawah. Build ulang lokal belum lulus |
 | Kandidat ZIP M1 (bukan bukti boot) | Dirakit; CRC ZIP dan 10.937 hash berkas lulus; 13 native Windows, tanpa native Linux |
 | M2. Paritas fitur | ⬜ belum |
 | M3. Computer Use `windows-desktop` + panel | ⬜ belum |
@@ -300,3 +300,18 @@ Belum ada baris di tabel ini yang boleh ditandai selesai tanpa bukti yang dijala
 - Installer vendor terpinsel memiliki metadata native dan hash header ASAR embedded yang stale; fuse validasi ASAR vendor memang mati. Packager mencatat ketidaksesuaian, memperbarui metadata kandidat, dan mempertahankan fuse `101100011`, bukan mematikan validasi untuk melewati kegagalan.
 
 Kandidat diterbitkan atas permintaan pemilik sebagai [prerelease uji M1](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016), bukan rilis final. Ukuran dan digest SHA256 asset GitHub cocok dengan kandidat lokal. Untuk pengujian awal tanpa terminal: unduh ZIP, pilih **Extract All**, buka folder `app`, lalu klik dua kali `CCode.exe`. Jalur langsung memakai `%LOCALAPPDATA%\CCode`; screenshot startup dan hasil buka ulang tidak menutup gate terminal/pty. Tidak ada hasil Windows yang dicatat sebagai lulus sampai bukti diterima.
+
+### Bukti lokal Windows M1 (2026-10-16)
+
+- OS: Microsoft Windows 11 Home Single Language, 10.0.26200, x64. Tidak memakai Wine atau simulasi platform.
+- Transfer baseline: `CCode-pristine-baselines-3.14.5.zip`, 81.915.813 byte, SHA256 `44d10c3e5fa674348a16acc963b1bb90221b99490f1443cdbcef41a666f7a329`, cocok dengan `Downloads/SHA256SUMS`. Seluruh 268 hash dalam `BASELINE-FILES.sha256` lulus sebelum ekstraksi ke root checkout, bukan `app/`; pin transfer cocok dengan `project.json`.
+- Kandidat diunduh dari prerelease M1 di atas. SHA256 ZIP cocok dengan `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`; pemeriksaan CRC ZIP lulus. Ekstraksi pengujian berada di `runtime/m1-windows/CCode-3.14.5-win-x64-M1`.
+- Launcher `CCode.ps1 --remote-debugging-port=9331` membuka aplikasi sebagai CCode. Onboarding ditutup melalui kontrol native **Exit onboarding**, lalu workspace terbuka tanpa login. Tidak ada provider, credentials, atau prompt model yang ditambahkan.
+- Namespace uji adalah `m1-isolated-root` di direktori kandidat; profil `electron/` dan data `data/.ccode/` terbentuk di sana. Terminal PowerShell bawaan dibuka melalui **Toggle terminal**; perintah `cmd /c echo CCODE_M1_PTY_OK` menghasilkan baris output `CCODE_M1_PTY_OK` dan kembali ke prompt dalam workspace namespace tersebut. Ini bukti PTY berjalan, bukan sekadar native bisa dimuat.
+- Dua sesi startup awal tidak memuat `Unknown channel`, `No handler registered`, `ReferenceError`, atau `TypeError` pada stdout/stderr launcher; log aplikasi sesi pertama juga diperiksa tanpa temuan keempat pola. Tombol Close window ternyata tidak langsung mengakhiri seluruh proses; penutupan penuh kemudian memakai CDP `Browser.close` dan launcher keluar 0. Uji persistensi terpisah menutup proses penuh setelah keluar onboarding, lalu membuka ulang root yang sama. Persistensi task/chat belum diuji karena tidak menjalankan model.
+- Bukti lokal ignored: `runtime/release-windows/m1-pty.png`, log dan metadata launcher dalam root uji. Setelah observasi dan penutupan normal, root uji dibersihkan; screenshot dan salinan log launcher disimpan di `runtime/release-windows/m1-evidence/`.
+- Toolchain lokal: Python 3.14.5 (MSYS2 UCRT64), Node dan Git tersedia; GNU Make tersedia di `C:/msys64/usr/bin/make.exe`, tetapi tidak ada di PATH. Build/check dijalankan lewat executable Make tersebut.
+- **Build ulang belum lulus:** `make build` berhenti di verifikasi digest plugin (`97f380e6…d48dd0d7` dibanding pin `5a891a5d…2318d9b`). Hash individual transfer benar; penghitungan ulang dengan urutan string path POSIX menghasilkan pin yang benar, sedangkan `_baseline_files()` menyortir objek Path dengan semantik Windows. Pin dan assertion tidak diubah.
+- **Suite Windows belum lulus:** `make test` berakhir dengan 12 failure, 29 error, 10 skip. Pemeriksaan sintaks sumber dan boundary launcher n8n sebelum suite berjalan; kegagalan suite bukan bukti seluruh fitur rusak atau siap. Portabilitas checker/build harus diperbaiki sebelum kandidat baru dibangun atau dipublikasikan.
+- Kesimpulan terbatas: gate boot/namespace/log/PTY/reopen **M1 kandidat yang sudah terbit lulus**. M2–M5, build reproducible Windows, installer, Computer Use, dan paritas fitur tetap belum lulus. Tidak ada apply/install atau publikasi binary baru pada sesi ini.
+
