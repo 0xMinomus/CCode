@@ -4,6 +4,16 @@ Status: 2026-10-16. Pemilik mengizinkan eksekusi **Windows hibrida M1–M5**. Ka
 
 Target: fitur Windows sama dengan rilis Linux 1.0.0 saat ini — tanpa akun, namespace data sendiri, provider BYOK + 9Router, 12 slash command, 32 skill Default, 12 subagent, Token savers, Activity, MCP katalog, Plugin Marketplace + n8n, backup/restore, dan Computer Use. Voice tetap dihapus.
 
+## Handoff ke mesin Windows (keputusan pemilik 2026-10-16)
+
+- Pemilik berencana melanjutkan pekerjaan di Windows agar assistant mengedit dan menguji aplikasi langsung pada OS target.
+- Clone **`https://github.com/0xMinomus/CCode-archive.git`**, branch **`main`**. Repo privat ini tetap workspace patch aktif; **`0xMinomus/CCode`** adalah fork publik untuk distribusi/rilis, bukan checkout kerja yang dimaksud.
+- Sesi assistant baru harus membaca `AGENTS.md` dan dokumen ini, lalu melanjutkan **gate M1**, bukan menganggap M1 sudah lulus atau langsung menandai M2–M5 selesai.
+- `app/`, `baselines/`, dan `runtime/` diabaikan Git: clone tidak membawa binary atau baseline. Kandidat [prerelease M1](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) cukup untuk uji boot awal; build ulang memerlukan baseline/payload terpinsel dan toolchain yang sesuai. Skrip Linux belum otomatis portabel ke Windows.
+- Pemilik memilih unduhan dan peluncuran GUI tanpa mengetik perintah terminal. Assistant menjalankan pemeriksaan teknis melalui tools lokal bila tersedia; interaksi desktop tetap memerlukan sesi aktif dan akses otomasi.
+- Memori assistant lokal tidak diasumsikan ikut berpindah OS. Catatan dalam repo ini menjadi handoff yang ikut clone.
+
+
 ## Keputusan yang sudah dikunci
 
 | Hal | Keputusan |
