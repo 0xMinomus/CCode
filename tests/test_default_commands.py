@@ -25,6 +25,26 @@ class DefaultCommandTests(unittest.TestCase):
                   'process.stdout.write(JSON.stringify(seedDefaultCommands({storageDir:process.argv[2],resourceDir:process.argv[3]})));')
         return json.loads(self.node(script, SEED_MODULE, storage, resources))
 
+    def test_agent_discovers_seeded_user_command_in_standalone_namespace(self):
+        runtime = ROOT / 'runtime/build/resources/glm/ccode.cjs'
+        electron = ROOT / 'app/ccode'
+        if not runtime.is_file() or not electron.is_file():
+            self.skipTest('staged agent and Electron are unavailable')
+        import os
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            storage = root / 'data/.ccode'
+            self.seed(storage, COMMAND_SOURCES)
+            env = dict(os.environ, CCODE_STANDALONE_ROOT=str(root), ELECTRON_RUN_AS_NODE='1')
+            result = subprocess.run(
+                [str(electron), str(runtime), 'commands', 'inspect', 'design', '--json'],
+                cwd=root, env=env, capture_output=True, text=True, timeout=30, check=True)
+            command = json.loads(result.stdout)['command']
+            self.assertEqual(command['metadata']['path'], str(storage / 'commands/design.md'))
+            self.assertEqual(command['metadata']['scope'], 'user')
+            self.assertEqual(command['content'],
+                             (storage / 'commands/design.md').read_text().split('---', 2)[2].strip())
+
     def test_seeding_updates_only_unchanged_defaults_and_respects_deletions(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)

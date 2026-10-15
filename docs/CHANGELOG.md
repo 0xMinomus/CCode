@@ -4,6 +4,9 @@
 
 ### Default slash commands
 
+- Perbaikan resolver agent: command user kini dicari di `${CCODE_STORAGE_DIR}/commands`, sama dengan scanner Settings. Sebelumnya picker dapat menampilkan `/design` tetapi agent menjawab `Custom command not found: design`; keberhasilan smoke yang menyebut `DESIGN.md` secara eksplisit tidak membuktikan dispatch command.
+- Seluruh 12 prompt berbahasa Inggris menyatakan tugas langsung, mengizinkan skills/MCP user yang relevan, membatasi riset berulang, dan menghentikan pekerjaan setelah hasil terverifikasi. Enam command dokumen tetap target-only; ADR tanpa keputusan final memakai status proposed.
+- Verifikasi tanpa provider: CLI terisolasi gagal menemukan `/design` pada runtime lama dan berhasil membaca prompt namespace yang benar pada runtime baru; ekspansi native mengganti `$ARGUMENTS` dengan URL referensi. Pengujian kualitas hasil model dilakukan pengguna.
 - Settings → Commands mendapat 12 command bawaan: `/prd`, `/design`, `/tech-spec`, `/task-plan`, `/test-plan`, `/adr`, `/implement`, `/debug`, `/explain`, `/review`, `/test`, dan `/security-review`.
 - Command dikelompokkan menjadi Documents, Development, Quality, dan Custom memakai header serta baris native. Prompt dokumen mengarahkan output ke `PRD.md`, `DESIGN.md`, `TECH-SPEC.md`, `TASKS.md`, `TEST-PLAN.md`, atau `docs/adr/`.
 - Main process men-seed command ke namespace user. Native scanner dan command creator sama-sama diarahkan ke `${CCODE_STORAGE_DIR}/commands`; tanpa pengalihan ini, command tertanam di namespace tetapi runtime mencari di home di luar namespace. Marker kepemilikan mencegah penggantian command user, melindungi edit, dan menghormati penghapusan. Command bawaan tidak menetapkan model atau mewajibkan skill/MCP.

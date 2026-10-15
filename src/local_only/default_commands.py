@@ -80,3 +80,11 @@ def patch_host(text):
         'function Bq(e){return un($w(),...e.userDirectorySegments)}',
         'function Bq(e){return e.agentSource==="ccodeAgent"?un(process.env.CCODE_STORAGE_DIR,"commands"):un($w(),...e.userDirectorySegments)}',
     )
+
+
+def patch_agent(text):
+    return replace_once(
+        text,
+        'function NHr(e,t,n){return[Tun((0,CC.join)(e,R3s,OHr),t,"ccode",n()),',
+        'function NHr(e,t,n){return[Tun(t==="user"&&process.env.CCODE_STORAGE_DIR?(0,CC.join)(process.env.CCODE_STORAGE_DIR,OHr):(0,CC.join)(e,R3s,OHr),t,"ccode",n()),',
+    )

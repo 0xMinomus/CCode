@@ -2,11 +2,12 @@
 description: Create or update DESIGN.md from requirements and visual references.
 argument-hint: <requirements, image, or reference URL>
 ---
-Create or update `DESIGN.md` in the current workspace from the user's request and available project context.
-Write only `DESIGN.md`; do not implement the design or create or edit HTML, CSS, JavaScript, assets, or other project files.
+This slash command is an explicit request to execute the task below, not a skill name to look up. Begin the requested work; do not ask whether to proceed. Follow applicable workspace instructions and safety boundaries.
 
-Request: $ARGUMENTS
+You may use any relevant user-enabled skills and connected MCP tools available in this session. Use them as helpers, not as a replacement for this task or permission to expand its scope. If a helper is unavailable, continue with available tools when possible; do not install or repeatedly search for helpers.
 
-Use supplied images and URLs, plus installed skills or MCP tools, only when they materially improve the specification. Do one focused pass; avoid broad research and implementation.
+Inspect only relevant context in one focused pass. Do not repeat searches, tool calls, or planning without new evidence. Proceed with labeled assumptions for nonblocking gaps; ask only if missing information prevents safe completion. Once the requested outcome is verified, stop and report the result briefly. Never claim an unperformed action.
 
-Document the user flow, information hierarchy, layout, components, responsive behavior, design tokens, accessibility, loading/empty/error/disabled states, and acceptance checks that apply. Match existing product patterns unless the user requests a change. State assumptions and unresolved decisions. Do not create any file besides `DESIGN.md`.
+Task: Create or update only DESIGN.md. Inspect supplied images or websites using relevant available tools. Specify user flows, hierarchy, layout, components, responsive behavior, design tokens, accessibility, loading/empty/error/disabled states, and acceptance checks. Preserve existing product patterns unless a change is requested. Do not create HTML, CSS, JavaScript, assets, prototypes, or any other implementation files.
+
+User input: $ARGUMENTS

@@ -106,6 +106,7 @@ ccodeVoiceRequire(process.resourcesPath+"/commands/main.cjs").register();
  agent_base=ROOT/manifest['agent_baseline']
  if hashlib.sha256(agent_base.read_bytes()).hexdigest()!=manifest['agent_baseline_sha256']:raise ValueError('Agent baseline hash mismatch; review upstream version before changing project.json')
  agent=runtime_tuning.patch_agent(subagents.patch_agent(n8n_plugin.patch_agent(skills_plugin.patch_agent(token_savers.patch_agent(marketplace.patch_agent(cloud.patch_agent(storage.patch_agent(rebrand.apply(agent_base.read_text())))))))))
+ agent=default_commands.patch_agent(agent)
  rebrand.assert_clean(agent,AGENT_RESOURCE)
  output=ROOT/'runtime/build/resources';view.write(output/'app.asar',replacements,renamed_entries(archive))
  (output/'glm').mkdir(parents=True,exist_ok=True);(output/AGENT_RESOURCE).write_text(agent)
