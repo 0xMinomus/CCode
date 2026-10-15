@@ -44,6 +44,40 @@ Survei cepat terhadap aset yang ada; semua di bawah ini fakta dari repo, API pub
 | Integrasi OS | `scripts/install_local.py` mengurus systemd unit dan icon theme (Linux-only); `scripts/pack_linux.py` hanya AppDir/deb/rpm |
 | Update feed | `app/resources/app-update.yml` sudah dinetralkan (`http://localhost:8081`); tidak ada feed vendor untuk mengambil build Windows |
 | Token savers | `src/main/token-savers-runtime.cjs` menjalankan `rtk` sebagai executable — binary Windows belum tersedia |
+| Paket MCP win32 | Diverifikasi ada di npm: `@sdsrs/code-graph-win32-x64@0.169.0` dan `@vscode/ripgrep-win32-x64@1.18.0` — versinya sama dengan pin Linux, jadi tinggal dipilih per platform |
+| Perkakas packaging di mesin ini | `makensis` **belum terpasang** (Fedora), jadi installer NSIS belum bisa dibangun di sini tanpa menambah paket NSIS; `mksquashfs`/`dpkg-deb`/`rpmbuild` yang dipakai Linux tidak relevan untuk Windows |
+| RTK | Binary lokal `~/.local/bin/rtk` v0.51.0 adalah Rust static-pie untuk Linux; build Windows-nya belum diverifikasi ada |
+
+---
+
+## Keputusan yang belum diambil (harus beres sebelum mulai)
+
+| # | Keputusan | Pilihan | Menghambat |
+|---|---|---|---|
+| K1 | Versi dasar Windows | Pakai `3.14.3` (cepat, versi lebih tua dari Linux), tunggu vendor rilis `3.14.5` Windows, atau jalur fork source (versi sama, kerja jauh lebih besar) | Semua langkah A–F |
+| K2 | Lokasi namespace data | `%LOCALAPPDATA%\CCode` (cara Windows) vs pertahankan `.local/share/ccode` (seragam lintas OS) | C1, C2, backup/migrate, dokumentasi |
+| K3 | Penjadwal model-sync | Task Scheduler (mengikuti pola Linux) vs scheduler di dalam aplikasi | C3 |
+| K4 | Runtime backend Computer Use | Bahasa + cara paket: Python (seperti Linux, tapi menambah runtime besar di paket Windows), Node/Electron (sudah ada di paket), atau biner kecil (Rust/Go) | B2, D5, E2, ukuran paket |
+| K5 | Strategi payload MCP | Payload per platform dalam satu paket vs paket terpisah per platform | D1, D3 |
+| K6 | Lingkungan uji | PC Windows pemilik (sesuai releaseplan) vs VM Windows; siapa yang menjalankan tiap milestone | F1–F3, semua kriteria lulus |
+| K7 | Signing | Tanpa sertifikat (SmartScreen warning, ditulis apa adanya) vs beli sertifikat | E4, F |
+
+K1 dan K4 yang paling menentukan: keduanya mengubah bentuk pekerjaan, bukan sekadar detail.
+
+## Urutan eksekusi: milestone dan kriteria lulus
+
+Rencana ini sengaja dibuat bertahap supaya kegagalan ketahuan di awal, bukan setelah semua dikerjakan.
+
+| Milestone | Isi | Kriteria lulus | Risiko kalau gagal |
+|---|---|---|---|
+| **M0 — Fakta & baseline** (selesai) | Pin installer vendor, bongkar isinya, catat temuan | Dokumen ini + SHA256 tercatat | — |
+| **M1 — Bukti boot di Windows** (spike, paling penting) | Patch minimal saja: `rebrand` + `storage` + `branding` + `cloud` pada baseline Windows, hasilkan tree yang bisa dijalankan | Di Windows: aplikasi terbuka dengan nama CCode, tanpa layar login, namespace data sendiri, tanpa `Unknown channel`/`ReferenceError`. Fitur lain belum diklaim | Kalau ini gagal, hentikan jalur patch dan pilih fork source (K1) — jangan lanjut ke M2 |
+| **M2 — Paritas fitur** | Sisanya: commands, 32 skill, subagents, token savers, marketplace + n8n, model-sync, Activity, katalog MCP | Daftar periksa fitur Linux terpenuhi di Windows satu per satu; tidak ada kontrol mati | Fitur yang tidak bisa diport ditulis sebagai batas, bukan dihapus diam-diam |
+| **M3 — Computer Use** | Backend `windows-desktop` (K4) + panel Settings versi Windows | Screenshot, `read_text`, klik element, typing, dan guard takeover `STOPPED` bekerja pada aplikasi biasa; batas UIPI diuji dan dicatat | Kalau tidak selesai, panel harus menyembunyikan diri dengan pesan jujur (B3) — jangan tampilkan toggle mati |
+| **M4 — Packaging** | `pack_windows.py`, NSIS per-user, ikon `.ico`, shortcut, uninstall | Installer jalan di Windows, uninstall bersih, data tetap kecuali diminta hapus, ukuran dicatat | Tanpa NSIS (perkakas belum ada) M4 tidak bisa dijalankan |
+| **M5 — Gate rilis** | 10 langkah verifikasi F1 + catatan hasil | Catatan lengkap: versi Windows, artifact + SHA256, temuan, log tersensor | Tanpa catatan ini rilis Windows belum boleh terbit |
+
+Aturan main: setiap milestone diverifikasi dengan menjalankan aplikasinya di Windows, bukan dari "build hijau". Kalau satu milestone gagal, mundur dan selesaikan keputusan yang menghambatnya sebelum lanjut.
 
 ---
 
@@ -165,7 +199,8 @@ Hasil ditulis sebagai catatan: versi Windows, nama artifact + SHA256, langkah, t
 | Anchor 3.14.3 tidak cocok dengan patch 3.14.5 | Build gagal berkali-kali | Cari ulang simbol/chunk seperti prosedur update baseline; jangan melemahkan assertion |
 | Helper Computer Use vendor butuh akun atau feed vendor | Rute B1 mati | Siapkan rute B2 (`windows-desktop`) sebelum menjanjikan Computer Use di Windows |
 | UIPI/UAC | "Setara Linux" tidak mungkin | Dokumentasikan batas; jangan janji elevated/secure desktop |
-| Paket native MCP tidak ada untuk win32-x64 | Katalog menampilkan tombol Install yang gagal | Verifikasi nama paket dulu; kalau tidak ada, jangan bundel dan jangan tampilkan |
+| Paket native MCP untuk win32 | Sudah diverifikasi ada di npm (`@sdsrs/code-graph-win32-x64@0.169.0`, `@vscode/ripgrep-win32-x64@1.18.0`), tetapi perilakunya di Windows belum diuji | Pilih paket per platform saat build; uji tool nyata (bukan handshake) di M1/M2 |
+| `makensis` belum terpasang di mesin build | M4 tidak bisa dijalankan sampai paket NSIS ditambahkan (atau installer dibangun di mesin Windows) | Catat sebagai prasyarat M4; jangan menjanjikan artifact sebelum perkakas ada |
 | Symlink dan izin Windows di backup/migrate | Data pengguna berisiko | Uji dengan hak pengguna normal, sediakan jalur tanpa symlink |
 | Installer unsigned | SmartScreen warning, kepercayaan pengguna turun | Catat status; keputusan sertifikat ada di pemilik |
 | Windows "tidak ringan" karena runtime tambahan | Bertentangan dengan keputusan terkunci | Batasi payload; ukur dan laporkan ukuran sebelum rilis |
@@ -186,12 +221,13 @@ Hasil ditulis sebagai catatan: versi Windows, nama artifact + SHA256, langkah, t
 | Item | Status |
 |---|---|
 | Rencana Windows (file ini) | ✅ selesai |
-| A. Baseline Windows + portabilitas patch | ⬜ belum |
-| B. Keputusan rute Computer Use Windows | ⬜ belum (B1 perlu bukti, B2 cadangan) |
-| C. Runtime standalone Windows | ⬜ belum |
-| D. Payload MCP per platform + plugin n8n | ⬜ belum |
-| E. Packaging installer Windows | ⬜ belum |
-| F. Verifikasi Windows x64 | ⬜ belum |
-| G/H. Risiko dan item tertunda | ⬜ belum |
+| M0. Fakta + pin baseline vendor | ✅ selesai (SHA256 installer + isi tercatat) |
+| K1–K7. Keputusan pemilik | ⬜ belum diambil (K1 versi dasar dan K4 runtime Computer Use paling menentukan) |
+| M1. Bukti boot di Windows (spike) | ⬜ belum — gate untuk lanjut ke M2 |
+| M2. Paritas fitur | ⬜ belum |
+| M3. Computer Use `windows-desktop` + panel | ⬜ belum |
+| M4. Packaging installer Windows | ⬜ belum (butuh `makensis`, belum terpasang) |
+| M5. Gate verifikasi di Windows | ⬜ belum |
+| A–H. Rincian pekerjaan | ⬜ belum |
 
 Belum ada baris di tabel ini yang boleh ditandai selesai tanpa bukti yang dijalankan di Windows; build berhasil saja bukan bukti.
