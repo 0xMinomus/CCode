@@ -3,6 +3,7 @@ description: Create or update TASKS.md with an implementation sequence.
 argument-hint: <approved feature or plan>
 ---
 Create or update `TASKS.md` in the current workspace from the approved request and repository context.
+Write only `TASKS.md`; do not edit implementation files or execute the plan.
 
 Request: $ARGUMENTS
 

@@ -2,7 +2,8 @@
 description: Record an accepted architecture decision in docs/adr/.
 argument-hint: <decision and context>
 ---
-Write an Architecture Decision Record under `docs/adr/` for the decision in the request.
+Write one Architecture Decision Record under `docs/adr/` for the decision in the request.
+Create or update only that ADR file; do not modify other project files.
 
 Request: $ARGUMENTS
 

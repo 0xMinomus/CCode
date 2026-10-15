@@ -3,6 +3,7 @@ description: Write TEST-PLAN.md with acceptance and regression checks.
 argument-hint: <feature or acceptance criteria>
 ---
 Create or update `TEST-PLAN.md` in the current workspace for the requested behavior.
+Write only `TEST-PLAN.md`; do not create test or implementation files.
 
 Request: $ARGUMENTS
 

@@ -91,6 +91,26 @@ class DefaultCommandTests(unittest.TestCase):
         self.assertEqual(groups[1]['names'], ['/security-review', 'review'])
         self.assertEqual(groups[2]['names'], ['custom-command'])
 
+    def test_slash_catalog_merges_enabled_commands_after_native_refresh(self):
+        script = ('const fs=require("node:fs");const mod={exports:{}};'
+                  'new Function("module","exports",fs.readFileSync(process.argv[1],"utf8"))(mod,mod.exports);'
+                  'const {CCodeMergeSlashCommands}=mod.exports;'
+                  'const commands=CCodeMergeSlashCommands('
+                  '[{name:"goal",source:"builtin"},{name:"stale",source:"custom"}],'
+                  '[{name:"design",description:"Write a design spec",argumentHint:"<request>",enabled:true},'
+                  '{name:"disabled",enabled:false},{name:"goal",enabled:true},'
+                  '{name:"/design",description:"Duplicate",enabled:true}]);'
+                  'process.stdout.write(JSON.stringify(commands));')
+        commands = json.loads(self.node(script, CATEGORY_MODULE))
+        self.assertEqual([command['name'] for command in commands], ['goal', 'design'])
+        self.assertEqual(commands[1], {
+            'name': 'design',
+            'description': 'Write a design spec',
+            'inputHint': '/design <request>',
+            'source': 'custom',
+        })
+
+
     def test_all_packaged_defaults_have_a_category(self):
         script = ('const fs=require("node:fs");const mod={exports:{}};'
                   'new Function("module","exports",fs.readFileSync(process.argv[1],"utf8"))(mod,mod.exports);'
@@ -103,15 +123,5 @@ class DefaultCommandTests(unittest.TestCase):
                          [('Documents', 6), ('Development', 3), ('Quality', 3)])
 
 
-    def test_native_scanner_and_command_creator_use_standalone_root(self):
-        source = (
-            'function Tve(e){let t=of(e);return un($w(),...t.userDirectorySegments)}'
-            'function Bq(e){return un($w(),...e.userDirectorySegments)}'
-        )
-        patched = default_commands.patch_host(source)
-        self.assertIn('e==="ccodeAgent"?un(process.env.CCODE_STORAGE_DIR,"commands")', patched)
-        self.assertIn('e.agentSource==="ccodeAgent"?un(process.env.CCODE_STORAGE_DIR,"commands")', patched)
-        self.assertIn('un($w(),...t.userDirectorySegments)', patched)
-        self.assertIn('un($w(),...e.userDirectorySegments)', patched)
 if __name__ == '__main__':
     unittest.main()

@@ -3,6 +3,7 @@ description: Create or update PRD.md from a product request.
 argument-hint: <idea or feature request>
 ---
 Create or update `PRD.md` in the current workspace from the user's request and available project context.
+Write only `PRD.md`; do not create or edit implementation, HTML, CSS, JavaScript, or supporting files.
 
 Request: $ARGUMENTS
 

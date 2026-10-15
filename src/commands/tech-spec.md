@@ -3,6 +3,7 @@ description: Write TECH-SPEC.md for an approved feature or system change.
 argument-hint: <feature or technical request>
 ---
 Create or update `TECH-SPEC.md` in the current workspace for the requested change.
+Write only `TECH-SPEC.md`; do not edit implementation files or execute the plan.
 
 Request: $ARGUMENTS
 
