@@ -76,7 +76,7 @@ assert.equal(mixed[2].enabled, true);
 """
         _run_node(script)
 
-    def test_settings_rows_offer_toggles_for_builtins_only(self):
+    def test_settings_rows_offer_toggles_for_builtins_and_user_plugin_agents(self):
         helpers = _region(self.renderer, 'function O7(e){', 'function cTn(e)')
         names = json.dumps(list(subagents.NAMES))
         script = f"""
@@ -89,10 +89,59 @@ for (const name of names) {{
   assert.equal(sTn(agent), name, `${{name}} needs the built-in model-inherit control`);
 }}
 assert.equal(iTn({{name: 'custom', scope: 'user', source: 'user'}}), true);
-assert.equal(iTn({{name: 'plugin:reviewer', scope: 'user', source: 'plugin'}}), false);
+const visualJudge = {{name: 'documents:visual-judge', pluginName: 'documents', scope: 'user', source: 'plugin', readOnly: true}};
+assert.equal(iTn(visualJudge), true);
+assert.equal(iTn({{...visualJudge, name: 'pdf:visual-judge', pluginName: 'pdf'}}), true);
+assert.equal(iTn({{name: 'plugin:reviewer', scope: 'user', source: 'plugin'}}), true);
+assert.equal(iTn({{...visualJudge, scope: 'workspace'}}), false);
 assert.equal(iTn({{name: 'workspace', scope: 'workspace', source: 'user'}}), false);
 """
         _run_node(script)
+
+    def test_plugin_agent_toggle_disables_unique_bare_name_alias(self):
+        plugin_discovery = _region(self.host, 'async function sve(e){', 'i(sve,"discoverPluginAgents")')
+        enabled_state = _region(self.host, 'function mq(e,t){', 'i(mq,"attachEnabledState")')
+        script = f"""(async () => {{
+const assert = require('node:assert/strict');
+const To = (...parts) => parts.join('/');
+const UR = () => 'desktop';
+const Lw = async () => '/home/test';
+const ave = async () => ({{}});
+let plugins = [];
+const cve = async () => plugins;
+const uve = async installPath => [installPath + '/agents/visual-judge.md'];
+const _d = async path => path;
+const Ow = ({{content, path, scope}}) => ({{agent: {{name: 'visual-judge', scope, path, tools: ['Read', 'Bash'], systemPrompt: 'visual review'}}}});
+const fve = profile => profile;
+const DS = (id, name) => id + ':' + name;
+const Sq = new Set();
+{plugin_discovery}
+{enabled_state}
+const makePlugin = name => ({{id: name + '@ccode-plugins-official', name, installPath: '/plugins/' + name, scope: 'user'}});
+const load = () => sve({{storageOptions: {{}}, diagnostics: [], reservedNames: [], state: {{}}}});
+plugins = ['documents', 'pdf', 'presentations', 'spreadsheets'].map(makePlugin);
+const four = await load();
+assert.deepEqual(four.profiles.map(profile => profile.name), [
+  'documents:visual-judge',
+  'pdf:visual-judge',
+  'presentations:visual-judge',
+  'spreadsheets:visual-judge'
+]);
+const pdf = four.profiles.find(profile => profile.pluginName === 'pdf');
+const fourEnabled = mq(four.runtimeAgents, {{disabledAgentIds: [pdf.id]}});
+assert.equal(fourEnabled.find(profile => profile.id === pdf.id).enabled, false);
+assert.equal(fourEnabled.filter(profile => profile.id !== pdf.id).every(profile => profile.enabled), true);
+plugins = [makePlugin('documents')];
+const single = await load();
+const canonical = single.profiles[0];
+const alias = single.runtimeAgents.find(profile => profile.name === 'visual-judge');
+assert.ok(alias);
+assert.equal(alias.canonicalAgentId, canonical.id);
+assert.equal(mq(single.runtimeAgents, {{disabledAgentIds: [canonical.id]}}).find(profile => profile.name === 'visual-judge').enabled, false);
+}})().catch(error => {{ console.error(error); process.exitCode = 1; }});
+"""
+        _run_node(script)
+
 
     def test_disabled_profiles_are_hidden_and_cannot_dispatch(self):
         profile_block = _region(self.agent, 'function fpa(e={})', 'function bho(e,t={})')
@@ -132,6 +181,16 @@ assert.throws(() => gwn(profiles, {{agentType: {json.dumps(name)}}}), /not found
 assert.equal(gwn(profiles, {{agentType: 'Frontend Developer'}}).profile.name, 'Frontend Developer');
 const override = {{providerId: 'local', modelId: 'explicit'}};
 assert.equal($vn([], {{builtInModelSelectionOverrides: {{'Backend Developer': override}}}}).find(profile => profile.name === 'Backend Developer').modelSelection, override);
+const visualJudgeId = 'plugin:documents:visual-judge';
+const disabledVisualJudge = {{id: visualJudgeId, name: 'documents:visual-judge', source: 'plugin', scope: 'user', enabled: false, systemPrompt: 'visual review', tools: ['Read', 'Bash']}};
+const hiddenPluginProfiles = $vn([disabledVisualJudge], {{}});
+assert.equal(hiddenPluginProfiles.some(profile => profile.id === visualJudgeId), false);
+assert.equal(bho([disabledVisualJudge], {{}}).includes('documents:visual-judge'), false);
+assert.throws(() => gwn(hiddenPluginProfiles, {{agentType: 'documents:visual-judge'}}), /not found/);
+const enabledVisualJudge = {{...disabledVisualJudge, enabled: true}};
+const visiblePluginProfiles = $vn([enabledVisualJudge], {{}});
+assert.equal(visiblePluginProfiles.some(profile => profile.id === visualJudgeId), true);
+assert.equal(gwn(visiblePluginProfiles, {{agentType: 'documents:visual-judge'}}).profile.id, visualJudgeId);
 """
         _run_node(script)
 

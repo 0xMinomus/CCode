@@ -6,8 +6,8 @@
 
 - Settings → Subagents kini menyediakan 12 role default: Engineering Generalist, Codebase Explorer, Technical Architect, Backend Developer, Frontend Developer, UI/UX Designer, Database Engineer, Debugger & Performance Engineer, QA / Test Engineer, Code Reviewer, Security Reviewer, dan DevOps Engineer. Setiap role memiliki deskripsi, prompt, dan warna sendiri.
 - Setiap built-in dapat diaktifkan atau dinonaktifkan lewat toggle per agent. Status tersimpan pada state subagent yang ada; runtime tidak menawarkan atau menerima dispatch untuk agent yang nonaktif.
-- Semua role mewarisi model sesi secara default. Override lama untuk `general-purpose` dan `Explore` tetap dipakai setelah nama built-in diganti. Agent plugin `visual-judge` tidak berubah.
-- Verifikasi: `make build && make test` lulus; semua test yang berjalan lolos, 8 test suite dilewati karena artefak upstream ter-pin tidak tersedia. Smoke aplikasi staged pada root terisolasi menampilkan 12 role dengan model **Inherit default**; toggle Technical Architect tetap nonaktif setelah aplikasi ditutup dan dibuka ulang. Test runtime memastikan role aktif dapat di-resolve dan role nonaktif tidak ditawarkan atau di-dispatch.
+- Semua role mewarisi model sesi secara default. Override lama untuk `general-purpose` dan `Explore` tetap dipakai setelah nama built-in diganti. Empat profil plugin `visual-judge` di Documents, PDF, Presentations, dan Spreadsheets juga kini memiliki toggle masing-masing; status nonaktif menutup profil kanonis dan alias runtime.
+- Verifikasi: `make build && make test` lulus (172 tes, 8 dilewati karena baseline upstream tidak tersedia); `scripts/check.py` lulus. Smoke UI staged di root terisolasi menampilkan toggle pada empat profil `visual-judge`; toggle PDF tetap nonaktif setelah restart. Tes runtime memastikan profil aktif dapat di-resolve, sedangkan profil nonaktif hilang dari prompt dan ditolak resolver. Tidak ada prompt model yang dikirim.
 
 ### Ikon celengan untuk Token savers
 

@@ -262,7 +262,7 @@ def patch_renderer(text):
     text = replace_once(
         text,
         "function iTn(e){return O7(e)&&e.scope===`user`}",
-        "function iTn(e){return aTn(e)||O7(e)&&e.scope===`user`}",
+        "function iTn(e){return aTn(e)||O7(e)&&e.scope===`user`||e.source===`plugin`&&e.scope===`user`}",
     )
     name_checks = "||".join(f'e.name==={_json(name)}' for name in NAMES)
     return replace_once(
@@ -295,10 +295,15 @@ def patch_host(text):
         'i(mve,"normalizeBuiltInSelectionOverrides")',
         _host_selection_normalizer(),
     )
+    text = replace_once(
+        text,
+        'l.push({...u.agent,id:DS(`${u.agent.id}:alias`,u.bareName),name:u.bareName})',
+        'l.push({...u.agent,id:DS(`${u.agent.id}:alias`,u.bareName),name:u.bareName,canonicalAgentId:u.agent.id})',
+    )
     return replace_once(
         text,
         'enabled:r.scope==="user"?!n.has(r.id):!0',
-        'enabled:r.source==="built-in"||r.scope==="user"?!n.has(r.id):!0',
+        'enabled:r.source==="built-in"||r.scope==="user"?!n.has(r.id)&&!(r.canonicalAgentId&&n.has(r.canonicalAgentId)):!0',
     )
 
 

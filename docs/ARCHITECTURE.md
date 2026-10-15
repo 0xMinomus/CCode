@@ -33,9 +33,9 @@ Grafik 30 hari membaca `saved_tokens` dari `rtk gain --daily --format json`. Nil
 
 ### Built-in subagents
 
-`src/local_only/subagents.py` menjadi satu sumber katalog peran untuk registry host, kontrol Settings, dan runtime agent. Katalog ini menyediakan 12 default: Engineering Generalist, Codebase Explorer, Technical Architect, Backend Developer, Frontend Developer, UI/UX Designer, Database Engineer, Debugger & Performance Engineer, QA / Test Engineer, Code Reviewer, Security Reviewer, dan DevOps Engineer. Generalist dan Explorer menggantikan dua default upstream; agent plugin `visual-judge` tetap terpisah.
+`src/local_only/subagents.py` menjadi satu sumber katalog peran untuk registry host, kontrol Settings, dan runtime agent. Katalog ini menyediakan 12 default: Engineering Generalist, Codebase Explorer, Technical Architect, Backend Developer, Frontend Developer, UI/UX Designer, Database Engineer, Debugger & Performance Engineer, QA / Test Engineer, Code Reviewer, Security Reviewer, dan DevOps Engineer. Generalist dan Explorer menggantikan dua default upstream; agent plugin `visual-judge` tetap terpisah dari katalog.
 
-Semua default aktif saat pemasangan dan mewarisi model sesi induk kecuali pengguna memilih override. Toggle Settings memakai `disabledAgentIds` pada file state subagent yang sudah ada. Host meneruskan status aktif setiap built-in, lalu runtime agent memakai ID yang sama untuk prompt daftar agent dan resolver dispatch. Role nonaktif tidak ditawarkan dan tidak dapat dipanggil. Override model lama untuk `general-purpose` dan `Explore` dipindahkan ke role penggantinya.
+Semua default aktif saat pemasangan dan mewarisi model sesi induk kecuali pengguna memilih override. Toggle Settings memakai `disabledAgentIds` pada file state subagent yang sudah ada. Host meneruskan status built-in dan plugin ber-scope user; alias nama pendek plugin menyimpan `canonicalAgentId`, sehingga profil yang dimatikan tidak tetap dapat dipanggil lewat alias. Runtime agent memakai ID/status aktif yang sama untuk prompt daftar agent dan resolver dispatch. Profil nonaktif tidak ditawarkan dan tidak dapat dipanggil. Override model lama untuk `general-purpose` dan `Explore` dipindahkan ke role penggantinya.
 
 ### Default skills
 

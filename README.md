@@ -41,7 +41,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Activity dashboard** | Prompt metrics, streaks, and a January–December heatmap for any year, computed read-only from your local session database. |
 | **Token savers** | Optional RTK shell-command rewrites plus Caveman and Ponytail agent-instruction modes. The chart reports RTK's estimated shell-output tokens saved, not provider-billed model tokens. |
 | **Bundled default skills** | 32 agent skills ship inside the app — antislop, GSAP, UI design, and engineering workflow — listed as Default in Settings → Skills without installing a plugin. |
-| **Built-in subagents** | Twelve engineering roles cover architecture, backend/frontend, UI/UX, databases, debugging, QA, review, security, and DevOps. Each has its own enable switch and inherits the session model by default. |
+| **Built-in subagents** | Twelve engineering roles cover architecture, backend/frontend, UI/UX, databases, debugging, QA, review, security, and DevOps. Each has its own enable switch and inherits the session model by default; user-scoped plugin subagents can also be toggled individually. |
 | **MCP catalog** | Context7 and Codegraph ship preinstalled. LSP and Ripgrep are installable from native server rows without an “Optional” badge; account-bound `image_search` is excluded. |
 | **n8n plugin** | Enable n8n from Plugins or Plugin Marketplace to load its MCP server and all 15 n8n skills. Configure your instance URL and API key in the native plugin settings. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
