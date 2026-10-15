@@ -51,6 +51,14 @@ There is no need to reinstall dependencies or run vendor setup scripts for routi
 - Keep local IPC handlers working: external links, task notifications, Docker/WSL/SSH inspection, and the local desktop-command path. Removing a cloud owner must not remove a local handler.
 - Keep the storage bootstrap and unique-anchor assertions intact. If an upstream anchor stops matching, the build must fail instead of silently skipping a patch.
 
+## Release scope (locked)
+
+- Release order: Linux x64 first, then Windows x64. The concrete work list lives in `linuxrelease.md`.
+- **Voice is removed entirely** — code, UI, resources, and artifacts, on Linux *and* Windows (Windows must stay light).
+- n8n stays available but is installed by the user from the Plugin Marketplace: zip hosted as a release asset on the public fork `0xMinomus/CCode`, `n8n-mcp` dependencies inside that zip.
+- Computer Use registers itself as the `linux-desktop` MCP server; the app seeds the entry, so packages work without `make install`.
+- Never drop a shipped feature without the owner's approval; state unverified limits in the release notes.
+
 ## Data and handoff
 
 - Standalone data lives in `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`). Never point verification runs at the pre-rebrand data directories (`rebrand.PREVIOUS_APPDATA`/`PREVIOUS_APPCONFIG`) and never copy them into the repo.

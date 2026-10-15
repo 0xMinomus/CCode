@@ -2,6 +2,11 @@
 
 ## 2026-10-15
 
+### Rencana kerja rilis
+
+- `linuxrelease.md` mencatat daftar kerja rilis yang sudah disetujui: hapus total fitur Voice (Linux dan Windows), pindahkan n8n ke Plugin Marketplace (zip sebagai release asset di fork publik, dependency `n8n-mcp` ikut di dalam zip), lalu rebuild dan verifikasi artifact Linux.
+- `AGENTS.md` mendapat seksi "Release scope (locked)" supaya keputusan ini ikut terbaca di sesi berikutnya. Belum ada kode yang diubah untuk kedua pekerjaan itu.
+
 ### Computer Use tanpa nama distro
 
 - Entry MCP desktop berganti nama dari `fedora-desktop` menjadi `linux-desktop`; backend (`services/desktop`) dan paket sistemnya tidak berubah. Kepemilikan entry itu pindah ke aplikasi: `src/main/mcp-catalog.cjs` menyemainya saat bootstrap (berjalan setiap aplikasi start dan lewat `--bootstrap`), dan menghitung `command`/`env` dari tree tempat aplikasi berjalan — prefix paket, checkout sumber, atau mount AppImage. Entry lama diadopsi di tempat lengkap dengan `enabled`/`env` pengguna; entry yang dihapus pengguna tidak dihidupkan lagi (marker `mcp/default-seed.json`); entry yang sudah ada cukup di-refresh karena path mount AppImage berubah tiap kali dijalankan. `src/local_only/desktop_mcp.py` beserta blok di `scripts/install_local.py` dihapus supaya hanya ada satu pemilik.
