@@ -22,6 +22,13 @@
 - Pemilik mengizinkan publikasi gratis/open source. Lisensi pihak ketiga untuk `design-taste-frontend` dan 17 skill workflow masih belum terverifikasi; izin pemilik workspace tidak menggantikan izin pemegang hak. Batas ini dicatat di `docs/THIRD_PARTY.md`, bukan dilabeli sebagai lisensi universal aplikasi.
 - Windows, portabilitas Computer Use, dan pengujian lintas distro tidak dikerjakan dalam perubahan ini.
 
+### Rencana kerja rilis Windows
+
+- `windowsrelease.md` mencatat rancangan rilis Windows x64 dengan fitur yang sama seperti rilis Linux 1.0.0: tanpa akun, namespace sendiri, provider BYOK + 9Router, 12 command, 32 skill, 12 subagent, Token savers, Activity, MCP katalog, Marketplace + n8n, backup/restore, dan Computer Use. Voice tetap dihapus.
+- Fakta yang dijadikan dasar: vendor hanya menerbitkan `ZCode-3.14.3-win-x64.exe` (baseline kita 3.14.5 Linux), ASAR terpinsel memuat native linux-x64, seeding desktop digerbang `process.platform==='linux'`, `services/mcp/launch.cjs` menulis shim `/bin/sh` dan memaku ripgrep linux, `storage.py` memakai default `.local/share/ccode` tanpa cabang platform, dan feed update sudah dinetralkan.
+- Computer Use Windows punya dua rute: helper bawaan vendor (kalau terbukti jalan tanpa akun dan tanpa feed vendor) atau backend MCP `windows-desktop` bergaya screen-mcp dengan tool sesingkat profil `ccode-fast` dan guard takeover yang sama. MCP dijelaskan sebagai transport, bukan kebutuhan khusus Linux; batas UIPI/UAC wajib ditulis, bukan diklaim setara Linux. Panel Windows tidak boleh menampilkan toggle tanpa fungsi.
+- Belum ada kode Windows yang diubah; eksekusi menunggu perintah pemilik.
+
 ### Rencana kerja rilis
 
 - `linuxrelease.md` mencatat daftar kerja rilis yang sudah disetujui: hapus total fitur Voice (Linux dan Windows), pindahkan n8n ke Plugin Marketplace (zip sebagai release asset di fork publik, dependency `n8n-mcp` ikut di dalam zip), lalu rebuild dan verifikasi artifact Linux.

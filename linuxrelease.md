@@ -84,7 +84,7 @@ Perkiraan: −150 MB mentah (± −65 MB terkompresi) dari artifact; user yang m
 
 - **Computer Use portabilitas**: perkakas Python dibuat di komputer user (lapis 1) dan tombol "Pasang komponen" via `pkexec` dengan perintah per distro (lapis 2)
 - **Uji lintas distro**: container Ubuntu/Debian untuk klaim "jalan di distro lain"
-- **Windows x64**: installer `.exe` dengan Voice juga dihapus; packaging Windows belum dimulai
+- **Windows x64**: installer `.exe` dengan Voice juga dihapus; rancangan kerjanya kini ada di [windowsrelease.md](windowsrelease.md), eksekusi menunggu perintah pemilik
 
 ---
 
