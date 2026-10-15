@@ -31,6 +31,12 @@ RTK memakai kontrak `rtk rewrite`: output `rtk ...` yang valid pada status 0, at
 
 Grafik 30 hari membaca `saved_tokens` dari `rtk gain --daily --format json`. Nilainya estimasi output shell RTK lintas proyek, bukan token yang ditagihkan provider. Main IPC `window.ccodeTokenSavers` hanya menerima main frame lokal; preferensi disimpan di `data/.ccode/v2/token-savers.json`.
 
+### Built-in subagents
+
+`src/local_only/subagents.py` menjadi satu sumber katalog peran untuk registry host, kontrol Settings, dan runtime agent. Katalog ini menyediakan 12 default: Engineering Generalist, Codebase Explorer, Technical Architect, Backend Developer, Frontend Developer, UI/UX Designer, Database Engineer, Debugger & Performance Engineer, QA / Test Engineer, Code Reviewer, Security Reviewer, dan DevOps Engineer. Generalist dan Explorer menggantikan dua default upstream; agent plugin `visual-judge` tetap terpisah.
+
+Semua default aktif saat pemasangan dan mewarisi model sesi induk kecuali pengguna memilih override. Toggle Settings memakai `disabledAgentIds` pada file state subagent yang sudah ada. Host meneruskan status aktif setiap built-in, lalu runtime agent memakai ID yang sama untuk prompt daftar agent dan resolver dispatch. Role nonaktif tidak ditawarkan dan tidak dapat dipanggil. Override model lama untuk `general-purpose` dan `Explore` dipindahkan ke role penggantinya.
+
 ### Default skills
 
 Skill bawaan dikirim sebagai **pack skill native**, bukan plugin CCode Skills. Settings → Skills menampilkan skill pack sebagai **Default**, dan agent memuatnya sebagai `system/bundled`.

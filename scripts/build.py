@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once,rebrand
-from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 AGENT_RESOURCE='glm/ccode.cjs'
@@ -77,6 +77,7 @@ def main():
  s=skills_plugin.patch_renderer(s)
  s+='\n'+(ROOT/'src/renderer/mcp-catalog.js').read_text()+'\n'
  s=mcp_catalog.patch_renderer(s)
+ s=subagents.patch_renderer(s)
  main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeVoiceApp,ipcMain as ccodeVoiceIpcMain} from "electron";
 import {createRequire as ccodeVoiceCreateRequire} from "node:module";
 const ccodeVoiceRequire=ccodeVoiceCreateRequire(import.meta.url);
@@ -93,7 +94,7 @@ ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcM
   'import {createRequire as ccodeMcpBootstrapRequire} from "node:module";\nccodeMcpBootstrapRequire(import.meta.url)(process.resourcesPath+"/mcp/main.cjs").bootstrap();\n').encode()
  cloud.patch_archive(view,replacements,renderer)
  token_savers.patch_archive(view,replacements,renderer,manifest['renderer_intl_asset'])
- replacements[cloud.HOST]=skills_plugin.patch_host(view.read(cloud.HOST).decode()).encode()
+ replacements[cloud.HOST]=subagents.patch_host(skills_plugin.patch_host(view.read(cloud.HOST).decode())).encode()
  runtime_tuning.patch_archive(view,replacements,cloud.HOST,renderer)
  branding.patch_archive(view,replacements,{'renderer':renderer,'intl':manifest['renderer_intl_asset'],'icon':manifest['renderer_icon_asset']})
  identity=json.loads(view.read('package.json'))
@@ -101,7 +102,7 @@ ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcM
  replacements['package.json']=(json.dumps(identity,indent=2)+'\n').encode()
  agent_base=ROOT/manifest['agent_baseline']
  if hashlib.sha256(agent_base.read_bytes()).hexdigest()!=manifest['agent_baseline_sha256']:raise ValueError('Agent baseline hash mismatch; review upstream version before changing project.json')
- agent=runtime_tuning.patch_agent(n8n_plugin.patch_agent(skills_plugin.patch_agent(token_savers.patch_agent(marketplace.patch_agent(cloud.patch_agent(storage.patch_agent(rebrand.apply(agent_base.read_text()))))))))
+ agent=runtime_tuning.patch_agent(subagents.patch_agent(n8n_plugin.patch_agent(skills_plugin.patch_agent(token_savers.patch_agent(marketplace.patch_agent(cloud.patch_agent(storage.patch_agent(rebrand.apply(agent_base.read_text())))))))))
  rebrand.assert_clean(agent,AGENT_RESOURCE)
  output=ROOT/'runtime/build/resources';view.write(output/'app.asar',replacements,renamed_entries(archive))
  (output/'glm').mkdir(parents=True,exist_ok=True);(output/AGENT_RESOURCE).write_text(agent)
