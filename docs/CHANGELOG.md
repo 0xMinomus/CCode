@@ -2,6 +2,11 @@
 
 ## 2026-10-15
 
+### Token savers: kontrol level di baris fitur
+
+- Pilihan Lite, Full, dan Ultra kini berada di kiri toggle Caveman dan Ponytail. Baris level terpisah dihapus.
+- Saat toggle mati, pilihan level nonaktif dan pudar. Level yang tersimpan tetap sama, dan deskripsi baris tetap menjelaskan efek tiap level.
+
 ### Plugin Marketplace: kontrak publisher dan label Cina
 
 - Tiga nama milik publisher dibiarkan ejaan upstream dan diterjemahkan di batas, bukan di-rename: id marketplace resmi `zcode-plugins-official` (manifest di `cdn-zcode.z.ai` selalu menyebut id itu), direktori manifest `.zcode-plugin/` di dalam zip plugin, serta variabel `${ZCODE_PLUGIN_ROOT}`/`${ZCODE_PROJECT_DIR}` dan env berprefiks `ZCODE_` yang dibaca runtime plugin. Sebelumnya rebrand menulis ulang ketiganya, sehingga refresh marketplace resmi selalu gagal (`Official marketplace source must provide ccode-plugins-official, received zcode-plugins-official`), tombol **marketplace sources** menampilkan **Refresh failed** dengan pesan yang sama, dan setiap install plugin URL berhenti di `Plugin manifest not found: <nama>@ccode-plugins-official`. Ini kelas yang sama dengan bug URL absolut sebelumnya: rename menabrak kontrak jaringan/ekosistem.

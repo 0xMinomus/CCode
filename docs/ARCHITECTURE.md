@@ -25,7 +25,7 @@ CSS renderer adalah hasil build Tailwind statis dari upstream: kelas yang tidak 
 
 ### Token savers
 
-`src/renderer/token-savers-panel.js` menambahkan menu Settings → Token savers tepat di bawah Memory. Panel memakai `Q1`, `Z1`, `Xx`, tooltip `uA`, dan warna heatmap usage upstream. Toggle RTK, Caveman, dan Ponytail tersimpan terpisah; Caveman/Ponytail menambahkan instruksi berlevel Lite/Full/Ultra ke `userInstructions` agent.
+`src/renderer/token-savers-panel.js` menambahkan menu Settings → Token savers tepat di bawah Memory. Panel memakai `Q1`, `Z1`, `Xx`, tooltip `uA`, dan warna heatmap usage upstream. Toggle RTK, Caveman, dan Ponytail tersimpan terpisah. Baris Caveman/Ponytail masing-masing menempatkan pilihan Lite/Full/Ultra di kiri toggle; saat fitur mati, pilihan level nonaktif dan pudar tanpa mengubah level yang tersimpan. Deskripsi setiap baris tetap menjelaskan efek level pada instruksi agent.
 
 RTK memakai kontrak `rtk rewrite`: output `rtk ...` yang valid pada status 0, atau status 3 (RTK 0.51.0 yang terpasang), mengganti perintah sebelum jalur approval CCode; status 1 tanpa output mempertahankan perintah dan approval normal. Status lain, kegagalan RTK, atau output rewrite tidak valid menghentikan perintah.
 

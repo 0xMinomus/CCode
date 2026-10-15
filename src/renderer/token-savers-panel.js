@@ -38,10 +38,8 @@ function CCodeTokenSaversPanel(){
   $.jsx('p',{className:'text-ui-sm text-foreground-subtle',children:'Choose which local token-saving tools shape shell commands and agent instructions.'}),
   $.jsxs(Q1,{children:[
    $.jsx(Z1,{label:'RTK',description:'RTK rewrites supported commands; no-match preserves CCode approval, while errors stop execution.',control:$.jsx(Xx,{'aria-label':'Enable RTK',checked:settings.rtk.enabled,disabled:!ready||saving,onCheckedChange:enabled=>updateFeature('rtk',enabled)})}),
-   $.jsx(Z1,{label:'Caveman',description:'Apply a concise response style to agent instructions.',control:$.jsx(Xx,{'aria-label':'Enable Caveman',checked:settings.caveman.enabled,disabled:!ready||saving,onCheckedChange:enabled=>updateFeature('caveman',enabled)})}),
-   $.jsx(Z1,{label:'Caveman level',description:'Lite, Full, or Ultra compression.',control:CCodeTokenSaversModes('Caveman',settings.caveman.level,level=>updateLevel('caveman',level),!ready||saving||!settings.caveman.enabled)}),
-   $.jsx(Z1,{label:'Ponytail',description:'Avoid unnecessary work while preserving correctness and safety.',control:$.jsx(Xx,{'aria-label':'Enable Ponytail',checked:settings.ponytail.enabled,disabled:!ready||saving,onCheckedChange:enabled=>updateFeature('ponytail',enabled)})}),
-   $.jsx(Z1,{label:'Ponytail level',description:'Lite, Full, or Ultra pruning.',control:CCodeTokenSaversModes('Ponytail',settings.ponytail.level,level=>updateLevel('ponytail',level),!ready||saving||!settings.ponytail.enabled)})
+   $.jsx(Z1,{label:'Caveman',description:'Apply a concise response style to agent instructions. Lite, Full, or Ultra compression.',control:CCodeTokenSaversFeatureControl('Caveman',settings.caveman,level=>updateLevel('caveman',level),enabled=>updateFeature('caveman',enabled),!ready||saving)}),
+   $.jsx(Z1,{label:'Ponytail',description:'Avoid unnecessary work while preserving correctness and safety. Lite, Full, or Ultra pruning.',control:CCodeTokenSaversFeatureControl('Ponytail',settings.ponytail,level=>updateLevel('ponytail',level),enabled=>updateFeature('ponytail',enabled),!ready||saving)})
   ]}),
   state.error?$.jsx('p',{className:'text-ui-sm text-destructive','data-testid':'ccode-token-savers-error',children:state.error}):null,
   $.jsxs('div',{className:'rounded-xl bg-surface px-4 py-3','data-testid':'ccode-token-savers-chart',children:[
@@ -63,10 +61,17 @@ function CCodeTokenSaversPanel(){
   ]})
  ]});
 }
-function CCodeTokenSaversModes(name,value,onChange,disabled){
- return $.jsx('div',{role:'group','aria-label':`${name} level`,className:'flex flex-none items-center gap-0.5 rounded-full bg-surface p-0.5',children:['lite','full','ultra'].map(level=>{
+function CCodeTokenSaversFeatureControl(name,feature,onLevel,onEnabled,busy){
+ const enabled=feature.enabled===true;
+ return $.jsxs('div',{className:'flex flex-none items-center gap-2',children:[
+  CCodeTokenSaversModes(name,feature.level,onLevel,busy||!enabled,!enabled),
+  $.jsx(Xx,{'aria-label':`Enable ${name}`,checked:enabled,disabled:busy,onCheckedChange:onEnabled})
+ ]});
+}
+function CCodeTokenSaversModes(name,value,onChange,disabled,dimmed){
+ return $.jsx('div',{role:'group','aria-label':`${name} level`,className:'flex flex-none items-center gap-0.5 rounded-full bg-surface p-0.5'+(dimmed?' opacity-50':''),children:['lite','full','ultra'].map(level=>{
   const active=value===level;
-  return $.jsx('button',{type:'button','aria-pressed':active,disabled,onClick:()=>onChange(level),'data-testid':`ccode-token-savers-${name.toLowerCase()}-${level}`,className:'h-6 rounded-full px-2 text-ui-sm font-medium transition-colors disabled:opacity-50 '+(active?'bg-background text-foreground':'text-foreground-subtle hover:text-foreground'),children:level[0].toUpperCase()+level.slice(1)},level);
+  return $.jsx('button',{type:'button','aria-pressed':active,disabled,onClick:()=>onChange(level),'data-testid':`ccode-token-savers-${name.toLowerCase()}-${level}`,className:'h-6 rounded-full px-2 text-ui-sm font-medium transition-colors '+(active?'bg-background text-foreground':'text-foreground-subtle hover:text-foreground'),children:level[0].toUpperCase()+level.slice(1)},level);
  })});
 }
 function CCodeTokenSaversChartSeries(rows,today=CCodeTokenSaversDayKey(new Date())){
