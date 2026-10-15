@@ -4,6 +4,14 @@ Tujuan: CCode bisa **diunduh dan langsung dipakai** sebagai aplikasi mandiri (bu
 
 Dokumen ini rencana; status hari ini ada di [README.md](README.md) dan [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Target rilis yang disepakati
+
+Target rilis pertama adalah **Linux x64** (`.AppImage`, `.deb`, `.rpm`) dan **Windows x64** (installer `.exe`). ARM64 dan macOS di luar scope rilis ini. Jalur resmi tetap fork source; workspace patch Linux menjadi acuan perilaku, bukan installer lintas OS.
+
+Build dan verifikasi Linux dikerjakan di lingkungan Linux. Installer Windows disiapkan dari source beserta dependency x64 yang sesuai; bila build memerlukan toolchain Windows, gunakan runner Windows. Pengguna menguji `.exe` di mesin Windows miliknya. Build berhasil tidak membuktikan aplikasi berjalan: artifact Windows belum layak dinyatakan siap rilis sebelum hasil pengujian pengguna lolos dan dicatat.
+
+Voice, Computer Use, dan model-sync tetap masuk scope porting Windows. Implementasi PipeWire/portal dan systemd Linux tidak dapat dipakai langsung di Windows; masing-masing memerlukan backend atau integrasi OS yang sesuai. Fitur yang belum berfungsi harus dilaporkan sebagai penghambat, bukan dihilangkan diam-diam atau diklaim setara.
+
 ## 1. Fakta yang menentukan rencana
 
 Diverifikasi 2026-10-13:
@@ -76,34 +84,42 @@ Port daftar patch yang sekarang hidup di `src/local_only/` + `src/main/` + `src/
 3. **Branding** (`branding.py` + `ccode-logo.svg`): mark CCode di onboarding/title bar/startup/About/ikon paket, nama produk `CCode`, `make icons` tetap dipakai untuk aset.
 4. **Katalog provider** (`catalog.py`): tanpa keluarga Zhipu, plus template **9Router**.
 5. **Activity lokal** (`src/main/activity.cjs` + `src/renderer/activity-panel.js`), **Voice** (`src/main/voice.cjs` + `services/voice`), **Computer Use Linux** (`src/renderer/linux-computer-use.js` + `services/desktop`).
-6. **Model sync** (`services/model-sync`), penjadwalan: systemd timer di Linux, padanan per OS saat F4.
+6. **Model sync** (`services/model-sync`): pertahankan penjadwalan systemd Linux; port integrasi Windows ke Task Scheduler atau mekanisme native yang diverifikasi sebelum packaging.
 7. ✅ **Selesai 2026-10-14 — Deep-link/desktop self-install**: `sl`/`iconName` dan seluruh nama file kini ditulis ulang `rebrand.apply()` menjadi `ccode.*`, dan `make apply`/`make install` mengganti nama identitas AppDir/launcher/unit yang sudah terpasang.
 8. ✅ **Selesai 2026-10-14 — Standarisasi env internal dan skema URL**: env (`CCODE_*`), kanal IPC (`ccode-*`), skema `ccode://`, layout `.ccode`, id/direktori plugin, dan judul proses memakai ejaan CCode (lihat `docs/CHANGELOG.md` 2026-10-14); `rebrand.previous()` menyediakan ejaan lama untuk kode migrasi.
+9. **Token savers**: port RTK, Caveman, Ponytail, pengaturan level/toggle, persistensi, dan analytics lokal; paketkan runtime yang sesuai per OS.
+10. **Skills dan subagents default**: port pack skill, katalog role, inheritance model, serta toggle built-in dan agent plugin.
+11. **Slash commands**: port 12 prompt, kategori Settings, enablement, seeding yang melindungi perubahan user, serta scanner dan resolver agent pada namespace yang sama. Verifikasi ekspansi argumen, bukan hanya kemunculan picker.
+12. **Plugin Marketplace dan katalog MCP**: port kompatibilitas manifest, instalasi/enablement plugin, katalog server, bootstrap dependency per OS, dan integrasi n8n; jangan membawa credential atau konfigurasi live ke artifact.
 Kriteria selesai: build dari sumber setara dengan hasil patch sekarang pada daftar uji perilaku di `docs/NO_LOGIN_TEST.md` + smoke test di `docs/DEVELOPMENT.md`.
 
 ### F3 — Packaging per platform
-- Linux: `.AppImage` (appimagetool) + `.deb`/`.rpm` (electron-builder), ikon hicolor, `.desktop`, unit systemd opsional, `update-desktop-database` + `gtk-update-icon-cache`.
-- Windows: installer NSIS/portable ZIP, `icon_windows.png`, shortcut, Task Scheduler untuk sync, ganti `run.sh` dengan `.cmd`/bootstrap internal.
-- macOS: `.dmg` (butuh signing/notarization atau instruksi bypass Gatekeeper) — opsional, evaluasi terpisah.
-- Artefak pendukung: tar portable, checksum SHA256, catatan verifikasi, uninstaller/instruksi hapus data (`~/.local/share/ccode`).
-Kriteria selesai: satu perintah/unduhan → aplikasi jalan di mesin bersih tanpa ZCode terpasang.
+- Linux x64: `.AppImage`, `.deb`, dan `.rpm`; sertakan ikon hicolor, `.desktop`, serta integrasi Linux yang relevan. Pilih tool packaging setelah build source tervalidasi.
+- Windows x64: installer `.exe` (NSIS), ikon Windows dan shortcut CCode, namespace data mandiri, dependency native x64, serta bootstrap tanpa ketergantungan pada shell Linux. Portable ZIP bukan deliverable wajib.
+- ARM64 dan macOS tidak dibuat atau dijanjikan pada rilis ini.
+- Sertakan checksum SHA256, LICENSE/NOTICE, catatan verifikasi, serta instruksi uninstall dan penghapusan data sesuai OS.
+Kriteria selesai: artifact setiap format dapat dipasang dan dibuka pada mesin target bersih tanpa instalasi upstream atau dependency pengembang yang tidak didokumentasikan.
 
 ### F4 — Rilis pertama
 - Tag `v<ccode>+upstream.<x.y.z>` (contoh `v1.0.0+upstream.3.15.1`) + GitHub Release berisi artifact, checksum, NOTICE, dan riwayat perubahan.
-- Release notes: versi upstream, SHA commit upstream, daftar perubahan kita, kewajiban lisensi, batasan yang jujur (Computer Use Fedora-only pada rilis pertama, Voice butuh PipeWire, dsb.).
-- Uji asap rilis di VM/container bersih (Fedora + satu distro lain).
-Kriteria selesai: orang lain bisa download → pakai tanpa menghubungi pemilik repo.
+- Release notes: versi dan SHA upstream, perubahan CCode, kewajiban lisensi, status signing, serta batasan per OS berdasarkan hasil pengujian. Jangan mengklaim Voice/Computer Use/model-sync Windows siap sebelum terverifikasi.
+- Verifikasi Linux: instalasi, startup, fungsi utama, uninstall, dan upgrade/rollback pada Fedora serta satu distro lain. Gunakan VM/desktop nyata untuk fitur yang memerlukan sesi grafis; container saja tidak membuktikan Voice atau Computer Use.
+- Verifikasi Windows oleh pengguna: jalankan installer `.exe` pada Windows x64, lalu periksa startup tanpa akun, provider/chat, persistensi data, skills, subagents, slash commands, plugin/MCP, token savers, Voice, Computer Use, model-sync, dan uninstall. Catat versi Windows, artifact/checksum, hasil, serta log yang sudah disensor.
+Kriteria selesai: Linux lolos verifikasi dan pengguna mengonfirmasi pengujian Windows lolos; installer berhasil dibangun saja bukan bukti kesiapan rilis Windows.
 
 ### F5 — Pemeliharaan
 - Kebijakan versi: ikuti rilis upstream; setiap bump = rebase + jalankan daftar uji perilaku.
 - Jadwal: evaluasi upstream tiap rilis minor; keamanan (dependency) bulanan; changelog tiap rilis.
 - Migrasi data antar versi CCode: namespace stabil, skema SQLite dari upstream, backup lewat `scripts/data_backup.py`.
-- Rencana depan: Windows/macOS, alternate recorder untuk Voice di luar PipeWire, penjadwal lintas OS.
+- Rencana depan di luar rilis ini: ARM64 dan macOS. Pelihara integrasi Linux/Windows serta kesetaraan fitur yang sudah dirilis.
 
 ## 6. Checklist pra-rilis
 
 - [ ] `make test` hijau (patch workspace) **dan** `pnpm test` hijau (fork sumber).
 - [ ] Smoke test root terisolasi: judul CCode, tanpa layar login, 0 `Unknown channel`, 0 `No handler registered`, 0 `ReferenceError`/`TypeError`.
+- [ ] Linux x64: `.AppImage`, `.deb`, `.rpm` lolos uji instalasi/startup di mesin target bersih.
+- [ ] Windows x64: `.exe` berhasil dibangun; pengujian pengguna di Windows lolos dan hasilnya dicatat.
+- [ ] Voice, Computer Use, dan model-sync diverifikasi per OS; tidak ada fitur scope rilis yang dihapus tanpa persetujuan.
 - [x] Tidak ada sisa mark/nama lama di UI (**selesai 2026-10-14**): `rebrand.assert_clean()`/`branding.guard()` menolak build bila sisa ejaan/mark upstream ada di asset yang dikirim; ejaan lama hanya tersisa di artifact upstream yang dipin dan di kode migrasi (`rebrand.PREVIOUS_*`).
 - [ ] Ikon: `Icon=ccode` resolve di tema user (ugrep + Gtk.IconTheme), cache ikon disegarkan installer.
 - [ ] Data terpisah: rilis tidak membaca/menulis `~/.zcode`, `~/.config/ZCode`.

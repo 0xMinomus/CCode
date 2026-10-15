@@ -2,6 +2,13 @@
 
 ## 2026-10-15
 
+### Scope rilis
+
+- `releaseplan.md` menetapkan Linux x64 (`.AppImage`, `.deb`, `.rpm`) dan Windows x64 (installer `.exe`) sebagai target pertama; ARM64 dan macOS di luar scope.
+- Verifikasi Linux dikerjakan di lingkungan Linux, sedangkan pengguna menguji installer di Windows. Hasil build Windows saja tidak memenuhi gate rilis. Voice, Computer Use, dan model-sync tetap perlu port serta verifikasi Windows.
+- Daftar porting kini mencakup token savers, skills/subagents default, slash commands, Plugin Marketplace, katalog MCP, dan integrasi n8n. Perubahan ini hanya rencana, bukan klaim artifact tersedia.
+
+
 ### Default slash commands
 
 - Perbaikan resolver agent: command user kini dicari di `${CCODE_STORAGE_DIR}/commands`, sama dengan scanner Settings. Sebelumnya picker dapat menampilkan `/design` tetapi agent menjawab `Custom command not found: design`; keberhasilan smoke yang menyebut `DESIGN.md` secara eksplisit tidak membuktikan dispatch command.
