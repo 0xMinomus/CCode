@@ -23,6 +23,22 @@ systemctl --user disable --now ccode-model-sync.path      # hentikan pengisian i
 systemctl --user disable --now ccode-model-sync.timer     # hentikan sync rutin
 ```
 
+## Paket rilis Linux
+
+`make pack-linux` membangun tiga artifact x86_64 di `runtime/release/` dari AppDir yang sudah `make apply`: `CCode-<versi>-x86_64.AppImage`, `ccode_<versi>_amd64.deb`, dan `ccode-<versi>-1.x86_64.rpm`, plus `SHA256SUMS` dan `release-notes.md`. Versi default `1.0.0+upstream.<versi upstream>`; pilih komponen (default `model-sync,voice,desktop`) lewat `--components` dan format lewat `--formats`. Build memerlukan `squashfs-tools`, `dpkg`, dan `rpm-build`.
+
+Paket sistem memasang aplikasi di `/opt/ccode` (termasuk `services/`, `scripts/data_backup.py`, dan `project.json`), lalu `usr/bin/ccode`, entri desktop `ccode.desktop` dengan skema `ccode://`, ikon hicolor, serta dokumen di `/usr/share/doc/ccode` (`LICENSE`, `NOTICE.md`, `THIRD_PARTY.md`, `UNINSTALL.md`). Launcher paket menjalankan kontrak namespace yang sama dengan `scripts/run.sh`, jadi data tetap di `~/.local/share/ccode` dan `CCODE_STANDALONE_ROOT` tetap berlaku.
+
+```bash
+make pack-linux
+make pack-linux PACK_ARGS="--version 1.0.1 --components model-sync --formats deb"
+sha256sum -c runtime/release/SHA256SUMS
+```
+
+Verifikasi sebelum dipublikasikan: jalankan AppImage dengan root uji lewat `CCODE_STANDALONE_ROOT=$PWD/runtime/verify/root ./runtime/release/*.AppImage`, uji RPM tanpa menyentuh sistem dengan `sudo rpm --root $PWD/runtime/verify/rpm-root -i --nodeps --noscripts <rpm>`, dan buka deb lewat `dpkg-deb -x <deb> runtime/verify/deb-root`. Operator `rm -rf ~/.local/share/ccode` menghapus seluruh data CCode; snapshot bisa dibuat lebih dulu dengan `python3 scripts/data_backup.py backup --root ~/.local/share/ccode`.
+
+Stage menolak build bila jalur home mesin build atau `provider_config*.json` ikut terbawa, dan menormalkan izin berkas supaya tree dapat dibaca pengguna yang memasangnya. Venv layanan hanya membawa interpreter (`bin/python*`); console script, `pyvenv.cfg` yang memuat jalur build, cache `__pycache__`, dan state lokal model-sync dibuang. Computer Use masih memerlukan paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`) karena layer itu tidak dapat dibundel.
+
 ## MCP di Settings
 
 Context7 dan Codegraph tersedia setelah instalasi aplikasi. **Settings → MCP Servers** menampilkan daftar **Installed** server native; LSP dan Ripgrep tersedia sebagai baris katalog dengan tombol **Install** di slot switch, tanpa label `Optional`. Setelah di-Install, baris native dengan switch on/off menggantikan baris katalog.

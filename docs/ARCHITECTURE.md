@@ -166,6 +166,16 @@ Rekaman `pw-record` disimpan di direktori privat sementara, maksimal 60 detik. W
 
 Aturan yang sama berlaku untuk keduanya: fingerprint pemetaan sebelumnya melindungi override manual, switch per model (`rule.config.enabled`) dipertahankan, model/rule yang dihapus user tidak dihidupkan lagi, dan schema host divalidasi (mis. `optionSpecs.reasoningLevel` wajib ada; model dengan rule katalog tidak boleh juga punya rule manual). Model tak dikenal dan combo tidak ditebak, dan tidak ada inference. Timer standalone `ccode-model-sync.timer` menunjuk config/state di dalam namespace lewat env `CCODE_MODEL_SYNC_CONFIG`/`CCODE_MODEL_SYNC_STATE`; tanpa env itu script tetap memakai jalur lama.
 
+## Rilis Linux
+
+`scripts/pack_linux.py` (target `make pack-linux`) membangun artifact Linux x86_64 dari AppDir yang sudah dipromosikan: AppImage, `.deb`, dan `.rpm`. Stage dibuat dengan hardlink dari `app/` dan `services/<komponen>`, ditambah `scripts/data_backup.py` (diimpor model-sync), `project.json` minimal, launcher, entri desktop, ikon, serta `LICENSE`/`NOTICE.md`/`docs/THIRD_PARTY.md`/`UNINSTALL.md`. Isi tree sama untuk ketiga format: AppDir memuat seluruh tree, sedangkan paket sistem memasangnya di `/opt/ccode` plus `/usr/bin/ccode`, entri desktop, ikon hicolor, dan dokumen di `/usr/share/doc/ccode`.
+
+Launcher paket (`<prefix>/ccode`, dipakai juga sebagai `AppRun`) meniru kontrak `scripts/run.sh`: root namespace dari `CCODE_STANDALONE_ROOT` atau `~/.local/share/ccode`, direktori privat 0700, seluruh env `CCODE_*`/`STORAGE_DIR`/`DESKTOP_HOME_DIR`, dan lock operasi bersama `.<nama>.operations.lock`; root `/` dan `$HOME` ditolak. `tests/test_pack_linux.py` membandingkan daftar env launcher dengan `run.sh` supaya keduanya tidak menyimpang.
+
+Stage membersihkan `__pycache__`/`.pyc`, menghapus console script venv yang menyimpan path build, membuang baris `command`/`executable` dari `pyvenv.cfg`, lalu menolak build bila jalur home mesin build masih ada di tree. Venv hanya menyisakan `bin/python*`: aplikasi memanggil interpreter itu lewat path, sementara `services/desktop/bin/screen-mcp` memilih interpreter sendiri lewat `scripts/run-python.sh` relatif terhadap direktorinya. Layer PyGObject/GStreamer/PipeWire tidak dapat dibundel, jadi Computer Use tetap memerlukan paket sistem dan launcher screen-mcp yang mencetak perintah distro yang sesuai.
+
+Runtime AppImage type 2 diambil ke `runtime/release-input/` dengan SHA256 yang dipin di skrip; hasil build menulis `SHA256SUMS` dan `release-notes.md`. Paket RPM mematikan `check-rpaths` bawaan Fedora karena bundle ini membawa wheel pihak ketiga dengan runpath `/usr/local/lib64`.
+
 ## Data pengguna
 
 Aplikasi berjalan sebagai varian mandiri. Root default `~/.local/share/ccode`:
