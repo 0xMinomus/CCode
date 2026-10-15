@@ -9,7 +9,7 @@ Target: fitur Windows sama dengan rilis Linux 1.0.0 saat ini — tanpa akun, nam
 - Pemilik berencana melanjutkan pekerjaan di Windows agar assistant mengedit dan menguji aplikasi langsung pada OS target.
 - Clone **`https://github.com/0xMinomus/CCode-archive.git`**, branch **`main`**. Repo privat ini tetap workspace patch aktif; **`0xMinomus/CCode`** adalah fork publik untuk distribusi/rilis, bukan checkout kerja yang dimaksud.
 - Sesi assistant baru harus membaca `AGENTS.md` dan dokumen ini, lalu melanjutkan **gate M1**, bukan menganggap M1 sudah lulus atau langsung menandai M2–M5 selesai.
-- `app/`, `baselines/`, dan `runtime/` diabaikan Git: clone tidak membawa binary atau baseline. Kandidat [prerelease M1](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) cukup untuk uji boot awal; build ulang memerlukan baseline/payload terpinsel dan toolchain yang sesuai. Skrip Linux belum otomatis portabel ke Windows.
+- `app/`, `baselines/`, dan `runtime/` diabaikan Git: clone tidak membawa binary atau baseline. Prarilis uji M1 sudah ditarik dari GitHub setelah rilis 1.0.0 menggantikannya; build ulang memerlukan baseline/payload terpinsel dan toolchain yang sesuai. Skrip Linux belum otomatis portabel ke Windows.
 - Pemilik memilih unduhan dan peluncuran GUI tanpa mengetik perintah terminal. Assistant menjalankan pemeriksaan teknis melalui tools lokal bila tersedia; interaksi desktop tetap memerlukan sesi aktif dan akses otomasi.
 - Memori assistant lokal tidak diasumsikan ikut berpindah OS. Catatan dalam repo ini menjadi handoff yang ikut clone.
 
@@ -324,25 +324,25 @@ Batas yang tidak diklaim setara Linux:
 
 ### Kandidat M1 (historis; digantikan rilis 1.0.0)
 
-- Berkas: `runtime/release-windows/CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.
+- Berkas (dihapus saat pembersihan 2026-10-16): `CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.
 - SHA256: `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`.
-- Pendamping: `SHA256SUMS`, `candidate-manifest.json`, `M1-INSTRUCTIONS.txt` pada direktori yang sama.
+- Pendamping `SHA256SUMS`, `candidate-manifest.json`, dan `M1-INSTRUCTIONS.txt` juga sudah dihapus.
 - Build/check akhir Linux: `make build && make test`, 198 tes, 6 dilewati. Smoke staged Linux membuka workspace tanpa login; tidak ada error renderer atau empat pola error IPC/runtime pada gate. Ini bukan pengujian Windows.
 - Ekstrak ZIP di Windows, lalu jalankan `powershell -NoProfile -ExecutionPolicy Bypass -File .\CCode.ps1`. Launcher memakai `m1-isolated-root` di folder hasil ekstrak dan menyimpan log/metadata di `<root>\logs`.
 - Buka terminal terintegrasi, jalankan `cmd /c echo CCODE_M1_PTY_OK`, catat versi Windows, hasil, screenshot, dan log tersensor. Tutup normal, buka lagi pada root sama, lalu periksa persistensi.
 - Installer vendor terpinsel memiliki metadata native dan hash header ASAR embedded yang stale; fuse validasi ASAR vendor memang mati. Packager mencatat ketidaksesuaian, memperbarui metadata kandidat, dan mempertahankan fuse `101100011`, bukan mematikan validasi untuk melewati kegagalan.
 
-Kandidat diterbitkan atas permintaan pemilik sebagai [prerelease uji M1](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016), bukan rilis final. Ukuran dan digest SHA256 asset GitHub cocok dengan kandidat lokal. Untuk pengujian awal tanpa terminal: unduh ZIP, pilih **Extract All**, buka folder `app`, lalu klik dua kali `CCode.exe`. Jalur langsung memakai `%LOCALAPPDATA%\CCode`; screenshot startup dan hasil buka ulang tidak menutup gate terminal/pty. Tidak ada hasil Windows yang dicatat sebagai lulus sampai bukti diterima.
+Kandidat ini pernah diterbitkan atas permintaan pemilik sebagai prerelease uji M1 dan sudah **ditarik** dari fork (release dan tag `windows-m1-20261016` dihapus) setelah rilis 1.0.0 menggantikannya; ukuran, digest SHA256, dan catatan pengujiannya tetap tercatat di file ini. Untuk pengujian awal tanpa terminal dulu: ekstrak ZIP, buka folder `app`, lalu klik dua kali `CCode.exe`. Jalur langsung memakai `%LOCALAPPDATA%\CCode`; screenshot startup dan hasil buka ulang tidak menutup gate terminal/pty. Tidak ada hasil Windows yang dicatat sebagai lulus sampai bukti diterima.
 
 ### Bukti lokal Windows M1 (historis, 2026-10-16)
 
 - OS: Microsoft Windows 11 Home Single Language, 10.0.26200, x64. Tidak memakai Wine atau simulasi platform.
 - Transfer baseline: `CCode-pristine-baselines-3.14.5.zip`, 81.915.813 byte, SHA256 `44d10c3e5fa674348a16acc963b1bb90221b99490f1443cdbcef41a666f7a329`, cocok dengan `Downloads/SHA256SUMS`. Seluruh 268 hash dalam `BASELINE-FILES.sha256` lulus sebelum ekstraksi ke root checkout, bukan `app/`; pin transfer cocok dengan `project.json`.
-- Kandidat diunduh dari prerelease M1 di atas. SHA256 ZIP cocok dengan `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`; pemeriksaan CRC ZIP lulus. Ekstraksi pengujian berada di `runtime/m1-windows/CCode-3.14.5-win-x64-M1`.
+- Kandidat diunduh dari prerelease M1 di atas. SHA256 ZIP cocok dengan `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`; pemeriksaan CRC ZIP lulus. Ekstraksi pengujian berada di `runtime/m1-windows/CCode-3.14.5-win-x64-M1` (dihapus saat pembersihan 2026-10-16).
 - Launcher `CCode.ps1 --remote-debugging-port=9331` membuka aplikasi sebagai CCode. Onboarding ditutup melalui kontrol native **Exit onboarding**, lalu workspace terbuka tanpa login. Tidak ada provider, credentials, atau prompt model yang ditambahkan.
 - Namespace uji adalah `m1-isolated-root` di direktori kandidat; profil `electron/` dan data `data/.ccode/` terbentuk di sana. Terminal PowerShell bawaan dibuka melalui **Toggle terminal**; perintah `cmd /c echo CCODE_M1_PTY_OK` menghasilkan baris output `CCODE_M1_PTY_OK` dan kembali ke prompt dalam workspace namespace tersebut. Ini bukti PTY berjalan, bukan sekadar native bisa dimuat.
 - Dua sesi startup awal tidak memuat `Unknown channel`, `No handler registered`, `ReferenceError`, atau `TypeError` pada stdout/stderr launcher; log aplikasi sesi pertama juga diperiksa tanpa temuan keempat pola. Tombol Close window ternyata tidak langsung mengakhiri seluruh proses; penutupan penuh kemudian memakai CDP `Browser.close` dan launcher keluar 0. Uji persistensi terpisah menutup proses penuh setelah keluar onboarding, lalu membuka ulang root yang sama. Persistensi task/chat belum diuji karena tidak menjalankan model.
-- Bukti lokal ignored: `runtime/release-windows/m1-pty.png`, log dan metadata launcher dalam root uji. Setelah observasi dan penutupan normal, root uji dibersihkan; screenshot dan salinan log launcher disimpan di `runtime/release-windows/m1-evidence/`.
+- Bukti lokal ignored (dihapus saat pembersihan 2026-10-16): `runtime/release-windows/m1-pty.png`, log dan metadata launcher dalam root uji, serta salinannya di `runtime/release-windows/m1-evidence/`; hasil pengamatannya tetap tercatat di bagian ini.
 - Toolchain lokal: Python 3.14.5 (MSYS2 UCRT64), Node dan Git tersedia; GNU Make tersedia di `C:/msys64/usr/bin/make.exe`, tetapi tidak ada di PATH. Build/check dijalankan lewat executable Make tersebut.
 - **Build ulang belum lulus:** `make build` berhenti di verifikasi digest plugin (`97f380e6…d48dd0d7` dibanding pin `5a891a5d…2318d9b`). Hash individual transfer benar; penghitungan ulang dengan urutan string path POSIX menghasilkan pin yang benar, sedangkan `_baseline_files()` menyortir objek Path dengan semantik Windows. Pin dan assertion tidak diubah.
 - **Suite Windows belum lulus:** `make test` berakhir dengan 12 failure, 29 error, 10 skip. Pemeriksaan sintaks sumber dan boundary launcher n8n sebelum suite berjalan; kegagalan suite bukan bukti seluruh fitur rusak atau siap. Portabilitas checker/build harus diperbaiki sebelum kandidat baru dibangun atau dipublikasikan.
