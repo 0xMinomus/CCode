@@ -1,6 +1,7 @@
 """Pinned renderer and agent patches for local Token savers."""
 
 from . import replace_once
+PIGGY_BANK_IMPORT = 'import{default as CCodePiggyBank}from"./piggy-bank-BLUAYYsf.js";'
 
 
 ROUTE = 'function TS(e){return e===`general`||e===`appearance`||e===`migration`||e===`browser`||e===`modelProvider`||e===`memory`||e===`plugin`||e===`mcp`||e===`skill`||e===`plugins`||e===`usage`||e===`subagents`||e===`commands`||e===`hooks`||e===`workspaceFileSearch`||e===`computerUse`||e===`automations`||e===`shortcuts`}'
@@ -12,8 +13,12 @@ TOKEN_SAVERS_BRANCH = 'b===`memory`?(0,$.jsx)(Eg,{services:qe,children:(0,$.jsx)
 
 
 def patch_renderer(text):
+    text = replace_once(text, 'const __vite__mapDeps=',
+                        PIGGY_BANK_IMPORT + 'const __vite__mapDeps=')
     text = replace_once(text, ROUTE, ROUTE_WITH_TOKEN_SAVERS)
     text = replace_once(text, NAVIGATION, NAVIGATION_WITH_TOKEN_SAVERS)
+    text = replace_once(text, 'icon:a.icon,titleId:`settings.tokenSavers`',
+                        'icon:CCodePiggyBank,titleId:`settings.tokenSavers`')
     return replace_once(text, MEMORY_BRANCH, TOKEN_SAVERS_BRANCH)
 
 

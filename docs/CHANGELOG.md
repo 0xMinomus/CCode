@@ -2,6 +2,10 @@
 
 ## 2026-10-15
 
+### Ikon celengan untuk Token savers
+
+- Menu Token savers kini memakai ikon `PiggyBank` dari Lucide, satu keluarga dengan ikon Settings lain. Tata letak dan perilaku menu tetap sama.
+
 ### Token savers: kontrol level di baris fitur
 
 - Pilihan Lite, Full, dan Ultra kini berada di kiri toggle Caveman dan Ponytail. Baris level terpisah dihapus.
