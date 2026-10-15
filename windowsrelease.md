@@ -22,13 +22,17 @@ Aturan tetap: tidak ada fitur yang dihapus tanpa persetujuan pemilik; batasan ya
 
 ## Fakta yang sudah diverifikasi (2026-10-15)
 
-Survei cepat terhadap aset yang ada; semua di bawah ini fakta dari repo dan API publik, bukan asumsi.
+Survei cepat terhadap aset yang ada; semua di bawah ini fakta dari repo, API publik, dan hasil membongkar installer Windows vendor, bukan asumsi.
 
 | Fakta | Nilai |
 |---|---|
 | Asset rilis vendor | Hanya tag `v3.14.3`: `ZCode-3.14.3-win-x64.exe` dan `ZCode-3.14.3-mac-arm64.dmg`. Tag `v3.15.1` tanpa asset |
+| Installer Windows vendor | 143,1 MiB, SHA256 `815721ad9888b03da2bba101faba7368896123849a6a82e3bc9e5fe5f3e5048b`; payload `$PLUGINSDIR/app-64.7z`; installer memuat `UAC.dll` dan `elevate.exe` (jalur vendor sendiri meminta elevasi) |
+| Isi aplikasi Windows | `ZCode.exe`, `resources/app.asar` (27.564 entri), `resources/app.asar.unpacked/node_modules/node-pty/prebuilds/win32-x64/*.node`, `resources/glm/zcode.cjs` (16,7 MB, agent), `resources/tools/{ripgrep,ugrep}`, `resources/THIRD-PARTY-NOTICES.md`, `icon_windows.png`, `tray_icon.ico` |
+| Kecocokan anchor | Hampir semua anchor patch **tidak ada** di build Windows 3.14.3: `Zu`, `AI`, `z9`, `Ft`, `VOn`, dan anchor registry agent tidak ditemukan; yang cocok hanya artwork (`0 0 256 218`). Nama chunk dan asset renderer juga berbeda (`out/main/chunk-3WLLXY4Q.js`, `styles-BdJsmXrN.css`, dst.) |
 | Baseline kita | `baselines/upstream-3.14.5-original.asar` (Linux). Tidak ada baseline Windows |
-| Native di ASAR terpinsel | `node_modules/node-pty/prebuilds/linux-x64/pty.node` dan `sshcrypto.node` — payload ASAR **per platform** |
+| Native di ASAR terpinsel | Linux: `node-pty/prebuilds/linux-x64/pty.node`, `sshcrypto.node`. Windows: `win32-x64/conpty*.node`, `pty.node`, `sshcrypto.node` — payload **per platform** |
+| Vendor Computer Use | Teks `out/main` dan `out/host` menyebut `computer-use` (5×), `cua` (44×), `helper` (26×), tetapi tidak ada helper biner/direktori di tree aplikasi; `elevate.exe` disertakan installer. Artinya helper diunduh/dipasang saat runtime, dan pemilik unduhan itu bisa jadi layanan akun yang sudah kita hapus — **wajib dibuktikan di Windows sebelum rute B1 dipilih** |
 | Seeding Computer Use | `src/main/mcp-catalog.cjs` menyemai server desktop hanya bila `process.platform === 'linux'`; jalur `win32` sudah ditangani untuk spawn/kill |
 | Launcher MCP | `services/mcp/launch.cjs` menulis shim `#!/bin/sh` untuk `node`/`typescript-language-server`, `symlinkSync` untuk `rg`, dan memaku `@vscode/ripgrep-linux-x64` |
 | Paket native katalog | `services/mcp/catalog.json` memaku `@sdsrs/code-graph-linux-x64` (codegraph) dan `@vscode/ripgrep-linux-x64` (ripgrep) |
@@ -58,16 +62,15 @@ Tambahkan `--platform linux|win32` (default tetap Linux) yang memilih baseline, 
 - `scripts/run.sh`: kontrak launcher perlu padanan `.cmd`/PowerShell (lihat C2).
 - `branding.py`, `token_savers.py`, `cloud.py`: sudah memuat cabang `win32`/`isWindowsDesktop`; verifikasi ulang terhadap baseline Windows.
 
-**A4. Audit anchor di baseline Windows.**
-Setiap anchor (`rebrand`, `storage`, `cloud`, `catalog`, `branding`, `skills_plugin`, `mcp_catalog`, `n8n_plugin`, `plugins`, `runtime_tuning`, `token_savers`, `marketplace`, `subagents`, `default_commands`) dicari ulang di baseline Windows. Nama chunk/simbol antarversi tidak stabil; jangan menebak. Prosedurnya sama dengan "Update the upstream baseline" di [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+**A4. Audit anchor di baseline Windows.** Hasil pemeriksaan installer 3.14.3 menunjukkan hampir semua anchor patch dan anchor agent **tidak cocok**: nama chunk, nama asset renderer, dan nama fungsi minified berbeda, hanya artwork yang sama. Jadi seluruh lapisan patch (host, renderer, scheduler, agent) harus dicari ulang di baseline Windows, bukan disalin apa adanya. Setiap anchor (`rebrand`, `storage`, `cloud`, `catalog`, `branding`, `skills_plugin`, `mcp_catalog`, `n8n_plugin`, `plugins`, `runtime_tuning`, `token_savers`, `marketplace`, `subagents`, `default_commands`) dicari ulang, dan build harus **gagal** bila anchor tidak unik. Prosedurnya sama dengan "Update the upstream baseline" di [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), dikerjakan dua kali: sekali untuk 3.14.3 Windows, sekali lagi bila nanti pindah ke basis versi lain.
 
 ---
 
 ## B. Computer Use di Windows — dan kenapa Linux memakai MCP
 
-**Penjelasan singkat dulu.** MCP bukan kebutuhan Linux, hanya transport. Agent CCode memanggil kontrol desktop sebagai *tool* dari sebuah server MCP. Di Linux kita memilih jalur itu karena vendor tidak punya backend Linux dan portal PipeWire adalah satu-satunya cara sah mengambil layar dan menekan tombol di Wayland — jadi kita tulis backend sendiri (`services/desktop`, screen-mcp) dan aplikasi menyemai entry `linux-desktop` sendiri. Memilih MCP juga membuat permukaan tool, guard *takeover*, dan panel Settings tetap sama bentuknya lintas platform. Di Windows situasinya beda: aplikasi upstream **sudah** membawa backend helper sendiri untuk macOS/Windows (renderer membedakan `isMacDesktop`/`isWindowsDesktop`), jadi MCP pihak kita belum tentu perlu.
+**Penjelasan singkat dulu.** MCP bukan kebutuhan Linux, hanya transport. Agent CCode memanggil kontrol desktop sebagai *tool* dari sebuah server MCP. Di Linux kita memilih jalur itu karena vendor tidak punya backend Linux dan portal PipeWire adalah satu-satunya cara sah mengambil layar dan menekan tombol di Wayland — jadi kita tulis backend sendiri (`services/desktop`, screen-mcp) dan aplikasi menyemai entry `linux-desktop` sendiri. Memilih MCP juga membuat permukaan tool, guard *takeover*, dan panel Settings tetap sama bentuknya lintas platform. Di Windows situasinya beda: kode upstream menyiapkan jalur helper sendiri untuk macOS/Windows (renderer membedakan `isMacDesktop`/`isWindowsDesktop`), tetapi helper-nya tidak ikut terpasang di tree aplikasi — ia dipasang/diunduh saat runtime. Jadi pertanyaannya bukan "MCP perlu atau tidak", melainkan "helper vendor masih bisa dipasang tanpa akun yang sudah kita buang, atau kita bangun backend sendiri".
 
-**B1. Rute vendor helper (tanpa MCP kita).** Kalau helper bawaan itu berjalan tanpa akun dan tanpa layanan yang kita hapus, Windows cukup memakai jalur itu: tidak ada server MCP baru, tidak ada entry yang disemai, panel vendor yang tampil. Prasyarat verifikasi, semuanya harus dibuktikan sebelum dipilih:
+**B1. Rute vendor helper (tanpa MCP kita).** Pemeriksaan installer 3.14.3 sudah mempersempit rute ini: JS `out/main`/`out/host` menyebut `computer-use`, `cua`, dan `helper`, tetapi tidak ada helper biner atau direktori helper di tree aplikasi yang dipasang — hanya `elevate.exe` dan `UAC.dll` dari installer. Artinya helper dipasang/diunduh saat runtime, dan pemilik unduhan itu bisa jadi layanan akun yang sudah kita hapus. Rute ini hanya dipakai kalau tiga hal berikut terbukti di Windows:
 1. Helper tidak memeriksa entitlemen/plan akun (semua layanan akun tidak terdaftar di build kita).
 2. Helper tidak mengunduh komponen dari feed vendor saat dipakai (feed sudah dinetralkan ke `http://localhost:8081`).
 3. Helper tidak meminta langkah instalasi yang mensyaratkan login.
