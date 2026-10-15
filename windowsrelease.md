@@ -126,6 +126,8 @@ Tambahkan `--platform linux|win32` (default tetap Linux) yang memilih baseline, 
 
 **E1. `scripts/pack_windows.py`.** Dari tree `app/` hasil `make apply` (payload Windows) menghasilkan installer NSIS `.exe` per-user dan opsional ZIP portable. Ikon: `make icons` perlu diperluas menghasilkan `.ico` multi-resolusi dari `ccode-logo.svg` (ImageMagick) selain PNG, plus `icon_windows.png` yang sudah ada untuk renderer.
 
+**E1b. Identitas Windows harus CCode penuh, bukan ZCode.** Installer vendor hanya bahan mentah: setelah dipatch, seluruh identitas produk diganti — binary `CCode.exe` (bukan `ZCode.exe`), ikon aplikasi/taskbar/tray dari mark CCode (`tray_icon.ico` punya vendor harus diganti), judul jendela dan AppUserModelID, nama entri uninstall dan shortcut Start Menu, folder install (`%LOCALAPPDATA%\Programs\CCode`), skema URL `ccode://`, serta `THIRD-PARTY-NOTICES.md` versi kita sendiri. Penggantian ini bukan opsional: `rebrand.assert_clean()` dan `branding.guard()` **wajib lulus pada payload Windows** seperti pada payload Linux, dan build harus gagal kalau masih ada tulisan atau mark vendor yang tersisa. Verifikasi tambahan: cari nama vendor di seluruh tree terpasang dan pastikan nol (kecuali di berkas atribusi `NOTICE.md`/`docs/THIRD_PARTY.md` dan catatan provenance rilis).
+
 **E2. Isi paket.** `app/` (Electron win32, ASAR, resources termasuk `glm/ccode.cjs`, `mcp/`, `commands/`, `bundled-skills/`, ikon), `services/{model-sync,desktop}`, `scripts/data_backup.py`, `project.json` minimal, launcher, shortcut, dan `LICENSE`/`NOTICE.md`/`docs/THIRD_PARTY.md`/`UNINSTALL.md`.
 
 **E3. Tanpa update channel.** Feed sudah dinetralkan; installer tidak boleh melakukan panggilan jaringan saat runtime selain ke provider yang user konfigurasi.
