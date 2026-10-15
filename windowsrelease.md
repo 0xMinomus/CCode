@@ -46,6 +46,7 @@ Survei cepat terhadap aset yang ada; semua di bawah ini fakta dari repo, API pub
 | Token savers | `src/main/token-savers-runtime.cjs` menjalankan `rtk` sebagai executable — binary Windows belum tersedia |
 | Paket MCP win32 | Diverifikasi ada di npm: `@sdsrs/code-graph-win32-x64@0.169.0` dan `@vscode/ripgrep-win32-x64@1.18.0` — versinya sama dengan pin Linux, jadi tinggal dipilih per platform |
 | Perkakas packaging di mesin ini | `makensis` **belum terpasang** (Fedora), jadi installer NSIS belum bisa dibangun di sini tanpa menambah paket NSIS; `mksquashfs`/`dpkg-deb`/`rpmbuild` yang dipakai Linux tidak relevan untuk Windows |
+| Shell kedua build | **Sama versinya.** Linux kita: `Chrome/146.0.7680.80 Electron/41.0.3` (node_module_version 145, `node_shared_sqlite` aktif). Windows vendor 3.14.3: `Chrome/146.0.7680.80 Electron/41.0.3`. `node-pty` 1.1.0 dan `ssh2` 1.17.0 juga sama di kedua ASAR — jadi native yang dipakai dua build itu ABI-compatible |
 | RTK | Binary lokal `~/.local/bin/rtk` v0.51.0 adalah Rust static-pie untuk Linux; build Windows-nya belum diverifikasi ada |
 
 ---
@@ -64,6 +65,18 @@ Survei cepat terhadap aset yang ada; semua di bawah ini fakta dari repo, API pub
 
 K1 dan K4 yang paling menentukan: keduanya mengubah bentuk pekerjaan, bukan sekadar detail.
 
+### Rekomendasi saya untuk tiap keputusan (pakai ini kalau tidak ada keberatan)
+
+| # | Rekomendasi | Alasan | Kalau ditolak |
+|---|---|---|---|
+| K1 | **Hibrida** (bagian A0): pakai lapisan aplikasi 3.14.5 kita, ganti shell jadi berkas Windows vendor | Shell kedua build Electron 41.0.3 dan native-nya sama versi; ini melewati pekerjaan mencari ulang semua anchor | Jalur lama: patch build 3.14.3 dari nol (jauh lebih besar), atau tunggu vendor rilis 3.14.5 Windows |
+| K2 | `%LOCALAPPDATA%\CCode`, `CCODE_STANDALONE_ROOT` tetap bisa menimpa | Konvensi Windows; pengguna tidak mencari data di `.local/share` | `.local/share/ccode` seragam lintas OS, tapi terasa asing di Windows |
+| K3 | Task Scheduler per-user (tanpa admin) saat install, plus pemicu tulis `provider_config.json` bila bisa | Meniru semantik unit Linux tanpa layanan tambahan | Scheduler di dalam aplikasi (lebih sederhana, tapi berjalan hanya saat aplikasi hidup) |
+| K4 | Backend Computer Use berbasis **Node (Electron-as-Node) + helper PowerShell**: capture lewat .NET, input lewat `SendInput` (Add-Type), teks/elemen lewat UI Automation | Tidak menambah runtime besar (tetap "ringan"), memakai pola launcher MCP yang sudah ada, dan policy takeover bisa diport ke JS | Python (seperti Linux) menambah ~100 MB ke paket; biner Rust/Go menambah toolchain baru |
+| K5 | Payload MCP per platform di repo yang sama, direktori terpisah (`runtime` vs `runtime-win32`), hash dicatat per platform | Tidak menimpa payload Linux; installer memuat hanya payload platformnya | Payload dalam zip terpisah per platform (lebih ribet untuk pengguna) |
+| K6 | PC Windows pemilik (Anda) untuk M1/M5; VM kalau perlu uji bersih berulang | Mengikuti releaseplan dan pernyataan Anda | VM Windows tetap diperlukan untuk uji instalasi bersih |
+| K7 | Unsigned dulu, ditulis apa adanya di release notes | Tidak menahan rilis demi sertifikat | Sertifikat code signing sebelum rilis (menambah biaya dan waktu) |
+
 ## Urutan eksekusi: milestone dan kriteria lulus
 
 Rencana ini sengaja dibuat bertahap supaya kegagalan ketahuan di awal, bukan setelah semua dikerjakan.
@@ -71,13 +84,36 @@ Rencana ini sengaja dibuat bertahap supaya kegagalan ketahuan di awal, bukan set
 | Milestone | Isi | Kriteria lulus | Risiko kalau gagal |
 |---|---|---|---|
 | **M0 — Fakta & baseline** (selesai) | Pin installer vendor, bongkar isinya, catat temuan | Dokumen ini + SHA256 tercatat | — |
-| **M1 — Bukti boot di Windows** (spike, paling penting) | Patch minimal saja: `rebrand` + `storage` + `branding` + `cloud` pada baseline Windows, hasilkan tree yang bisa dijalankan | Di Windows: aplikasi terbuka dengan nama CCode, tanpa layar login, namespace data sendiri, tanpa `Unknown channel`/`ReferenceError`. Fitur lain belum diklaim | Kalau ini gagal, hentikan jalur patch dan pilih fork source (K1) — jangan lanjut ke M2 |
+| **M1 — Bukti boot di Windows** (spike, paling penting) | Rute hibrida A0: rakit tree Windows = ASAR patch kita + native win32 + shell vendor, rename identitas | Di Windows: aplikasi terbuka sebagai CCode, tanpa layar login, namespace sendiri, tanpa `Unknown channel`/`ReferenceError`, terminal/pty jalan (bukti native win32 benar). Fitur lain belum diklaim | Kalau ini gagal, jatuh ke jalur lama: patch build 3.14.3 Windows dicari ulang dari nol (K1 berubah) — dan itu lebih mahal |
 | **M2 — Paritas fitur** | Sisanya: commands, 32 skill, subagents, token savers, marketplace + n8n, model-sync, Activity, katalog MCP | Daftar periksa fitur Linux terpenuhi di Windows satu per satu; tidak ada kontrol mati | Fitur yang tidak bisa diport ditulis sebagai batas, bukan dihapus diam-diam |
 | **M3 — Computer Use** | Backend `windows-desktop` (K4) + panel Settings versi Windows | Screenshot, `read_text`, klik element, typing, dan guard takeover `STOPPED` bekerja pada aplikasi biasa; batas UIPI diuji dan dicatat | Kalau tidak selesai, panel harus menyembunyikan diri dengan pesan jujur (B3) — jangan tampilkan toggle mati |
 | **M4 — Packaging** | `pack_windows.py`, NSIS per-user, ikon `.ico`, shortcut, uninstall | Installer jalan di Windows, uninstall bersih, data tetap kecuali diminta hapus, ukuran dicatat | Tanpa NSIS (perkakas belum ada) M4 tidak bisa dijalankan |
 | **M5 — Gate rilis** | 10 langkah verifikasi F1 + catatan hasil | Catatan lengkap: versi Windows, artifact + SHA256, temuan, log tersensor | Tanpa catatan ini rilis Windows belum boleh terbit |
 
 Aturan main: setiap milestone diverifikasi dengan menjalankan aplikasinya di Windows, bukan dari "build hijau". Kalau satu milestone gagal, mundur dan selesaikan keputusan yang menghambatnya sebelum lanjut.
+
+---
+
+## A0. Rute hibrida (rekomendasi untuk K1)
+
+Karena shell kedua build memakai Electron yang sama (41.0.3) dan native yang sama versinya (node-pty 1.1.0, ssh2 1.17.0), jalan terpendek bukan "cari ulang semua anchor di build 3.14.3", melainkan **pakai lapisan aplikasi kita yang sudah dipatch, lalu ganti shell-nya**:
+
+| Bagian | Dari mana |
+|---|---|
+| `resources/app.asar` | Hasil patch kita sekarang (aplikasi 3.14.5, sudah CCode) |
+| Unpacked native | Diambil dari build Windows: `node-pty/prebuilds/win32-x64/{pty,conpty,conpty_console_list}.node` + `ssh2/.../sshcrypto.node` (ABI sama) |
+| Shell Electron | Berkas Windows vendor: `CCode.exe` (rename dari `ZCode.exe`), DLL, `locales/`, `*.pak`, `resources.pak` |
+| Agent | `resources/glm/ccode.cjs` hasil patch kita |
+| `resources/tools/` | Binary Windows vendor (`ripgrep`, `ugrep`) — kita tidak membangun ulang |
+| Ikon | `icon_windows.png` dari build kita; `tray_icon.ico` diganti mark CCode |
+| `THIRD-PARTY-NOTICES.md` + `licenses/` | Milik vendor tetap disertakan (kewajiban lisensi), ditambah `NOTICE.md`/`LICENSE` kita |
+
+Yang perlu ditambah di sisi kita: `scripts/asar.py` sekarang hanya mengganti isi entri, belum bisa **menambah** entri — padahal ASAR Windows butuh dua entri native yang tidak ada di ASAR Linux (`conpty*.node`). Tambahan itu kecil (tambah entri + tandai `unpacked` + tulis berkasnya ke `app.asar.unpacked/`), dan hasilnya: satu lapisan JS yang dipatch, dua varian archive (Linux dan Windows) dari sumber yang sama.
+
+Konsekuensi jujur:
+- Ini tetap **hibrida**: kode aplikasi 3.14.5, berkas shell dari paket Windows vendor 3.14.3 (Electron-nya sama versi). Label rilis memakai versi aplikasi, dan release notes menyebut dari mana berkas shell diambil.
+- Yang belum terbukti: apakah kode aplikasi 3.14.5 berjalan bersih di shell itu (kemungkinan besar ya karena Electron-nya identik, tapi ini justru yang harus dibuktikan M1, bukan diasumsikan).
+- Kalau M1 gagal, jatuh ke jalur lama: patch 3.14.3 dicari ulang dari nol.
 
 ---
 
