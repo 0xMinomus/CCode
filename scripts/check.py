@@ -21,6 +21,7 @@ if staged.exists():
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/activity/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/token-savers-runtime.cjs')],check=True)
+ subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/commands/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/marketplace/marketplace-compat.cjs')],check=True)
  subprocess.run(['node','--check',str(staged.parent/'mcp/main.cjs')],check=True)
  for p in (staged.parent/'mcp').glob('*.cjs'):

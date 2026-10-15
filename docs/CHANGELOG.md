@@ -2,6 +2,13 @@
 
 ## 2026-10-15
 
+### Default slash commands
+
+- Settings → Commands mendapat 12 command bawaan: `/prd`, `/design`, `/tech-spec`, `/task-plan`, `/test-plan`, `/adr`, `/implement`, `/debug`, `/explain`, `/review`, `/test`, dan `/security-review`.
+- Command dikelompokkan menjadi Documents, Development, Quality, dan Custom memakai header serta baris native. Prompt dokumen mengarahkan output ke `PRD.md`, `DESIGN.md`, `TECH-SPEC.md`, `TASKS.md`, `TEST-PLAN.md`, atau `docs/adr/`.
+- Main process men-seed command ke namespace user. Native scanner dan command creator sama-sama diarahkan ke `${CCODE_STORAGE_DIR}/commands`; tanpa pengalihan ini, command tertanam di namespace tetapi runtime mencari di home di luar namespace. Marker kepemilikan mencegah penggantian command user, melindungi edit, dan menghormati penghapusan. Command bawaan tidak menetapkan model atau mewajibkan skill/MCP.
+- Verifikasi: `make build`, `make test` (177 lulus, 8 dilewati), pemeriksaan batas launcher, dan `make apply` lulus. Smoke root terisolasi menampilkan 12 command dalam kategori Documents/Development/Quality dan semua command aktif. Tidak ada provider terkonfigurasi, jadi pembuatan dokumen tidak dikirim atau diklaim teruji.
+
 ### Built-in subagents
 
 - Settings → Subagents kini menyediakan 12 role default: Engineering Generalist, Codebase Explorer, Technical Architect, Backend Developer, Frontend Developer, UI/UX Designer, Database Engineer, Debugger & Performance Engineer, QA / Test Engineer, Code Reviewer, Security Reviewer, dan DevOps Engineer. Setiap role memiliki deskripsi, prompt, dan warna sendiri.

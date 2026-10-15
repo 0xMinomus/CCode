@@ -37,6 +37,16 @@ Grafik 30 hari membaca `saved_tokens` dari `rtk gain --daily --format json`. Nil
 
 Semua default aktif saat pemasangan dan mewarisi model sesi induk kecuali pengguna memilih override. Toggle Settings memakai `disabledAgentIds` pada file state subagent yang sudah ada. Host meneruskan status built-in dan plugin ber-scope user; alias nama pendek plugin menyimpan `canonicalAgentId`, sehingga profil yang dimatikan tidak tetap dapat dipanggil lewat alias. Runtime agent memakai ID/status aktif yang sama untuk prompt daftar agent dan resolver dispatch. Profil nonaktif tidak ditawarkan dan tidak dapat dipanggil. Override model lama untuk `general-purpose` dan `Explore` dipindahkan ke role penggantinya.
 
+### Default slash commands
+
+`src/commands/*.md` mengirim 12 command: `/prd`, `/design`, `/tech-spec`, `/task-plan`, `/test-plan`, `/adr`, `/implement`, `/debug`, `/explain`, `/review`, `/test`, dan `/security-review`. Prompt memakai model serta tools sesi yang tersedia; tidak ada skill atau MCP wajib.
+
+`scripts/build.py` menyalin prompt dan `src/main/commands.cjs` ke resource `commands/`, lalu memasukkan semua berkas ke manifest SHA256. Main process menjalankan seeder saat startup. `src/local_only/default_commands.py` menambal resolver scanner dan command creator native agar keduanya memakai `${CCODE_STORAGE_DIR}/commands`; tanpa patch itu, CLI tetap mencari command di home yang tidak termasuk namespace standalone. Seeder menaruh prompt user-scope di lokasi yang sama. Marker `.ccode-default-commands.json` membedakan berkas milik CCode dari berkas user: seed baru hanya mengisi nama yang belum ada, update hanya mengganti default yang belum diedit, dan file yang diedit, dihapus, atau sudah dimiliki user tetap tidak ditimpa atau dibuat ulang.
+
+`src/renderer/default-commands.js` mengelompokkan command bawaan menjadi **Documents**, **Development**, dan **Quality**. Command user lain masuk **Custom**. Header memakai komponen native `H7`; daftar command dan kontrol enablement tetap komponen upstream.
+
+`scripts/apply_build.py` memverifikasi hash dan mempromosikan main module serta prompt dengan mekanisme backup/rollback resource statis yang sama. Seeder tidak memerlukan provider untuk instalasi dan tidak mengimpor konfigurasi dari instalasi lain.
+
 ### Default skills
 
 Skill bawaan dikirim sebagai **pack skill native**, bukan plugin CCode Skills. Settings → Skills menampilkan skill pack sebagai **Default**, dan agent memuatnya sebagai `system/bundled`.

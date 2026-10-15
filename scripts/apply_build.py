@@ -4,7 +4,7 @@ import hashlib,json,pathlib,shutil,os,datetime,sys
 from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
-from local_only import catalog,branding,rebrand,skills_plugin
+from local_only import catalog,branding,rebrand,skills_plugin,default_commands
 def namespace_root():
  return pathlib.Path(os.environ.get('CCODE_STANDALONE_ROOT','').strip() or pathlib.Path.home()/'.local/share/ccode')
 def derived_catalogs():
@@ -15,7 +15,7 @@ APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/ccode"'
 LEGACY=rebrand.previous
 LEGACY_FILES=(LEGACY('glm/ccode.cjs'),LEGACY('config/provider/ccode-builtin.json'))
-FILES=['app.asar','glm/ccode.cjs','glm/.node-bundle-meta.json','app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','marketplace/marketplace-compat.cjs','config/provider/ccode-builtin.json']
+FILES=['app.asar','glm/ccode.cjs','glm/.node-bundle-meta.json','app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',*default_commands.resource_files(),'marketplace/marketplace-compat.cjs','config/provider/ccode-builtin.json']
 PAYLOAD_JOURNAL='plugin-payload.json'
 PAYLOAD_ROOT='glm/packages'
 SKILL_PACK='glm/packages/'+skills_plugin.PACK_DIR

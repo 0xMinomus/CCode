@@ -42,6 +42,7 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Token savers** | Optional RTK shell-command rewrites plus Caveman and Ponytail agent-instruction modes. The chart reports RTK's estimated shell-output tokens saved, not provider-billed model tokens. |
 | **Bundled default skills** | 32 agent skills ship inside the app — antislop, GSAP, UI design, and engineering workflow — listed as Default in Settings → Skills without installing a plugin. |
 | **Built-in subagents** | Twelve engineering roles cover architecture, backend/frontend, UI/UX, databases, debugging, QA, review, security, and DevOps. Each has its own enable switch and inherits the session model by default; user-scoped plugin subagents can also be toggled individually. |
+| **Built-in slash commands** | Twelve defaults for PRDs, design/spec documents, planning, implementation, debugging, explanation, testing, and reviews. Settings → Commands groups them by purpose; scanner and command runner use the namespaced command directory without replacing user edits. |
 | **MCP catalog** | Context7 and Codegraph ship preinstalled. LSP and Ripgrep are installable from native server rows without an “Optional” badge; account-bound `image_search` is excluded. |
 | **n8n plugin** | Enable n8n from Plugins or Plugin Marketplace to load its MCP server and all 15 n8n skills. Configure your instance URL and API key in the native plugin settings. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
@@ -112,11 +113,12 @@ make dry-run        # show what the local integration would install
 
 | Path | Contents |
 |---|---|
-| `src/renderer/` | UI sources: Computer Use settings, voice input, Activity panel, Token savers settings |
+| `src/renderer/` | UI sources: Computer Use settings, voice input, Activity and Token savers panels, and slash-command categories |
+| `src/commands/` | Default slash-command prompts for documents, development, and quality checks |
 | `src/skills/` | Default agent skills bundled into the app pack (`glm/packages/bundled-skills`) |
 | `src/plugins/n8n/` | Native n8n plugin manifest, MCP entrypoint, and all 15 activation-scoped n8n skills |
-| `src/main/` | Electron main-process modules: voice IPC, Activity data, Token savers, Auto Detect |
-| `src/local_only/` | Product patches: `rebrand` (identity and runtime contracts, runs first), `branding` (mark, runs last), storage namespacing, account/cloud removal, bundled plugin payload, built-in subagent catalog, agent runtime tuning, provider catalog, Token savers agent integration |
+| `src/main/` | Electron main-process modules: voice IPC, Activity data, Token savers, Auto Detect, and default-command seeding |
+| `src/local_only/` | Product patches: `rebrand` (identity and runtime contracts, runs first), `branding` (mark, runs last), storage namespacing, account/cloud removal, bundled plugin payload, default-command staging and grouping, built-in subagent catalog, agent runtime tuning, provider catalog, Token savers agent integration |
 | `services/desktop/` | `screen-mcp` desktop backend and its fast profile |
 | `services/voice/` | Whisper worker, bilingual terminology, model |
 | `services/mcp/` | Pinned default MCP packages and optional integration catalog |
