@@ -1,9 +1,9 @@
-"""Standalone storage boundaries for the pinned CCode 3.14.5 bundles."""
+"""CCode modification: standalone storage boundaries for the pinned 3.14.5 bundles."""
 
 from . import replace_once
 
 
-_ENV_BODY = '''const ccodeStandaloneRoot=ccodeStandalonePath.resolve(process.env.CCODE_STANDALONE_ROOT?.trim()||ccodeStandalonePath.join(ccodeStandaloneOs.homedir(),".local","share","ccode"));
+_ENV_BODY = '''const ccodeStandaloneRoot=ccodeStandalonePath.resolve(process.env.CCODE_STANDALONE_ROOT?.trim()||(process.platform==="win32"?ccodeStandalonePath.join(process.env.LOCALAPPDATA?.trim()||ccodeStandalonePath.join(ccodeStandaloneOs.homedir(),"AppData","Local"),"CCode"):ccodeStandalonePath.join(ccodeStandaloneOs.homedir(),".local","share","ccode")));
 const ccodeStandaloneData=ccodeStandalonePath.join(ccodeStandaloneRoot,"data");
 Object.assign(process.env,{CCODE_STANDALONE_ROOT:ccodeStandaloneRoot,CCODE_DATA_BASE_DIR:ccodeStandaloneData,CCODE_DESKTOP_HOME_DIR:ccodeStandaloneData,DESKTOP_HOME_DIR:ccodeStandaloneData,CCODE_STORAGE_DIR:ccodeStandalonePath.join(ccodeStandaloneData,".ccode"),STORAGE_DIR:ccodeStandalonePath.join(ccodeStandaloneData,".ccode"),CCODE_SESSION_DB_PATH:ccodeStandalonePath.join(ccodeStandaloneData,".ccode","cli","db","db.sqlite"),CCODE_DESKTOP_USER_DATA_DIR:ccodeStandalonePath.join(ccodeStandaloneRoot,"electron"),CCODE_DESKTOP_SESSION_DATA_DIR:ccodeStandalonePath.join(ccodeStandaloneRoot,"electron","session"),CCODE_DESKTOP_USE_ELECTRON_DEFAULT_USER_DATA:"0",CCODE_DESKTOP_APPLICATION_NAME:"ccode"});
 '''

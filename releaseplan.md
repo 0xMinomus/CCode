@@ -10,6 +10,8 @@ Target rilis pertama adalah **Linux x64** (`.AppImage`, `.deb`, `.rpm`) dan **Wi
 
 Build dan verifikasi Linux dikerjakan di lingkungan Linux. Installer Windows disiapkan dari source beserta dependency x64 yang sesuai; bila build memerlukan toolchain Windows, gunakan runner Windows. Pengguna menguji `.exe` di mesin Windows miliknya. Build berhasil tidak membuktikan aplikasi berjalan: artifact Windows belum layak dinyatakan siap rilis sebelum hasil pengujian pengguna lolos dan dicatat.
 
+Keputusan eksekusi 2026-10-16: pemilik memilih **Windows hibrida M1–M5** dari [windowsrelease.md](windowsrelease.md) untuk pekerjaan sekarang. Ini pengecualian stopgap yang eksplisit, bukan penyelesaian F1/F2 atau pengganti arah source fork. Kandidat M1 memakai aplikasi patch 3.14.5 dengan shell/native Windows vendor 3.14.3; M2–M5 menunggu bukti boot dan terminal dari Windows pengguna.
+
 Computer Use dan model-sync tetap masuk scope porting Windows. Implementasi portal dan systemd Linux tidak dapat dipakai langsung di Windows; masing-masing memerlukan backend atau integrasi OS yang sesuai. Voice dihapus dari seluruh platform sesuai keputusan 2026-10-15 di `linuxrelease.md`. n8n dipasang pengguna dari Plugin Marketplace, dengan dependency lengkap di zip release asset publik. Fitur lain yang belum berfungsi harus dilaporkan sebagai penghambat, bukan dihilangkan diam-diam atau diklaim setara.
 
 ## 1. Fakta yang menentukan rencana

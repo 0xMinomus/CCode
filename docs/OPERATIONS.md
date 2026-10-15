@@ -39,6 +39,12 @@ Verifikasi sebelum dipublikasikan: jalankan AppImage dengan root uji lewat `CCOD
 
 Stage menolak build bila jalur home mesin build atau `provider_config*.json` ikut terbawa, dan menormalkan izin berkas supaya tree dapat dibaca pengguna yang memasangnya. Venv layanan hanya membawa interpreter (`bin/python*`); console script, `pyvenv.cfg` yang memuat jalur build, cache `__pycache__`, dan state lokal model-sync dibuang. Computer Use masih memerlukan paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`) karena layer itu tidak dapat dibundel.
 
+## Gate kandidat Windows hibrida
+
+Kandidat M1 bukan installer atau rilis Windows siap pakai. Gunakan hanya root uji terisolasi; jangan menunjuk ke data Linux atau namespace harian. Default Windows adalah `%LOCALAPPDATA%\CCode`, tetapi `CCODE_STANDALONE_ROOT` tetap menimpa default tersebut di main, host, scheduler, dan agent.
+
+Pengguna Windows harus mencatat versi OS, checksum kandidat, startup tanpa login, lokasi profil/data, log runtime/IPC, serta hasil terminal/pty. Jangan mengirim API key atau konfigurasi provider live bersama log. Tutup aplikasi secara normal setelah uji. M2–M5 menunggu bukti M1; Wine, inspeksi archive, dan tes namespace tersimulasi tidak menggantikan pengujian Windows. Daftar penerimaan lengkap ada di [windowsrelease.md](../windowsrelease.md).
+
 ## Computer Use: satu backend, dua tempat
 
 Computer Use Linux diatur dari **Settings → Computer Use**, dan entry yang sama (`linux-desktop`) juga tampil sebagai baris di **Settings → MCP Servers**. Keduanya bukan dua backend: keduanya menulis state `enabled` yang sama, jadi menyalakan/mematikan di salah satu tempat memberi hasil yang sama. Panel Computer Use menambahkan hal yang tidak ada di daftar MCP: status koneksi + jumlah tool, petunjuk izin, dan sakelar pintasan di kotak chat. Teks panel menyebut hal ini supaya tidak jadi pertanyaan "yang mana yang dipakai?".

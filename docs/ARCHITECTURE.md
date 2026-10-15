@@ -4,6 +4,8 @@
 
 `project.json` menyimpan hash ASAR upstream asli, hash backend agent asli, identitas aplikasi standalone, dan nama tiga asset ASAR yang diubah. Build membaca baseline, mengganti anchor yang harus muncul tepat sekali, lalu menulis ASAR baru ke `runtime/build/resources` dengan offset dan integrity SHA256 yang dihitung ulang. Entri unpacked asli tetap mengacu pada `app/resources/app.asar.unpacked`.
 
+Bootstrap storage yang sama dipakai main, host, scheduler, dan agent. Default Linux tetap `~/.local/share/ccode`; Windows memakai `%LOCALAPPDATA%\CCode`, atau `homedir()/AppData/Local/CCode` bila variabel itu kosong. `CCODE_STANDALONE_ROOT` menimpa keduanya; data, profil Electron, database, dan config selalu diturunkan dari root tersebut. Perubahan default Windows tidak mengimpor data instalasi lain. Kandidat Windows hibrida M1 memakai lapisan aplikasi 3.14.5 dan shell/native Windows vendor 3.14.3; kesamaan Electron/ABI bukan bukti boot atau paritas fitur.
+
 Patch renderer:
 
 1. Halaman `iOn` asli diubah menjadi `originalCuaSettings`.

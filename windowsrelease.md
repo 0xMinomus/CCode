@@ -1,6 +1,6 @@
 # Rencana kerja rilis Windows x64
 
-Status: 2026-10-15. Rencana tingkat tinggi tetap di [releaseplan.md](releaseplan.md); pelaksanaan Linux ada di [linuxrelease.md](linuxrelease.md). File ini daftar kerja Windows, dan **belum ada kode Windows yang diubah**. Eksekusi menunggu perintah pemilik.
+Status: 2026-10-16. Pemilik mengizinkan eksekusi **Windows hibrida M1–M5**. Kandidat ZIP M1 sudah dirakit dan diperiksa di Linux; bukti boot/terminal Windows belum ada. M2–M5 menunggu gate tersebut. Rencana tingkat tinggi tetap di [releaseplan.md](releaseplan.md); pelaksanaan Linux ada di [linuxrelease.md](linuxrelease.md).
 
 Target: fitur Windows sama dengan rilis Linux 1.0.0 saat ini — tanpa akun, namespace data sendiri, provider BYOK + 9Router, 12 slash command, 32 skill Default, 12 subagent, Token savers, Activity, MCP katalog, Plugin Marketplace + n8n, backup/restore, dan Computer Use. Voice tetap dihapus.
 
@@ -76,6 +76,16 @@ K1 dan K4 yang paling menentukan: keduanya mengubah bentuk pekerjaan, bukan seka
 | K5 | Payload MCP per platform di repo yang sama, direktori terpisah (`runtime` vs `runtime-win32`), hash dicatat per platform | Tidak menimpa payload Linux; installer memuat hanya payload platformnya | Payload dalam zip terpisah per platform (lebih ribet untuk pengguna) |
 | K6 | PC Windows pemilik (Anda) untuk M1/M5; VM kalau perlu uji bersih berulang | Mengikuti releaseplan dan pernyataan Anda | VM Windows tetap diperlukan untuk uji instalasi bersih |
 | K7 | Unsigned dulu, ditulis apa adanya di release notes | Tidak menahan rilis demi sertifikat | Sertifikat code signing sebelum rilis (menambah biaya dan waktu) |
+
+### Keputusan eksekusi 2026-10-16
+
+- K1: pemilik memilih **Windows hibrida M1–M5**, bukan port source fork F0–F4.
+- K2: bootstrap bersama memakai `%LOCALAPPDATA%\CCode` di Windows, dengan fallback `%USERPROFILE%\AppData\Local\CCode`; `CCODE_STANDALONE_ROOT` tetap menang. Default Linux tidak berubah. Tidak ada impor atau migrasi otomatis.
+- K3–K5: rekomendasi di atas tetap menjadi arah implementasi milestone terkait, bukan bukti fitur selesai.
+- K6: pengujian pada PC Windows pemilik. Mesin build Linux tidak memiliki Wine atau PowerShell; pemeriksaan struktur/paket tidak menggantikan gate Windows.
+- K7: kandidat M1 unsigned dan bukan installer rilis.
+
+Jangan menjalankan M2–M5 sebelum hasil M1 dicatat: versi Windows, checksum kandidat, startup tanpa login, namespace terisolasi, log IPC/runtime, dan terminal/pty.
 
 ## Urutan eksekusi: milestone dan kriteria lulus
 
@@ -258,8 +268,9 @@ Hasil ditulis sebagai catatan: versi Windows, nama artifact + SHA256, langkah, t
 |---|---|
 | Rencana Windows (file ini) | ✅ selesai |
 | M0. Fakta + pin baseline vendor | ✅ selesai (SHA256 installer + isi tercatat) |
-| K1–K7. Keputusan pemilik | ⬜ belum diambil (K1 versi dasar dan K4 runtime Computer Use paling menentukan) |
+| K1–K7. Keputusan pemilik | K1 hibrida dipilih; K2 namespace Windows diterapkan; K3–K5 mengikuti rekomendasi saat milestone terkait; K6 PC pemilik; K7 kandidat unsigned |
 | M1. Bukti boot di Windows (spike) | ⬜ belum — gate untuk lanjut ke M2 |
+| Kandidat ZIP M1 (bukan bukti boot) | Dirakit; CRC ZIP dan 10.937 hash berkas lulus; 13 native Windows, tanpa native Linux |
 | M2. Paritas fitur | ⬜ belum |
 | M3. Computer Use `windows-desktop` + panel | ⬜ belum |
 | M4. Packaging installer Windows | ⬜ belum (butuh `makensis`, belum terpasang) |
@@ -267,3 +278,15 @@ Hasil ditulis sebagai catatan: versi Windows, nama artifact + SHA256, langkah, t
 | A–H. Rincian pekerjaan | ⬜ belum |
 
 Belum ada baris di tabel ini yang boleh ditandai selesai tanpa bukti yang dijalankan di Windows; build berhasil saja bukan bukti.
+
+### Kandidat yang harus diuji pengguna
+
+- Berkas: `runtime/release-windows/CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.
+- SHA256: `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`.
+- Pendamping: `SHA256SUMS`, `candidate-manifest.json`, `M1-INSTRUCTIONS.txt` pada direktori yang sama.
+- Build/check akhir Linux: `make build && make test`, 198 tes, 6 dilewati. Smoke staged Linux membuka workspace tanpa login; tidak ada error renderer atau empat pola error IPC/runtime pada gate. Ini bukan pengujian Windows.
+- Ekstrak ZIP di Windows, lalu jalankan `powershell -NoProfile -ExecutionPolicy Bypass -File .\CCode.ps1`. Launcher memakai `m1-isolated-root` di folder hasil ekstrak dan menyimpan log/metadata di `<root>\logs`.
+- Buka terminal terintegrasi, jalankan `cmd /c echo CCODE_M1_PTY_OK`, catat versi Windows, hasil, screenshot, dan log tersensor. Tutup normal, buka lagi pada root sama, lalu periksa persistensi.
+- Installer vendor terpinsel memiliki metadata native dan hash header ASAR embedded yang stale; fuse validasi ASAR vendor memang mati. Packager mencatat ketidaksesuaian, memperbarui metadata kandidat, dan mempertahankan fuse `101100011`, bukan mematikan validasi untuk melewati kegagalan.
+
+Tidak ada hasil Windows yang dicatat sebagai lulus sampai pengguna mengirim bukti tersebut. Kandidat lokal belum dipublikasikan sebagai rilis Windows.

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-16
+
+### Windows hibrida: kandidat boot M1
+
+- Pemilik memilih jalur Windows hibrida M1–M5. Pekerjaan ini merakit kandidat boot M1, bukan menyatakan Windows siap rilis atau menyelesaikan port source fork.
+- `scripts/pack_windows.py` memverifikasi manifest build staged dan SHA256 installer vendor 3.14.3, lalu menggabungkan JS/agent patch 3.14.5 dengan shell/native Windows. Payload ConPTY unpacked ikut header ASAR; native Linux tidak boleh ikut kandidat. Codegraph default memakai paket Windows x64 dengan integrity npm terpinsel.
+- Installer vendor yang SHA256-nya cocok membawa metadata ASAR native yang tertinggal setelah signing. Kandidat memakai byte native aktual dari installer terpinsel, menghitung ulang ukuran/integrity pada overlay, dan mencatat metadata lama/baru dalam manifest; tidak mengganti hash pin installer atau baseline Linux.
+- Executable memakai identitas/ikon CCode, resource integrity menunjuk hash header ASAR kandidat, dan fuse Electron tetap dipertahankan. Referensi Authenticode vendor yang batal karena modifikasi dibuang; kandidat unsigned. Lisensi dan notices vendor tetap disertakan.
+- Launcher PowerShell memakai namespace uji terisolasi, mencatat OS/hash/root dan stdout/stderr, lalu memulihkan environment proses. Default storage bersama di Windows menjadi `%LOCALAPPDATA%\CCode`, fallback `homedir()/AppData/Local/CCode`; override `CCODE_STANDALONE_ROOT` tetap menang dan default Linux tidak berubah.
+- `make build && make test` akhir lulus: 198 tes, 6 dilewati. Regresi baru menjalankan bootstrap namespace Linux/Windows/override, overlay native ASAR, traversal, konflik, symlink, kontrak replace/rename/transform, serta penolakan hash vendor stale bila validasi executable aktif.
+- Smoke build staged di Linux membuka workspace CCode tanpa login setelah keluar dari onboarding; profil dan data berada di root sementara. Tidak ada `Unknown channel`, `No handler registered`, `ReferenceError`, atau `TypeError`; renderer tidak melaporkan error. Aplikasi ditutup normal dan root uji dibersihkan. Tidak ada prompt/provider yang dijalankan.
+- Kandidat lokal `runtime/release-windows/CCode-3.14.5-win-x64-M1.zip`: 255.163.953 byte, SHA256 `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`. CRC ZIP dan seluruh 10.937 hash berkas manifest lulus; 13 native Windows tercatat. Manifest source cocok dengan build akhir, fuse tetap `101100011`, dan notices cocok dengan source. Belum dipublikasikan sebagai rilis Windows.
+- Gate M1 Windows tetap terbuka: startup nyata, namespace, log, terminal/pty, dan persistensi harus diuji pengguna di Windows. M2–M5 belum dijalankan; optional MCP launcher, model-sync, Computer Use, NSIS, shortcut, uninstall, dan signing belum diverifikasi.
+
 ## 2026-10-15
 
 ### Eksekusi rilis Linux

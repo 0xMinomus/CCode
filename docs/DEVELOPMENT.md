@@ -55,6 +55,14 @@ Knob yang tersedia: `CCODE_CUA_WARMUP=1` (kembalikan prefetch model OCR di MCP d
 
 Untuk mesin baru, buat kembali venv desktop, pasang dependency yang tercatat, dan sediakan PyGObject/GStreamer/PipeWire/portal/wl-clipboard. Jangan menyalin venv antarversi Python lalu menganggapnya portabel.
 
+## Kandidat boot Windows hibrida (M1)
+
+Jalankan `make build && make test`, lalu `python3 scripts/pack_windows.py`. Skrip memakai resource staged yang diverifikasi lewat manifest, mengunduh installer vendor 3.14.3 dengan SHA256 terpinsel, dan merakit ZIP kandidat M1 di `runtime/release-windows/`. Prasyarat build: Python 3, `7z`/`7zz`, ImageMagick `magick`, serta jaringan untuk installer dan paket native Codegraph Windows yang integrity-nya dipin. `--installer <path>` memakai unduhan lokal dengan pemeriksaan hash yang sama; `--staged <dir>` memilih build terverifikasi. Output tidak mengubah AppDir terpasang atau artifact Linux.
+
+Lapisan JS tetap hasil patch 3.14.5; payload native unpacked berasal dari ASAR Windows dan menggantikan native Linux, termasuk helper ConPTY. Packager memperbarui hash header ASAR dalam resource executable, mempertahankan fuse Electron, dan membuang referensi sertifikat vendor yang tidak lagi berlaku setelah executable diubah. Kandidat tetap unsigned.
+
+Output menyertakan `SHA256SUMS`, `candidate-manifest.json`, dan `M1-INSTRUCTIONS.txt`. ZIP berisi launcher PowerShell dengan root terisolasi, metadata OS/hash/root, serta log stdout/stderr. Pengguna menguji startup dan terminal di Windows sesuai instruksi itu; build Linux, unit test, dan checksum bukan bukti Windows berjalan. Ini belum NSIS, belum paritas fitur, dan bukan penyelesaian port source fork. M2–M5 menunggu gate M1 di [windowsrelease.md](../windowsrelease.md).
+
 ## Update the upstream baseline
 
 Simpan baseline baru di baselines, baca package identity/hash, lalu perbarui project.json setelah meninjau versi. Cari kembali asset renderer dan simbol komponen. Build sengaja gagal saat anchor berubah; jangan menghapus assertion agar build terlihat berhasil. Verifikasi Computer Use, reasoning, profil pengguna, dan rollback sebelum mengganti launcher.

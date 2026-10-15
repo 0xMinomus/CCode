@@ -12,6 +12,14 @@ Berkas lisensi proyek ada di root: `LICENSE` (Apache-2.0 verbatim) dan `NOTICE.m
 
 Jangan menyertakan credentials, portal restore tokens, task history, rekaman pribadi, atau config backup pengguna dalam distribusi/project commit.
 
+## Kandidat Windows hibrida M1
+
+Sumber shell dan native Windows adalah [installer vendor v3.14.3](https://github.com/zai-org/ZCode/releases/tag/v3.14.3), SHA256 `815721ad9888b03da2bba101faba7368896123849a6a82e3bc9e5fe5f3e5048b`. Lapisan aplikasi/agent tetap patch baseline 3.14.5 yang dipin di `project.json`; ini bukan build source fork atau bukti kesetaraan source vendor. Kandidat mempertahankan `LICENSE.electron.txt`, `LICENSES.chromium.html`, `resources/THIRD-PARTY-NOTICES.md`, dan lisensi payload vendor, serta menyertakan `LICENSE`, `NOTICE.md`, dan catatan ini.
+
+Packager mengganti nama/ikon executable dan hash header ASAR pada resource integrity, mempertahankan atribusi copyright shell, dan membuang referensi Authenticode vendor setelah modifikasi. Kandidat unsigned. Native unpacked memakai byte dari installer terpinsel, dengan ukuran/hash metadata ASAR dihitung ulang; metadata vendor yang berubah dicatat dalam `candidate-manifest.json`.
+
+Codegraph Windows memakai `@sdsrs/code-graph-win32-x64@0.169.0`; URL dan SHA512 integrity npm dipin di packager serta dicatat dalam manifest kandidat. Batas hak distribusi skill di bawah tetap berlaku. ZIP M1 untuk pengujian lokal tidak dinyatakan sebagai rilis Windows publik.
+
 ## MCP bawaan dan opsional
 
 Katalog MCP menggunakan package upstream berikut. Dependency transitif dan teks lisensi ikut dipertahankan di payload runtime; lockfile menjadi sumber versi build.
