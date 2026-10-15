@@ -28,7 +28,7 @@ function main() {
   const env = configure(process.env);
   fs.mkdirSync(env.HOME, { recursive: true, mode: 0o700 });
   Object.assign(process.env, env);
-  require(path.join(path.dirname(process.execPath), 'resources/mcp/runtime/node_modules/n8n-mcp/dist/mcp/stdio-wrapper.js'));
+  require(path.join(path.dirname(require.resolve('n8n-mcp')), 'mcp/stdio-wrapper.js'));
 }
 exports.configure = configure;
 exports.main = main;

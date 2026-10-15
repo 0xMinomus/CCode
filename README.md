@@ -22,11 +22,11 @@ CCode is a fork of **CCode**, the agentic coding workspace by Z.AI, rebuilt arou
 
 1. **No account, ever.** There is no sign-in screen, no account service, no plan or subscription surface. The app opens
    straight into a workspace and talks only to the model providers *you* configure.
-2. **Your machine, your data.** Everything — tasks, sessions, provider keys, voice preferences, activity history, and token saver settings —
+2. **Your machine, your data.** Everything, including tasks, sessions, provider keys, activity history, and token saver settings,
    lives in a dedicated namespace (`~/.local/share/ccode`). CCode never reads or writes another installation's data
    and never imports anything behind your back.
-3. **Local capabilities first.** Desktop automation over MCP, bilingual local voice input, and a local activity
-   dashboard run on your hardware, with no round-trip through a vendor service.
+3. **Local capabilities first.** Desktop automation over MCP and a local activity dashboard run on your hardware,
+   with no round-trip through a vendor service.
 
 CCode is an independent, unaffiliated fork. Upstream attribution, license terms, and the full list of modifications
 are recorded in [NOTICE.md](NOTICE.md).
@@ -44,12 +44,11 @@ are recorded in [NOTICE.md](NOTICE.md).
 | **Built-in subagents** | Twelve engineering roles cover architecture, backend/frontend, UI/UX, databases, debugging, QA, review, security, and DevOps. Each has its own enable switch and inherits the session model by default; user-scoped plugin subagents can also be toggled individually. |
 | **Built-in slash commands** | Twelve defaults for PRDs, design/spec documents, planning, implementation, debugging, explanation, testing, and reviews. Settings → Commands groups them by purpose; scanner and command runner use the namespaced command directory without replacing user edits. |
 | **MCP catalog** | Context7 and Codegraph ship preinstalled. LSP and Ripgrep are installable from native server rows without an “Optional” badge; account-bound `image_search` is excluded. |
-| **n8n plugin** | Enable n8n from Plugins or Plugin Marketplace to load its MCP server and all 15 n8n skills. Configure your instance URL and API key in the native plugin settings. |
+| **n8n plugin** | Install n8n from Plugin Marketplace to download its pinned MCP server and all 15 n8n skills. Configure your instance URL and API key in native plugin settings; enable or disable the server and skills together. |
 | **Computer Use over MCP** | A Linux desktop backend (`screen-mcp`) exposes screenshot, text-first screen reading, element-based clicks, waiting, and verification tools — with an explicit pointer-takeover guard that stops an agent the moment you take the mouse. |
-| **Bilingual voice input** | Local Whisper worker tuned for mixed Indonesian–English speech, with preview-before-send, a 60-second cap, and temporary audio that is deleted after transcription. |
 | **Reasoning metadata that is real** | Reasoning levels come from provider metadata or verified behavior — no cosmetic Low/Max toggles. |
 | **Own identity** | CCode name, mark, launcher, icons, and onboarding, generated from a single brand source ([`ccode-logo.svg`](ccode-logo.svg)). |
-| **Apache-2.0 throughout** | Fork, modify, and redistribute under the same license as upstream, with attribution intact ([LICENSE](LICENSE), [NOTICE.md](NOTICE.md)). |
+| **Apache-2.0 project code** | CCode modifications retain upstream attribution ([LICENSE](LICENSE), [NOTICE.md](NOTICE.md)). Bundled dependencies and skills have separate terms and unresolved rights noted in [third-party documentation](docs/THIRD_PARTY.md). |
 
 ## CCode vs ZCode
 
@@ -62,13 +61,12 @@ Side by side, at a glance:
 | **Providers** | Built-in Zhipu family (Z.ai, BigModel, coding plans) plus BYOK | Zhipu/plan family removed; BYOK for any compatible endpoint, plus a local 9Router template |
 | **Model catalog** | Refreshed from the account endpoint at runtime | Account-driven refresh disabled; the catalog is local and pinned |
 | **Usage analytics** | Cloud usage stats | **Activity**: prompt counts, streaks, and a per-year heatmap computed locally, laid out like the original usage page |
-| **Voice input** | — | Local Whisper worker, Indonesian–English mixed speech, preview before send |
 | **Computer Use** | Platform helper apps with their own permission flow | Linux desktop backend over MCP: text-first screen reading, element-based clicks, pointer-takeover guard, portal capture |
 | **Auto-update** | Polls the vendor update feed | Update channel removed; a release never overwrites your build |
 | **Startup network footprint** | Account and business-config calls, catalog refresh, update checks | None of the above; only the provider endpoints you configure, only when you use them |
 | **Performance & resource use** | Account/cloud round-trips during startup and for stats | No account/cloud/update round-trips; Activity is read-only local SQLite. The Computer Use MCP defers model loading to the first observation (~60 MB less per idle session, measured), and an optional Chromium low-memory switch saves ~128 MB PSS when enabled (documented, off by default) |
 | **Identity** | CCode branding and vendor endpoints | CCode branding end to end, with the `ccode://` scheme, `.ccode` layout, `CCODE_*` variables, and `ccode-*` IPC channels used consistently across the host and agent |
-| **License** | Apache-2.0 — Copyright 2026 Z.AI Co., Ltd | Apache-2.0, same terms, attribution preserved |
+| **License** | Apache-2.0 — Copyright 2026 Z.AI Co., Ltd | Project code: Apache-2.0; bundled components retain separate terms |
 
 <sub>Performance figures come from the project's reference workstation and are recorded in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); a reproducible head-to-head benchmark suite is on the roadmap.</sub>
 
@@ -78,8 +76,16 @@ Side by side, at a glance:
   so no separate Node.js installation is needed to run it. Windows and macOS builds are on the [roadmap](#roadmap).
 - **Source builds:** Python 3, GNU Make, and a checkout of this workspace. Regenerating the brand icons needs
   ImageMagick; nothing else is required to build the patched bundle.
-- **Optional capabilities:** PipeWire (`pw-record`) and FFmpeg for voice input; a desktop portal session with AT-SPI for
-  Computer Use; `gtk-update-icon-cache` for launcher icons on GTK desktops.
+- **Optional capabilities:** A desktop portal session with AT-SPI for Computer Use; `gtk-update-icon-cache` for
+  launcher icons on GTK desktops.
+
+## Linux downloads
+
+Download the unsigned Linux x86-64 AppImage, `.deb`, or `.rpm` from [GitHub Releases](https://github.com/0xMinomus/CCode/releases). Verify the download with the release's `SHA256SUMS` before running it.
+
+The Linux build has been checked on the project's Fedora workstation, not clean installations of other distributions. Computer Use still needs compatible Python and system desktop libraries. See the release notes and [Linux verification record](linuxrelease.md) for exact limits. Windows is not part of this release.
+
+n8n is a separate [Marketplace plugin download](https://github.com/0xMinomus/CCode/releases/tag/n8n-plugin-v1.0.0), including its runtime and 15 skills. Voice is not shipped.
 
 ## Build and run
 
@@ -96,8 +102,8 @@ make run        # launch
 ```
 
 `make build` verifies the pinned upstream artifacts recorded in [`project.json`](project.json) before patching; a
-mismatch fails the build instead of producing a half-patched application. Packaged installers (`AppImage`, `.deb`,
-`.rpm`, Windows installer) are being prepared — see the [release plan](releaseplan.md).
+mismatch fails the build instead of producing a half-patched application. Linux packages are available through
+[GitHub Releases](https://github.com/0xMinomus/CCode/releases); the Windows installer remains deferred.
 
 ### Everyday commands
 
@@ -113,21 +119,20 @@ make dry-run        # show what the local integration would install
 
 | Path | Contents |
 |---|---|
-| `src/renderer/` | UI sources: Computer Use settings, voice input, Activity and Token savers panels, and slash-command categories |
+| `src/renderer/` | UI sources: Computer Use settings, Activity and Token savers panels, and slash-command categories |
 | `src/commands/` | Default slash-command prompts for documents, development, and quality checks |
 | `src/skills/` | Default agent skills bundled into the app pack (`glm/packages/bundled-skills`) |
-| `src/plugins/n8n/` | Native n8n plugin manifest, MCP entrypoint, and all 15 activation-scoped n8n skills |
-| `src/main/` | Electron main-process modules: voice IPC, Activity data, Token savers, Auto Detect, and default-command seeding |
+| `src/plugins/n8n/` | Marketplace plugin source: native manifest, self-contained MCP entrypoint, and all 15 n8n skills |
+| `src/main/` | Electron main-process modules: Activity data, Token savers, Auto Detect, and default-command seeding |
 | `src/local_only/` | Product patches: `rebrand` (identity and runtime contracts, runs first), `branding` (mark, runs last), storage namespacing, account/cloud removal, bundled plugin payload, default-command staging and grouping, built-in subagent catalog, agent runtime tuning, provider catalog, Token savers agent integration |
 | `services/desktop/` | `screen-mcp` desktop backend and its fast profile |
-| `services/voice/` | Whisper worker, bilingual terminology, model |
 | `services/mcp/` | Pinned default MCP packages and optional integration catalog |
 | `services/model-sync/` | Gateway model discovery and reasoning-metadata sync |
 | `scripts/` | Build, verification, apply, install, namespace migration (`migrate_identity.py`), backup/restore, icon generation, docs export |
 | `assets/icons/` | Rasterized CCode icons committed for reproducible builds |
 | `baselines/` | Pinned upstream artifacts, never edited: `upstream-3.14.5-original.asar`, `upstream-3.14.5-original-agent.cjs`, `upstream-3.14.5-original-plugins/` (checksums in `project.json`) |
 | `ccode-logo.svg` | Single source of the CCode mark |
-| `docs/` | Architecture, operations, development, models, voice, and third-party notes (Indonesian) |
+| `docs/` | Architecture, operations, development, models, and third-party notes (Indonesian) |
 | `project.json` | Pinned upstream identities, checksums, and patched asset names |
 | `releaseplan.md` | Release plan: source-fork route, license duties, packaging per platform |
 
@@ -147,9 +152,9 @@ instead (`git fetch upstream && git rebase upstream/main` on `main`).</sub>
 
 - **Packaged releases** — signed AppImage, `.deb`/`.rpm`, portable tarball, and a Windows installer, so using CCode is
   a download instead of a build.
-- **Source-based fork track** — the `ccode` branch ports the standalone, branding, provider, voice, Activity, and
+- **Source-based fork track**: the `ccode` branch ports the standalone, branding, provider, Activity, and
   Computer Use work into TypeScript on top of upstream, replacing binary patching.
-- **Cross-platform** — Windows and macOS builds, including native desktop-automation and audio-capture backends.
+- **Cross-platform**: Windows and macOS builds, including native desktop-automation backends.
 - **Benchmarks** — a reproducible suite for cold start, idle memory, and disk footprint, published with each release.
 - **More desktops** — verification across GNOME, KDE, and tiling compositors.
 

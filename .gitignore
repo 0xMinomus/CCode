@@ -19,7 +19,6 @@
 .obsidian/
 
 # Local models, sync state, and captured media.
-/services/voice/model/
 /services/model-sync/catalog.json
 /services/model-sync/state.json
 /services/model-sync/sync.lock

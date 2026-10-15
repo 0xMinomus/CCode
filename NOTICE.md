@@ -13,8 +13,9 @@ licensed under the Apache License, Version 2.0 (see [LICENSE](LICENSE)).
 CCode tracks a specific upstream release. The identities and SHA-256 checksums of the artifacts this workspace
 builds from are recorded in [`project.json`](project.json); the current baseline is ZCode **3.14.5**.
 
-This repository is a patch workspace: it does not redistribute upstream source or binaries. Upstream artifacts are
-obtained from the vendor release and verified against the pinned checksums before any build runs.
+This repository is a patch workspace. Its Linux release artifacts redistribute the patched vendor runtime together
+with CCode additions. Vendor artifacts are verified against pinned checksums before the build; this is not a build
+from an identified upstream source commit. Dependency licenses and Electron/Chromium notices remain in the payload.
 
 ## Modifications
 
@@ -28,13 +29,13 @@ Every change relative to the pinned upstream build is recorded in [`docs/CHANGEL
   directories; no cross-installation import happens automatically.
 - **Provider catalog** — the Zhipu account family (Z.ai, BigModel, coding plans) is removed; a local 9Router provider
   template is added, and the built-in catalog refresh from the account endpoint is disabled.
-- **Local features** — Activity dashboard computed from the local session database, bilingual (Indonesian–English)
-  local voice input, and a Linux desktop Computer Use backend exposed over MCP.
+- **Local features**: Activity dashboard computed from the local session database and a Linux desktop Computer Use
+  backend exposed over MCP.
 - **Bundled default skills** — 32 agent skills (antislop, GSAP, UI design, and engineering workflow) ship inside the
   app resources at `glm/packages/bundled-skills/skills`. Sources, provenance, and per-group license status are listed
   in [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md); several of them declare no license upstream.
-- **MCP catalog**: Context7, Websearch, and Codegraph ship as preinstalled servers. Optional integrations can be
-  installed and checked from the MCP settings page. Upstream package licenses remain applicable.
+- **MCP catalog**: Context7 and Codegraph ship as preinstalled servers. Optional integrations can be installed from
+  the native MCP settings page. n8n is a separate Marketplace download. Upstream package licenses remain applicable.
 - **Identity** — every shipped contract carries the CCode name: environment variables (`CCODE_*`), IPC channels, the
   `ccode://` URL scheme, the `.ccode` storage layout, plugin ids and directories, process titles, and the agent system
   prompt. The upstream spelling survives only in the pinned upstream artifacts (never edited, verified by checksum) and
@@ -52,4 +53,4 @@ for that purpose by Apache-2.0 §6.
 
 Third-party components keep their own terms. See [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) for the full list,
 including the Electron/Chromium notices shipped inside the application directory, `screen-mcp` (FSL-1.1-ALv2),
-the Whisper voice model, and the bundled default skills (MIT, Apache-2.0, and undeclared).
+and the bundled default skills (MIT, Apache-2.0, and undeclared).

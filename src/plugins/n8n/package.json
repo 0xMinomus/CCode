@@ -2,5 +2,9 @@
   "name": "ccode-n8n-plugin",
   "version": "1.0.0",
   "private": true,
-  "type": "commonjs"
+  "type": "commonjs",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "n8n-mcp": "2.92.1"
+  }
 }

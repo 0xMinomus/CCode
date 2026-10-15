@@ -8,7 +8,6 @@ Berkas lisensi proyek ada di root: `LICENSE` (Apache-2.0 verbatim) dan `NOTICE.m
 - ZCode packaged baseline 3.14.5: identitas dan SHA256 di project.json. Build binary ini belum diverifikasi setara dengan build dari commit upstream (tag rilis terakhir upstream saat pencatatan: `v3.14.3`; `main` = 3.15.1), jadi perlakukan binary sebagai artefak vendor, bukan salinan repo.  Backend agent di luar ASAR (`app/resources/glm/zcode.cjs`) dipin terpisah sebagai `baselines/zcode-3.14.5-original-agent.cjs` dengan hash `agent_baseline_sha256`. Binary Electron/Chromium membawa LICENSE.electron.txt dan LICENSES.chromium.html di app/. AppImage asli tidak dimodifikasi.
 - Varian standalone memakai identitas `ccode` (package name, launcher, WM class) dan namespace data sendiri. Perubahan identitas ini tidak mengubah lisensi upstream; tetap tidak ada lisensi tunggal untuk seluruh aplikasi bundled.
 - screen-mcp: commit `14b88dee70db3a72281b566494e94ccf87258c28`, dari https://github.com/88plug/screen-mcp. Lisensi upstream FSL-1.1-ALv2 disimpan di services/desktop/LICENSE. Metadata Git asli dipertahankan di vendor-metadata dan tidak untuk commit source project.
-- faster-whisper dan dependency: versi yang bekerja pada migrasi tercatat pada services/voice/requirements.txt. Model lokal berasal dari Systran/faster-whisper-small di Hugging Face. Periksa terms masing-masing sebelum redistribusi, bukan hanya lisensi patch lokal.
 - Metadata reasoning: snapshot OpenCode/models.dev melalui URL yang tercatat di services/model-sync/sync.py.
 
 Jangan menyertakan credentials, portal restore tokens, task history, rekaman pribadi, atau config backup pengguna dalam distribusi/project commit.
@@ -27,15 +26,15 @@ Katalog MCP menggunakan package upstream berikut. Dependency transitif dan teks 
 
 Context7 membutuhkan jaringan ketika tool dokumentasi dipanggil dan dapat terkena rate limit. Codegraph mengindeks proyek lokal. Ripgrep memakai binary pencarian native `@vscode/ripgrep-linux-x64`.
 
-Websearch, Obsidian, dan GitHub tidak ikut dibundel. n8n-mcp ikut runtime plugin n8n; telemetry upstream dinonaktifkan.
+Websearch, Obsidian, dan GitHub tidak ikut dibundel. n8n-mcp 2.92.1 beserta dependency transitifnya dikirim dalam zip plugin terpisah dari Plugin Marketplace, bukan runtime aplikasi; telemetry upstream dinonaktifkan.
 
 Installer npm yang dibundel menggunakan Artistic-2.0. Dukungan TypeScript opsional (`typescript` dan `typescript-language-server`) menggunakan Apache-2.0. Package Codegraph dipakai melalui engine native; hook, prompt, dan installer plugin Claude tidak dimasukkan ke runtime CCode.
 
 ## Skill plugin n8n (`src/plugins/n8n/skills`)
 
-15 skill disalin lengkap dari library operator `~/.omp/agent/skills`: `using-n8n-mcp-skills` dan seluruh 14 skill berawalan `n8n-`. README pada tujuh skill inti mencantumkan kredit Romuald Członkowski (aiadvisors.pl/en) dan koleksi n8n-skills. Seluruh referensi dan enam asset self-hosting dipertahankan; `.env.*.example` hanya berisi contoh, bukan credentials.
+15 skill (`using-n8n-mcp-skills` dan seluruh 14 skill berawalan `n8n-`, 85 berkas) berasal dari [`czlonkowski/n8n-skills`](https://github.com/czlonkowski/n8n-skills/tree/cb6caa7b3ae8d4206c768d7f69f598438ef25595), commit `cb6caa7b3ae8d4206c768d7f69f598438ef25595`. Isi berkas sama dengan sumber itu, kecuali frontmatter `SKILL.md` yang disesuaikan untuk scanner CCode; body skill, referensi, dan enam asset self-hosting dipertahankan. `.env.*.example` hanya berisi contoh, bukan credentials. SHA256 tar sumber: `d63e68e8bf98fbd800d062573e3f09f39a88a3a3601ccfde13fe8e6515f13a9d`.
 
-Berkas skill yang terpasang tidak menyatakan lisensi redistribusi. Lisensi MIT **n8n-mcp** tidak otomatis berlaku untuk skill tersebut. Payload skill digunakan pada workspace pribadi atas permintaan pemilik; jangan merilisnya secara publik sebelum izin/lisensi sumber dipastikan. Skill n8n menjadi milik plugin, bukan pack skill Default, sehingga hanya aktif ketika plugin diaktifkan.
+Lisensi [MIT upstream](https://github.com/czlonkowski/n8n-skills/blob/cb6caa7b3ae8d4206c768d7f69f598438ef25595/LICENSE), Copyright (c) 2025 Romuald Członkowski, disertakan lengkap di `src/plugins/n8n/skills/LICENSE` bersama provenance plugin. Skill n8n menjadi milik plugin marketplace, bukan pack skill Default, sehingga hanya aktif ketika plugin diaktifkan.
 
 
 ## Default skills yang dibundel (`src/skills`)
@@ -46,10 +45,14 @@ Berkas skill yang terpasang tidak menyatakan lisensi redistribusi. Lisensi MIT *
 |---|---|---|---|
 | Antislop (4) | `antislop`, `antislop-code`, `antislop-copywriting`, `antislop-human` | plugin marketplace `anti-slop` v3.2.20 (Oh My Pi) | **MIT**, Copyright (c) 2026 Miqdad Badjuber — teks lengkap di bawah |
 | GSAP (8) | `gsap-core`, `gsap-frameworks`, `gsap-performance`, `gsap-plugins`, `gsap-react`, `gsap-scrolltrigger`, `gsap-timeline`, `gsap-utils` | skill resmi GSAP dari library skill Oh My Pi | **MIT** (dinyatakan di frontmatter `license: MIT` tiap SKILL.md) |
-| UI/desain (3) | `impeccable`, `design-taste-frontend`, `emil-design-eng` | library skill Oh My Pi | `impeccable`: **Apache-2.0** (frontmatter); dua lainnya tidak menyatakan lisensi di berkasnya |
+| UI/desain (3) | `impeccable`, `design-taste-frontend`, `emil-design-eng` | library skill Oh My Pi; sumber resmi Emil dipin di bawah | `impeccable`: **Apache-2.0** (frontmatter); `emil-design-eng`: **MIT**; `design-taste-frontend` tidak menyatakan lisensi di berkasnya |
 | Workflow (17) | `code-review`, `diagnosing-bugs`, `investigate-first`, `lean-build`, `migration`, `prototype`, `full-output-enforcement`, `safe-refactor`, `surgical-patch`, `tdd`, `verify-and-stop`, `resolving-merge-conflicts`, `pr`, `research`, `wizard`, `find-skills`, `handoff` | library skill Oh My Pi milik operator (`~/.omp/agent/skills`) | tidak ada lisensi yang dinyatakan di berkas sumber; `pr` mencantumkan kredit `show-me` (Dex Horthy, Humanlayer) di frontmatter |
 
+`emil-design-eng/SKILL.md` sama persis dengan [sumber resmi](https://github.com/emilkowalski/skills/blob/2d228630ba1446365f614a108cb8252f1feda202/skills/emil-design-eng/SKILL.md), commit `2d228630ba1446365f614a108cb8252f1feda202`, SHA256 `ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939`. Lisensi [MIT upstream](https://github.com/emilkowalski/skills/blob/2d228630ba1446365f614a108cb8252f1feda202/LICENSE), Copyright (c) 2026 Emil Kowalski, disertakan di `src/skills/emil-design-eng/LICENSE`.
+
 Catatan: skill tanpa pernyataan lisensi dibundel atas keputusan pemilik workspace untuk pemakaian pribadi. Karena tidak ada lisensi eksplisit, **jangan mengklaim lisensi apa pun untuk berkas itu** dan jangan mempublikasikannya sebagai bagian rilis publik tanpa menanyakan pemiliknya dulu. Frontmatter tiap skill disesuaikan ke format yang diterima aplikasi (`name`, `description`, `when_to_use`, `license`, `metadata`): kunci Claude-Code seperti `allowed-tools`, `argument-hint`, `user-invocable`, `disable-model-invocation`, dan `version` dipindahkan ke dalam `metadata` supaya tidak memicu peringatan `skill_invalid_frontmatter`.
+
+Pemilik workspace mengizinkan publikasi payload lengkap pada 2026-10-15 dengan tujuan distribusi gratis dan open source. Izin pemilik workspace ini tidak membuktikan hak redistribusi materi pihak ketiga: lisensi `design-taste-frontend` dan 17 skill workflow di tabel masih belum terverifikasi. Distribusi tanpa biaya tidak menggantikan izin pemegang hak cipta; jangan menyatakan seluruh payload memiliki lisensi Apache-2.0 atau MIT.
 
 ```text
 MIT License

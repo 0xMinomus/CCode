@@ -41,7 +41,7 @@ class PromotionTests(unittest.TestCase):
         self.staged = self.root / 'runtime/build/resources'
         self.target = self.root / 'app/resources'
         self.names = ['app.asar', 'glm/ccode.cjs', 'glm/.node-bundle-meta.json', 'app-update.yml',
-                      'voice/main.cjs', 'activity/main.cjs',
+                      'activity/main.cjs',
                       'token-savers/main.cjs', 'token-savers/token-savers-runtime.cjs',
                       *apply_build.default_commands.resource_files(),
                       'marketplace/marketplace-compat.cjs',
@@ -161,6 +161,34 @@ class PromotionTests(unittest.TestCase):
         patch = mock.patch.object(apply_build, 'ROOT', self.root)
         patch.start()
         self.addCleanup(patch.stop)
+
+    def test_retired_resource_is_archived_and_restored_if_promotion_fails(self):
+        retired = self.target / 'voice'
+        retired.mkdir()
+        (retired / 'main.cjs').write_bytes(b'old retired module')
+        with mock.patch.object(apply_build, 'refresh_derived_catalogs', side_effect=OSError('cache failed')):
+            with self.assertRaisesRegex(OSError, 'cache failed'):
+                apply_build.main()
+        self.assertEqual((retired / 'main.cjs').read_bytes(), b'old retired module')
+        self.assert_previous_resources()
+        apply_build.main()
+        self.assertFalse(retired.exists())
+        archived = list((self.root / 'runtime/backups').glob('*/retired/voice/main.cjs'))
+        self.assertEqual(len(archived), 1)
+        self.assertEqual(archived[0].read_bytes(), b'old retired module')
+
+    def test_retired_resource_in_stage_or_inventory_refuses_apply(self):
+        proof = json.loads((self.staged / 'build-manifest.json').read_text())
+        for inventory_only in (False, True):
+            with self.subTest(inventory_only=inventory_only):
+                if inventory_only:
+                    proof['sha256']['voice/main.cjs'] = 'obsolete'
+                else:
+                    (self.staged / 'voice').mkdir()
+                with self.assertRaisesRegex(ValueError, 'Retired resource survived staging'):
+                    apply_build.verify_retired_resources(self.staged, proof)
+                if not inventory_only:
+                    (self.staged / 'voice').rmdir()
 
     def test_modified_staged_resource_cannot_replace_current_app(self):
         (self.staged / 'glm/ccode.cjs').write_bytes(b'corrupt')

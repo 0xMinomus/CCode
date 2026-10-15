@@ -8,7 +8,7 @@ Patch renderer:
 
 1. Halaman `iOn` asli diubah menjadi `originalCuaSettings`.
 2. Wrapper memilih `LinuxCuaSettings` untuk workspace Linux lokal; workspace lain memakai halaman asli.
-3. Composer `mit` memilih pintasan Linux; `CCodeVoiceInput` ditambahkan di dekat toolbar Computer Use.
+3. Composer `mit` memilih pintasan Computer Use Linux.
 4. Source custom ditambahkan pada modul renderer yang sama sehingga dapat menggunakan React dan komponen bundled.
 
 Simbol versi ini: `Q` = React, `$` = JSX runtime, `X` = Button, `bA/xA/SA` = dropdown root/trigger/content, `TA/EA` = radio group/item, `DA/OA` = label/separator, `Iv` = MCP store, `gv` = settings hook, `uA` = Tooltip (dipakai sel heatmap Activity dan pintasan Computer Use; props `title`, `side`, `children`). Simbol dan anchor dapat berubah pada update upstream. Jangan menebak bahwa nama ini stabil antarversi.
@@ -85,17 +85,25 @@ Lokalisasi payload menulis ulang hanya label yang dibaca UI dan agent, pada sali
 
 ### Plugin n8n
 
-`src/plugins/n8n/` menyimpan manifest native, entrypoint `dist/mcp/server.js`, dan 15 skill n8n beserta seluruh berkas pendukungnya. `services/mcp/stage.cjs` menyalin plugin ke `resources/mcp/plugins/n8n` dan memasang `n8n-mcp` 2.92.1 dari lockfile. Seluruh payload ikut inventori SHA256, promosi, dan rollback resource MCP yang sudah ada.
+`src/plugins/n8n/` menyimpan manifest native, entrypoint `dist/mcp/server.js`, 15 skill beserta referensinya, dan lockfile khusus `n8n-mcp` 2.92.1. `python3 scripts/pack_n8n_plugin.py` memasang dependency dengan `npm ci --omit=dev --ignore-scripts`, lalu membuat `runtime/release-plugin/ccode-n8n-plugin-1.0.0.zip` dengan urutan berkas, timestamp, mode, dan kompresi tetap. Shim symlink `.bin` tidak diperlukan karena entrypoint dimuat langsung; lisensi dependency, lisensi skill MIT, serta `provenance.json` tetap ikut zip.
 
-`src/local_only/n8n_plugin.py` menambahkan registry lokal dengan root `../mcp/plugins/n8n`, relatif terhadap entrypoint agent di `resources/glm`. Native runtime menyemai cache plugin, membangun listing Marketplace, dan memakai `__ccode-plugin-host` untuk menjalankan entrypoint dengan binary Electron sebagai Node. Tidak membutuhkan Node/npm sistem dan tidak mengunduh server saat pemakaian pertama.
+`src/plugins/n8n-marketplace.json` memin URL release publik `n8n-plugin-v1.0.0` dan SHA256 zip. `src/local_only/n8n_plugin.py` menyisipkan entri itu pada penggabungan manifest Marketplace resmi, bukan registry plugin bawaan. Refresh katalog tetap mempertahankan entri yang dipin. Tanpa **Install**, tidak ada payload n8n maupun cache n8n yang disemai. Installer native mengunduh zip, memverifikasi SHA256, lalu memasangnya pada namespace plugin seperti plugin lain. Perlu jaringan hanya untuk unduhan; akses instance n8n tetap mengikuti endpoint pengguna.
 
-Plugin tersedia tetapi mati secara default. Enable/disable native menjadi satu gerbang untuk MCP `plugin:n8n:n8n` dan seluruh 15 skill; tidak ada salinan n8n di pack skill Default. Form native **Advanced details → Configuration** menyimpan URL instance, API key, serta token MCP instance bila fitur terkait memerlukannya. API key/token memakai field `sensitive` dan hanya diinterpolasikan ke environment server, bukan argv atau URL. Konfigurasi disimpan lokal dalam file private, bukan dienkripsi oleh keychain.
+Database `n8n-mcp/data/nodes.db` berukuran 69.464.064 byte, lebih besar dari batas native 50 MiB per berkas. Hanya zip dengan SHA256 yang sama persis dengan pin n8n mendapat batas 80 MiB setelah pemeriksaan hash; zip lain tetap 50 MiB. Batas path, symlink, jumlah entri, total ekstraksi, dan ukuran unduhan tidak berubah.
+
+Resolver MCP plugin memakai host native `__ccode-plugin-host` dengan binary Electron sebagai Node, termasuk untuk hasil unduhan yang tidak melewati seeder plugin bawaan. Entrypoint mencari ekspor publik `n8n-mcp` di `node_modules` plugin sendiri, lalu memuat executable `mcp/stdio-wrapper.js` relatif terhadap hasil resolver itu; deep import package ditolak oleh kontrak `exports` upstream. Tidak membutuhkan Node/npm sistem atau instalasi dependency ketika plugin dijalankan.
+
+`services/mcp/dependency-audit.json` mencatat perbandingan lockfile sebelum/sesudah: 56 paket khusus n8n dikeluarkan dari runtime aplikasi, 346 paket tetap dengan resolusi yang sama. `n8n-mcp`, `sql.js`, dan `better-sqlite3` tidak ikut aplikasi; SDK MCP, `zod`, serta pohon OpenTelemetry yang dibutuhkan integrasi lain dipertahankan. `services/mcp/stage.cjs` juga menghapus sisa `plugins/n8n` pada staging lama.
+
+Setelah dipasang, enable/disable native menjadi satu gerbang untuk MCP `plugin:n8n:n8n` dan seluruh 15 skill; tidak ada salinan n8n di pack skill Default. Form native **Advanced details → Configuration** menyimpan URL instance, API key, serta token MCP instance bila fitur terkait memerlukannya. API key/token memakai field `sensitive` dan hanya diinterpolasikan ke environment server, bukan argv atau URL. Konfigurasi disimpan lokal dalam file private, bukan dienkripsi oleh keychain.
 
 Entrypoint membatasi endpoint ke HTTPS, kecuali HTTP loopback, dan menolak URL yang memuat credentials/query/fragment. Data runtime memakai `CCODE_PLUGIN_DATA`; telemetry upstream dimatikan melalui `N8N_MCP_TELEMETRY_DISABLED=true`. Key kosong atau URL tidak valid menghasilkan error konfigurasi, bukan koneksi palsu.
 
 Policy SSRF upstream memakai `strict` untuk endpoint remote dan `moderate` untuk loopback yang dipilih eksplisit, agar instance lokal dapat diakses. Keduanya mempertahankan larangan endpoint metadata cloud dan alamat private non-loopback; tidak ada mode `permissive` atau pelemahan guard secara global.
 
 Scanner Skills host memakai resolver `Up()` untuk lokasi config dan user skills. `storage.py` mengarahkannya ke `Ai()` (data root standalone), sehingga switch plugin dibaca dari namespace yang sama dengan cache dan agent. Sebelumnya scanner membaca enablement dari HOME asli walaupun cache sudah memakai namespace; plugin opt-in tidak muncul di Settings → Skills.
+
+`tests/test_n8n_plugin.py` menyediakan smoke native dengan manifest lokal dan zip aktual: root terisolasi tanpa install, unduhan HTTP loopback dengan hash yang sama, install, enable, handshake MCP lewat Electron, listing 15 skill, lalu disable. Jalankan setelah pack dengan `python3 -m unittest discover -s tests -p test_n8n_plugin.py -v`; pemeriksaan tidak menghubungi instance n8n atau menjalankan workflow.
 
 Patch standalone hidup di `src/local_only/`. `rebrand.py` berjalan paling awal — setiap pembacaan arsip lewat view `Rebranded` sudah membawa identitas CCode — modul lain setelah patch renderer, dan `branding.py` paling akhir:
 
@@ -109,7 +117,7 @@ Patch standalone hidup di `src/local_only/`. `rebrand.py` berjalan paling awal �
 8. `catalog.py` membersihkan katalog provider native dari keluarga Zhipu dan menambahkan template **9Router** (api-key, baseUrl `http://127.0.0.1:20128/v1`, model `combo/coding-harian`) secara idempotent; `apply_build.py` juga menyegarkan cache katalog per-endpoint di namespace karena salinan itu yang menang atas file bundled, lalu menghapus marker `ccode-builtin-refresh.json` yang dijadwalkan oleh host.
 9. Refresh katalog built-in dari endpoint akun dimatikan di host: facade `refreshCCodeBuiltin` dan `CCodeBuiltinRemoteSynchronizer.refresh` menjawab `"skipped"`, jadi tidak ada fetch ke `https://zcode.z.ai` dan release upstream tidak bisa menimpa katalog yang sudah dipatch (tanpa Zhipu, dengan 9Router).
 10. Fitur akun/langganan dihapus dari akarnya: tombol Upgrade composer, section plan/usage di menu profil, tab app/coding-plan, grup **Providers** akun di Model settings (hanya Custom providers + template katalog yang tersisa; loading gate akun dipaku mati), dan remote control web/mobile (trigger, dialog, channel, hook status). Tanpa provider terkonfigurasi, pane detail Model settings merender empty state lokal (`CCodeProviderEmptyState`, label CCode sendiri) alih-alih kartu `common.loading` yang menunggu item navigasi yang tidak ada. Halaman Usage stats diganti **Activity** lokal: `src/main/activity.cjs` membaca `CCODE_SESSION_DB_PATH` (`cli/db/db.sqlite`) read-only lewat `node:sqlite` (fallback snapshot bila WAL menolak handle read-only) dan menghitung prompt `role=user` per hari (seluruh riwayat) plus streak serta rekap per tahun; renderer memakainya lewat `window.ccodeActivity` (`src/renderer/activity-panel.js`). Katalog marketplace disaring di agen (`requiresPaidPlan` dibuang sebelum manifest), badge Coding Plan dimatikan di renderer, dan label akun di `IntlProvider-B-44tSXQ.js` ikut dipatch.
-11. `build-manifest.json` menyimpan SHA256 hasil staging, termasuk `app.asar`, `glm/ccode.cjs`, `glm/.node-bundle-meta.json`, `app-update.yml`, `voice/main.cjs`, `activity/main.cjs`, `token-savers/main.cjs`, `token-savers/token-savers-runtime.cjs`, `config/provider/ccode-builtin.json`, dan plan `plugin_payload` (berkas, rename direktori, removal). `scripts/apply_build.py` menolak promote bila checksum inventory tidak cocok dan mengembalikan resource yang dipromosikan bila penggantian gagal. Promosi payload plugin menjalankan rename direktori, removal (dicadangkan), lalu rewrite berkas, menulis jurnal rollback ke `runtime/backups/<stamp>/plugin-payload.json`, dan pada akhirnya memindahkan nama resource pra-rebrand (`glm/<ejaan-lama>.cjs` dan `config/provider/<ejaan-lama>-builtin.json`) ke cadangan. Apply juga menyisakan **dua** cadangan terbaru di `runtime/backups` (`BACKUP_RETENTION`) supaya cadangan penuh tiap promote tidak menumpuk tanpa batas.
+11. `build-manifest.json` menyimpan SHA256 hasil staging, termasuk `app.asar`, `glm/ccode.cjs`, `glm/.node-bundle-meta.json`, `app-update.yml`, `activity/main.cjs`, `token-savers/main.cjs`, `token-savers/token-savers-runtime.cjs`, prompt dan main module `commands/`, `marketplace/marketplace-compat.cjs`, `config/provider/ccode-builtin.json`, dan plan `plugin_payload` (berkas, rename direktori, removal). `scripts/apply_build.py` menolak promote bila checksum inventory tidak cocok dan mengembalikan resource yang dipromosikan bila penggantian gagal. Promosi payload plugin menjalankan rename direktori, removal (dicadangkan), lalu rewrite berkas, menulis jurnal rollback ke `runtime/backups/<stamp>/plugin-payload.json`, dan pada akhirnya memindahkan nama resource pra-rebrand (`glm/<ejaan-lama>.cjs` dan `config/provider/<ejaan-lama>-builtin.json`) ke cadangan. Apply juga menyisakan **dua** cadangan terbaru di `runtime/backups` (`BACKUP_RETENTION`) supaya cadangan penuh tiap promote tidak menumpuk tanpa batas. Resource Voice yang dihapus dibersihkan dari staging; resource deployed lama dipindahkan ke `retired/voice` dalam backup dan dikembalikan jika promote gagal. Packaging menolak AppDir yang masih membawanya.
 12. `src/local_only/token_savers.py` memasang menu di bawah Memory, label locale, dan integrasi prompt/approval pada agent dari baseline. `src/main/token-savers.cjs` dan `src/main/token-savers-runtime.cjs` menyediakan persistence privat, bridge IPC lokal, RTK rewrite, dan data chart; keduanya ikut hash serta rollback.
 
 Anchor cloud terikat versi upstream dan sengaja gagal bila tidak unik. Jangan melemahkan assertion agar build terlihat berhasil. `cloud.guard_main` menutup celah yang tidak terlihat oleh anchor: setelah semua edit, build menolak main bundle yang masih mereferensikan binding/layanan yang sudah dihapus (`REMOVED_MAIN_SYMBOLS`) atau referensi `webRemoteControlManager` — hook `window closed` dan port telemetri host berjalan pada pemakaian normal, jadi referensi sisa berarti crash main process, bukan kode mati. `cloud.guard_remote_ipc_dependencies` memeriksa hal yang sama untuk region registrasi IPC yang diganti: setiap `e.<service>` yang dipanggil handler terdaftar harus dikirim ke `Ik({...})`, karena provider lokal (Docker/WSL/SSH) pernah hilang bersama region …
@@ -149,14 +157,6 @@ Server MCP desktop tidak memuat model OCR/OmniParser saat start; sesi dibangun s
 
 CPU saat idle terukur rendah (sekitar 1% untuk seluruh pohon proses setelah startup); timer model-sync memakai 0,17 sampai 0,25 detik CPU dan 60 MB transient sekali per menit.
 
-## Voice
-
-Preload mengekspos `window.ccodeVoice.start/stop/cancel`. IPC `ccode-voice:*` hanya menerima main frame lokal `out/renderer/index.html`. `src/main/voice.cjs`, yang disalin ke `app/resources/voice/main.cjs`, menemukan root project melalui `project.json`, lalu memakai `services/voice`.
-
-Rekaman `pw-record` disimpan di direktori privat sementara, maksimal 60 detik. Worker Python dimuat saat pertama dipakai, mempertahankan model hangat selama aplikasi hidup, dan menerima request JSON via stdio. Audio didekode FFmpeg menjadi NumPy float32, lalu Whisper melakukan transkripsi. Jalur ini menghindari ketidakcocokan API decode PyAV yang ditemukan saat setup.
-
-`terminology.py` memberikan prompt/hotwords bilingual dan koreksi terbatas “komputer rius/use” → “computer use”. Jangan mengubah normalizer menjadi pengganti umum yang menebak maksud semua ucapan.
-
 ## Model sync
 
 `services/model-sync/sync.py` mengerjakan dua hal untuk namespace standalone:
@@ -176,6 +176,8 @@ Stage membersihkan `__pycache__`/`.pyc`, menghapus console script venv yang meny
 
 Runtime AppImage type 2 diambil ke `runtime/release-input/` dengan SHA256 yang dipin di skrip; hasil build menulis `SHA256SUMS` dan `release-notes.md`. Paket RPM mematikan `check-rpaths` bawaan Fedora karena bundle ini membawa wheel pihak ketiga dengan runpath `/usr/local/lib64`.
 
+Cutover Linux 2026-10-15 mengirim hanya `model-sync,desktop`: Voice dipensiunkan lewat promosi/rollback, sedangkan n8n dan seluruh dependency eksklusifnya pindah ke zip Marketplace. Ketiga artifact akhir lolos checksum; AppImage dan RPM hasil instalasi lolos smoke workspace/12 command pada root terisolasi. Payload RPM/deb masing-masing berisi 13.612 berkas reguler dan hash inti sama. Ukuran, checksum, serta batas verifikasi dicatat di `linuxrelease.md` dan release notes; tidak ada klaim dukungan lintas distro atau Windows dari hasil ini.
+
 ## Data pengguna
 
 Aplikasi berjalan sebagai varian mandiri. Root default `~/.local/share/ccode`:
@@ -186,7 +188,7 @@ Aplikasi berjalan sebagai varian mandiri. Root default `~/.local/share/ccode`:
 | `data/.ccode/cli/db/db.sqlite` | database sesi/message agent |
 | `data/.ccode/cli/config.json` | config MCP pengguna |
 | `data/.ccode/workspace`, `plugin-workspace` | workspace percakapan dan plugin |
-| `electron/` | profil Electron (localStorage voice, cookies) |
+| `electron/` | profil Electron (localStorage, cookies) |
 | `model-sync/` | state, cache, dan backup model sync varian ini |
 
 `CCODE_STANDALONE_ROOT` dapat memindahkan seluruh root (dipakai untuk pengujian terisolasi). `scripts/run.sh` menetapkan env namespace dan menahan lock operasi bersama (`~/.local/share/.ccode.operations.lock`); menjalankan `app/ccode` langsung juga memakai root yang sama karena bootstrap env berjalan sebelum modul membaca path. `make install` memindahkan namespace pra-rebrand (`~/.local/share/<rebrand.PREVIOUS_NAMESPACE>`) ke root ini satu kali dan tidak menyalinnya; `scripts/data_backup.py` memakai root baru sebagai default dan menyimpan snapshot di `~/.local/share/ccode-backups`.

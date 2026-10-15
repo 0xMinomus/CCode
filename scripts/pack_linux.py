@@ -5,9 +5,9 @@ The merged release tree mirrors this repository closely enough that the packaged
 resolves what it looks for at runtime:
 
     <prefix>/app/                     AppDir (Electron binary + resources)
-    <prefix>/services/<component>/    voice, desktop (screen-mcp), model-sync
+    <prefix>/services/<component>/    desktop (screen-mcp), model-sync
     <prefix>/scripts/data_backup.py   imported by model-sync
-    <prefix>/project.json             voice locates the project root by walking up to it
+    <prefix>/project.json             packaged identity and upstream provenance
     <prefix>/ccode                    launcher (same namespace contract as scripts/run.sh)
 
 Nothing here mutates the working tree: the stage is built with hardlinks and every file
@@ -34,8 +34,8 @@ DEFAULT_VERSION = '1.0.0'
 HOMEPAGE = 'https://github.com/0xMinomus/CCode'
 MAINTAINER = 'CCode maintainers <0xMinomus@users.noreply.github.com>'
 PREFIX = pathlib.Path('/opt/ccode')
-COMPONENTS = {'model-sync': 'services/model-sync', 'voice': 'services/voice', 'desktop': 'services/desktop'}
-ALL_COMPONENTS = ('model-sync', 'voice', 'desktop')
+COMPONENTS = {'model-sync': 'services/model-sync', 'desktop': 'services/desktop'}
+ALL_COMPONENTS = ('model-sync', 'desktop')
 ICON_SIZES = (16, 24, 32, 48, 64, 128, 256, 512, 1024)
 RUNTIME_NAME = 'runtime-x86_64'
 RUNTIME_URL = 'https://github.com/AppImage/type2-runtime/releases/download/continuous/' + RUNTIME_NAME
@@ -79,7 +79,7 @@ Remove the application files with the package manager, then delete your data:
 
 ```sh
 sudo dnf remove ccode        # or: sudo apt remove ccode
-rm -rf ~/.local/share/ccode  # tasks, sessions, provider keys, voice settings, MCP config
+rm -rf ~/.local/share/ccode  # tasks, sessions, provider keys, settings, MCP config
 ```
 
 The AppImage is a single file: delete it and, if you want the data gone, the namespace above.
@@ -279,6 +279,9 @@ def write_metadata(tree, version):
 
 
 def stage_tree(destination, components, version):
+    retired = APPLIED / 'resources/voice'
+    if retired.exists() or retired.is_symlink():
+        raise SystemExit('Retired Voice resource remains in app/; run `make build` and `make apply`')
     if destination.exists():
         shutil.rmtree(destination)
     copy_tree(APPLIED, destination / 'app')
@@ -354,7 +357,7 @@ def build_deb(package, out, version, installed_size_kb):
             f'Maintainer: {MAINTAINER}',
             f'Installed-Size: {installed_size_kb}',
             'Depends: python3 (>= 3.10)',
-            'Recommends: ffmpeg, pipewire-utils, python3-gobject, gstreamer1-plugins-base',
+            'Recommends: python3-gobject, gstreamer1-plugins-base',
             f'Homepage: {HOMEPAGE}',
             'Description: CCode, a local-first coding agent workspace',
             ' An unofficial Apache-2.0 fork of ZCode with no account requirement: your tasks,',
@@ -383,8 +386,6 @@ License: Apache-2.0
 URL: {HOMEPAGE}
 AutoReqProv: no
 Requires: python3 >= 3.10
-Recommends: ffmpeg
-Recommends: pipewire-utils
 Recommends: python3-gobject
 Recommends: gstreamer1-plugins-base
 BuildArch: x86_64
@@ -442,17 +443,28 @@ def write_release_notes(out, version, components, artifacts):
         f'# CCode {version} (Linux x86_64)',
         '',
         f'Upstream artifact: ZCode {UPSTREAM_VERSION} ({PROJECT["baseline"]})',
-        'License: Apache-2.0. This is an unofficial fork; ZCode is not affiliated with it.',
+        'Project code: Apache-2.0. Bundled components retain their own terms; see docs/THIRD_PARTY.md.',
+        'This is an unofficial fork; ZCode is not affiliated with it.',
+        f'Baseline ASAR SHA256: `{PROJECT["baseline_sha256"]}`.',
         '',
         '## Contents',
         '',
         '- The desktop application and its bundled agent backend, skills, commands, MCP catalog.',
         f'- Optional services: {", ".join(components) if components else "none"}.',
+        '- Voice is removed. n8n and its 15 skills are a separate Plugin Marketplace download.',
+        '',
+        '## Limits',
+        '',
+        '- Unsigned Linux artifacts. Windows is not included or verified.',
+        '- The vendor baseline is patched, not rebuilt from an identified upstream source commit.',
+        '- Other distributions and clean machines have not been verified.',
+        '- Computer Use still needs a compatible Python environment and system desktop libraries.',
+        '- Redistribution rights for design-taste-frontend and 17 workflow skills remain unverified.',
+        '  The workspace owner authorized publication; free distribution does not replace third-party permission.',
         '',
         '## Requirements',
         '',
         '- Linux x86_64 with a desktop session; Python 3.10+ for the optional services.',
-        '- Voice input needs PipeWire tools (`pw-record`) plus `ffmpeg`.',
         '- Computer Use needs the system layer that cannot be bundled: PyGObject, GStreamer',
         '  with base and PipeWire plugins, PipeWire, a portal backend, and `wl-clipboard`.',
         '',

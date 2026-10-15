@@ -4,6 +4,7 @@ import stat
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -36,16 +37,26 @@ class LauncherContractTests(unittest.TestCase):
 
 class StageHygieneTests(unittest.TestCase):
     def make_venv(self, root):
-        venv = root / 'services/voice/.venv'
+        venv = root / 'services/desktop/.venv'
         (venv / 'bin').mkdir(parents=True)
         (venv / 'lib/__pycache__').mkdir(parents=True)
         (venv / 'lib/__pycache__/module.cpython-314.pyc').write_bytes(b'cache')
         (venv / 'bin/python3').write_text('link placeholder\n')
-        (venv / 'bin/pip').write_text(f'#!{pathlib.Path.home()}/repo/services/voice/.venv/bin/python\n')
+        (venv / 'bin/pip').write_text(f'#!{pathlib.Path.home()}/repo/services/desktop/.venv/bin/python\n')
         (venv / 'pyvenv.cfg').write_text(
             'home = /usr/bin\ninclude-system-site-packages = false\nversion = 3.14.8\n'
-            f'command = /usr/bin/python3 -m venv {pathlib.Path.home()}/repo/services/voice/.venv\n')
+            f'command = /usr/bin/python3 -m venv {pathlib.Path.home()}/repo/services/desktop/.venv\n')
         return venv
+
+    def test_release_refuses_retired_deployed_resources(self):
+        self.assertEqual(pack_linux.ALL_COMPONENTS, ('model-sync', 'desktop'))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            app = root / 'app'
+            (app / 'resources/voice').mkdir(parents=True)
+            with mock.patch.object(pack_linux, 'APPLIED', app):
+                with self.assertRaisesRegex(SystemExit, 'Retired Voice resource'):
+                    pack_linux.stage_tree(root / 'release', (), '1.0.0')
 
     def test_sanitize_drops_caches_console_scripts_and_build_paths(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import ast,json,pathlib,subprocess,sys
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-for p in list((ROOT/'scripts').glob('*.py'))+list((ROOT/'src/local_only').glob('*.py'))+list((ROOT/'services/voice').glob('*.py'))+[ROOT/'services/desktop/ccode_fast_profile.py',ROOT/'services/model-sync/sync.py']:
+for p in list((ROOT/'scripts').glob('*.py'))+list((ROOT/'src/local_only').glob('*.py'))+[ROOT/'services/desktop/ccode_fast_profile.py',ROOT/'services/model-sync/sync.py']:
  ast.parse(p.read_text(),filename=str(p))
 for p in list((ROOT/'src/renderer').glob('*.js'))+list((ROOT/'src/main').glob('*.cjs'))+list((ROOT/'services/mcp').glob('*.cjs')):
  subprocess.run(['node','--check',str(p)],check=True)
@@ -17,7 +17,7 @@ if staged.exists():
   if not name.endswith(('.js','.cjs')):continue
   p=folder/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(a.read(name));subprocess.run(['node','--check',str(p)],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/glm/ccode.cjs')],check=True)
- subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/voice/main.cjs')],check=True)
+ assert not (staged.parent/'voice').exists(),'Retired Voice resource survived staging'
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/activity/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/token-savers-runtime.cjs')],check=True)

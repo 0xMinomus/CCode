@@ -1,0 +1,11 @@
+{
+  "skills": {
+    "repository": "https://github.com/czlonkowski/n8n-skills",
+    "revision": "cb6caa7b3ae8d4206c768d7f69f598438ef25595",
+    "sourceArchiveSha256": "d63e68e8bf98fbd800d062573e3f09f39a88a3a3601ccfde13fe8e6515f13a9d",
+    "license": "MIT",
+    "copyright": "Copyright (c) 2025 Romuald Cz\u0142onkowski",
+    "filesCompared": 85,
+    "modifications": "SKILL.md frontmatter adapted to native CCode schema; bodies and supporting files unchanged."
+  }
+}

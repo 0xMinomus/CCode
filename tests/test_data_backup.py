@@ -27,7 +27,7 @@ class DataBackupTests(unittest.TestCase):
         self.task.write_text('{"messages":["local task"]}')
         self.profile = self.root / 'electron/Preferences'
         self.profile.parent.mkdir()
-        self.profile.write_text('{"voice":"review"}')
+        self.profile.write_text('{"theme":"dark"}')
         self.snapshot = self.folder / 'snapshot'
 
     def create_database(self):
@@ -67,7 +67,7 @@ class DataBackupTests(unittest.TestCase):
         original = backup.restore(self.root, self.snapshot)
         self.assertEqual((original / self.task.relative_to(self.root)).read_text(), 'changed task')
         self.assertEqual(self.task.read_text(), '{"messages":["local task"]}')
-        self.assertEqual(self.profile.read_text(), '{"voice":"review"}')
+        self.assertEqual(self.profile.read_text(), '{"theme":"dark"}')
         with contextlib.closing(sqlite3.connect(self.db)) as restored:
             self.assertEqual(restored.execute('SELECT message FROM tasks').fetchone(), ('committed in WAL',))
 

@@ -15,12 +15,28 @@ APP_DIR_ICON_DIR='usr/share/icons/hicolor'
 APP_RUN_BIN='BIN="$APPDIR/ccode"'
 LEGACY=rebrand.previous
 LEGACY_FILES=(LEGACY('glm/ccode.cjs'),LEGACY('config/provider/ccode-builtin.json'))
-FILES=['app.asar','glm/ccode.cjs','glm/.node-bundle-meta.json','app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',*default_commands.resource_files(),'marketplace/marketplace-compat.cjs','config/provider/ccode-builtin.json']
+FILES=['app.asar','glm/ccode.cjs','glm/.node-bundle-meta.json','app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',*default_commands.resource_files(),'marketplace/marketplace-compat.cjs','config/provider/ccode-builtin.json']
 PAYLOAD_JOURNAL='plugin-payload.json'
 PAYLOAD_ROOT='glm/packages'
 SKILL_PACK='glm/packages/'+skills_plugin.PACK_DIR
 LEGACY_SKILL_PLUGIN='glm/packages/ccode-skills-plugin'
 MCP_RESOURCE='mcp'
+RETIRED_RESOURCES=('voice',)
+def verify_retired_resources(staged,proof):
+ for name in RETIRED_RESOURCES:
+  path=staged/name
+  if path.exists() or path.is_symlink() or any(entry==name or entry.startswith(name+'/') for entry in proof['sha256']):
+   raise ValueError('Retired resource survived staging: '+name)
+def retire_resources(target,backup):
+ for name in RETIRED_RESOURCES:
+  path=target/name
+  if not path.exists() and not path.is_symlink():continue
+  archived=backup/'retired'/name;archived.parent.mkdir(parents=True,exist_ok=True)
+  os.replace(path,archived)
+def restore_retired_resources(target,backup):
+ for name in RETIRED_RESOURCES:
+  archived=backup/'retired'/name
+  if archived.exists() or archived.is_symlink():os.replace(archived,target/name)
 def verify_mcp_tree(staged,proof):
  root=staged/MCP_RESOURCE
  if not root.is_dir() or root.is_symlink():raise ValueError('Missing staged MCP resource directory')
@@ -271,6 +287,7 @@ def main():
  proof=json.loads((staged/'build-manifest.json').read_text())
  files=[*FILES,*branding.PACKAGED_ICONS]
  if proof['application_name']!=manifest['application_name']:raise ValueError('Wrong staged application identity')
+ verify_retired_resources(staged,proof)
  for name in files:
   if hashlib.sha256((staged/name).read_bytes()).hexdigest()!=proof['sha256'][name]:raise ValueError('Staged build checksum mismatch: '+name)
  identity=json.loads(Archive(staged/'app.asar').read('package.json'))
@@ -291,6 +308,7 @@ def main():
   promote_mcp_tree(staged,target,backup)
   promote_payload(staged,target,payload,backup)
   removed_legacy=drop_legacy_files(target,backup)
+  retire_resources(target,backup)
   refreshed=refresh_derived_catalogs(backup)
  except BaseException:
   for name in reversed(promoted):
@@ -299,6 +317,7 @@ def main():
   restore_payload(target,backup)
   restore_skill_pack(target,backup)
   restore_mcp_tree(target,backup)
+  restore_retired_resources(target,backup)
   raise
  finally:
   for name in files:

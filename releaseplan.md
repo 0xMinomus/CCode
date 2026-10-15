@@ -10,7 +10,7 @@ Target rilis pertama adalah **Linux x64** (`.AppImage`, `.deb`, `.rpm`) dan **Wi
 
 Build dan verifikasi Linux dikerjakan di lingkungan Linux. Installer Windows disiapkan dari source beserta dependency x64 yang sesuai; bila build memerlukan toolchain Windows, gunakan runner Windows. Pengguna menguji `.exe` di mesin Windows miliknya. Build berhasil tidak membuktikan aplikasi berjalan: artifact Windows belum layak dinyatakan siap rilis sebelum hasil pengujian pengguna lolos dan dicatat.
 
-Voice, Computer Use, dan model-sync tetap masuk scope porting Windows. Implementasi PipeWire/portal dan systemd Linux tidak dapat dipakai langsung di Windows; masing-masing memerlukan backend atau integrasi OS yang sesuai. Fitur yang belum berfungsi harus dilaporkan sebagai penghambat, bukan dihilangkan diam-diam atau diklaim setara.
+Computer Use dan model-sync tetap masuk scope porting Windows. Implementasi portal dan systemd Linux tidak dapat dipakai langsung di Windows; masing-masing memerlukan backend atau integrasi OS yang sesuai. Voice dihapus dari seluruh platform sesuai keputusan 2026-10-15 di `linuxrelease.md`. n8n dipasang pengguna dari Plugin Marketplace, dengan dependency lengkap di zip release asset publik. Fitur lain yang belum berfungsi harus dilaporkan sebagai penghambat, bukan dihilangkan diam-diam atau diklaim setara.
 
 ## 1. Fakta yang menentukan rencana
 
@@ -83,7 +83,7 @@ Port daftar patch yang sekarang hidup di `src/local_only/` + `src/main/` + `src/
 2. **Tanpa akun/cloud** (`cloud.py`): registry service akun dimatikan, gerbang login renderer dihapus, channel yatim dijawab lokal, refresh katalog built-in dimatikan.
 3. **Branding** (`branding.py` + `ccode-logo.svg`): mark CCode di onboarding/title bar/startup/About/ikon paket, nama produk `CCode`, `make icons` tetap dipakai untuk aset.
 4. **Katalog provider** (`catalog.py`): tanpa keluarga Zhipu, plus template **9Router**.
-5. **Activity lokal** (`src/main/activity.cjs` + `src/renderer/activity-panel.js`), **Voice** (`src/main/voice.cjs` + `services/voice`), **Computer Use Linux** (`src/renderer/linux-computer-use.js` + `services/desktop`).
+5. **Activity lokal** (`src/main/activity.cjs` + `src/renderer/activity-panel.js`) dan **Computer Use Linux** (`src/renderer/linux-computer-use.js` + `services/desktop`).
 6. **Model sync** (`services/model-sync`): pertahankan penjadwalan systemd Linux; port integrasi Windows ke Task Scheduler atau mekanisme native yang diverifikasi sebelum packaging.
 7. ✅ **Selesai 2026-10-14 — Deep-link/desktop self-install**: `sl`/`iconName` dan seluruh nama file kini ditulis ulang `rebrand.apply()` menjadi `ccode.*`, dan `make apply`/`make install` mengganti nama identitas AppDir/launcher/unit yang sudah terpasang.
 8. ✅ **Selesai 2026-10-14 — Standarisasi env internal dan skema URL**: env (`CCODE_*`), kanal IPC (`ccode-*`), skema `ccode://`, layout `.ccode`, id/direktori plugin, dan judul proses memakai ejaan CCode (lihat `docs/CHANGELOG.md` 2026-10-14); `rebrand.previous()` menyediakan ejaan lama untuk kode migrasi.
@@ -94,8 +94,8 @@ Port daftar patch yang sekarang hidup di `src/local_only/` + `src/main/` + `src/
 Kriteria selesai: build dari sumber setara dengan hasil patch sekarang pada daftar uji perilaku di `docs/NO_LOGIN_TEST.md` + smoke test di `docs/DEVELOPMENT.md`.
 
 ### F3 — Packaging per platform
-- ✅ **Selesai 2026-10-15 — Linux x64**: `scripts/pack_linux.py` (`make pack-linux`) membangun ketiga format dari AppDir yang sudah `make apply` dan menulis `SHA256SUMS` + `release-notes.md`. Hasil: `CCode-1.0.0+upstream.3.14.5-x86_64.AppImage` (871 MiB), `ccode_1.0.0+upstream.3.14.5_amd64.deb` (790 MiB), `ccode-1.0.0+upstream.3.14.5-1.x86_64.rpm` (806 MiB). Tree dipasang di `/opt/ccode` (termasuk `services/` dan `project.json`) plus `/usr/bin/ccode`, entri desktop `ccode://`, ikon hicolor, dan dokumen di `/usr/share/doc/ccode`; AppImage memuat tree yang sama sebagai AppDir.
-  Verifikasi: checksum OK; AppImage berjalan lewat FUSE pada root terisolasi (workspace terbuka, 12 command, 0 error renderer); RPM dipasang ke root sementara dan aplikasinya dijalankan dari hasil instalasi; deb diekstrak dengan payload identik (18.523 berkas, hash sampel sama). Batas: Voice butuh PipeWire + ffmpeg, Computer Use butuh paket sistem (PyGObject/GStreamer/portal/wl-clipboard), dan Artifact belum diuji di mesin/distro bersih selain Fedora ini. Distribusi masih memakai AppDir hasil patch, bukan build dari source fork (jalur A di §2); artifact Linux ini adalah stopgap terverifikasi.
+- **Selesai 2026-10-15 — Linux x64**: `scripts/pack_linux.py` (`make pack-linux`) menghasilkan AppImage (329,15 MiB), deb (260,62 MiB), dan rpm (274,24 MiB), setelah Voice dihapus dan n8n dipisahkan ke Marketplace. Nama artifact tetap memakai `1.0.0+upstream.3.14.5`; `SHA256SUMS` dan `release-notes.md` menyertai ketiganya. Payload layanan hanya `model-sync,desktop`.
+  Verifikasi akhir: ketiga checksum lulus; AppImage dijalankan lewat `--appimage-extract-and-run` pada root terisolasi; RPM dipasang ke root sementara dan launchernya dijalankan. Keduanya membuka workspace tanpa login, 12 command, tanpa kontrol Voice dan tanpa error renderer/IPC yatim. Deb diekstrak; 13.612 berkas reguler per payload RPM/deb dan hash inti ASAR/agent/launcher/metadata/NOTICE cocok. n8n dipasang dari asset publik melalui UI native, 15 skill aktif lalu hilang saat disable, dan MCP `get_node` membaca database terpaket. Artifact unsigned; dependency/scriptlet pada distro bersih belum diuji. Computer Use masih bergantung pada Python dan paket desktop sistem. Ini distribusi stopgap AppDir hasil patch, bukan build source fork; batas lisensi pihak ketiga tetap dicatat di `docs/THIRD_PARTY.md`.
 - Windows x64: installer `.exe` (NSIS), ikon Windows dan shortcut CCode, namespace data mandiri, dependency native x64, serta bootstrap tanpa ketergantungan pada shell Linux. Portable ZIP bukan deliverable wajib.
 - ARM64 dan macOS tidak dibuat atau dijanjikan pada rilis ini.
 - Sertakan checksum SHA256, LICENSE/NOTICE, catatan verifikasi, serta instruksi uninstall dan penghapusan data sesuai OS.
@@ -103,9 +103,9 @@ Kriteria selesai: artifact setiap format dapat dipasang dan dibuka pada mesin ta
 
 ### F4 — Rilis pertama
 - Tag `v<ccode>+upstream.<x.y.z>` (contoh `v1.0.0+upstream.3.15.1`) + GitHub Release berisi artifact, checksum, NOTICE, dan riwayat perubahan.
-- Release notes: versi dan SHA upstream, perubahan CCode, kewajiban lisensi, status signing, serta batasan per OS berdasarkan hasil pengujian. Jangan mengklaim Voice/Computer Use/model-sync Windows siap sebelum terverifikasi.
-- Verifikasi Linux: instalasi, startup, fungsi utama, uninstall, dan upgrade/rollback pada Fedora serta satu distro lain. Gunakan VM/desktop nyata untuk fitur yang memerlukan sesi grafis; container saja tidak membuktikan Voice atau Computer Use.
-- Verifikasi Windows oleh pengguna: jalankan installer `.exe` pada Windows x64, lalu periksa startup tanpa akun, provider/chat, persistensi data, skills, subagents, slash commands, plugin/MCP, token savers, Voice, Computer Use, model-sync, dan uninstall. Catat versi Windows, artifact/checksum, hasil, serta log yang sudah disensor.
+- Release notes: versi dan SHA upstream, perubahan CCode, kewajiban lisensi, status signing, serta batasan per OS berdasarkan hasil pengujian. Jangan mengklaim Computer Use/model-sync Windows siap sebelum terverifikasi.
+- Verifikasi Linux: instalasi, startup, fungsi utama, uninstall, dan upgrade/rollback pada Fedora serta satu distro lain. Gunakan VM/desktop nyata untuk fitur yang memerlukan sesi grafis; container saja tidak membuktikan Computer Use.
+- Verifikasi Windows oleh pengguna: jalankan installer `.exe` pada Windows x64, lalu periksa startup tanpa akun, provider/chat, persistensi data, skills, subagents, slash commands, plugin/MCP, token savers, Computer Use, model-sync, dan uninstall. Catat versi Windows, artifact/checksum, hasil, serta log yang sudah disensor.
 Kriteria selesai: Linux lolos verifikasi dan pengguna mengonfirmasi pengujian Windows lolos; installer berhasil dibangun saja bukan bukti kesiapan rilis Windows.
 
 ### F5 — Pemeliharaan
@@ -120,7 +120,7 @@ Kriteria selesai: Linux lolos verifikasi dan pengguna mengonfirmasi pengujian Wi
 - [ ] Smoke test root terisolasi: judul CCode, tanpa layar login, 0 `Unknown channel`, 0 `No handler registered`, 0 `ReferenceError`/`TypeError`.
 - [ ] Linux x64: `.AppImage`, `.deb`, `.rpm` lolos uji instalasi/startup di mesin target bersih.
 - [ ] Windows x64: `.exe` berhasil dibangun; pengujian pengguna di Windows lolos dan hasilnya dicatat.
-- [ ] Voice, Computer Use, dan model-sync diverifikasi per OS; tidak ada fitur scope rilis yang dihapus tanpa persetujuan.
+- [ ] Computer Use dan model-sync diverifikasi per OS; tidak ada fitur scope rilis lain yang dihapus tanpa persetujuan.
 - [x] Tidak ada sisa mark/nama lama di UI (**selesai 2026-10-14**): `rebrand.assert_clean()`/`branding.guard()` menolak build bila sisa ejaan/mark upstream ada di asset yang dikirim; ejaan lama hanya tersisa di artifact upstream yang dipin dan di kode migrasi (`rebrand.PREVIOUS_*`).
 - [ ] Ikon: `Icon=ccode` resolve di tema user (ugrep + Gtk.IconTheme), cache ikon disegarkan installer.
 - [ ] Data terpisah: rilis tidak membaca/menulis `~/.zcode`, `~/.config/ZCode`.
@@ -146,4 +146,4 @@ Kriteria selesai: Linux lolos verifikasi dan pengguna mengonfirmasi pengujian Wi
 - Mengklaim afiliasi/dukungan Z.ai atau Zhipu.
 - Meng-commit `app/`, `baselines/`, model, venv, snapshot data, kredensial, atau jalur pribadi.
 - Melemahkan assertion anchor/guard supaya build terlihat hijau.
-- Menjanjikan fitur yang belum diuji (Computer Use di luar Linux, Voice tanpa PipeWire, dsb.).
+- Menjanjikan fitur yang belum diuji (misalnya Computer Use di luar Linux).

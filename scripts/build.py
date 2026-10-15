@@ -68,10 +68,7 @@ def main():
  renderer=manifest['renderer_asset'];s=view.read(renderer).decode()
  s=replace_once(s,'function iOn({isDesktop:','function originalCuaSettings({isDesktop:')
  s=replace_once(s,'function mit(e){let t=Wo()','function mit(e){if(linuxCuaLocal(e))return $.jsx(LinuxCuaShortcut,e);let t=Wo()')
- anchor='(0,$.jsx)(git,{workspacePath:v,workspaceIdentity:y,remoteSessionId:b,isWebRemoteControl:_,currentSessionBusy:$t})'
- s=replace_once(s,anchor,anchor+',(0,$.jsx)(CCodeVoiceInput,{disabled:h||_})')
  s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\nfunction iOn(p){return linuxCuaLocal(p)?$.jsx(LinuxCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
- s+='\n'+(ROOT/'src/renderer/voice-input.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/activity-panel.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/token-savers-panel.js').read_text()+'\n'
  s=skills_plugin.patch_renderer(s)
@@ -80,16 +77,15 @@ def main():
  s=subagents.patch_renderer(s)
  s+='\n'+(ROOT/'src/renderer/default-commands.js').read_text()+'\n'
  s=default_commands.patch_renderer(s)
- main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeVoiceApp,ipcMain as ccodeVoiceIpcMain} from "electron";
-import {createRequire as ccodeVoiceCreateRequire} from "node:module";
-const ccodeVoiceRequire=ccodeVoiceCreateRequire(import.meta.url);
-if(process.platform==="linux"){ccodeVoiceRequire(process.resourcesPath+"/voice/main.cjs").register({app:ccodeVoiceApp,ipcMain:ccodeVoiceIpcMain});}
-ccodeVoiceRequire(process.resourcesPath+"/activity/main.cjs").register({app:ccodeVoiceApp,ipcMain:ccodeVoiceIpcMain});
-ccodeVoiceRequire(process.resourcesPath+"/mcp/main.cjs").register({app:ccodeVoiceApp,ipcMain:ccodeVoiceIpcMain});
-ccodeVoiceRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcMain:ccodeVoiceIpcMain});
-ccodeVoiceRequire(process.resourcesPath+"/commands/main.cjs").register();
+ main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeLocalApp,ipcMain as ccodeLocalIpcMain} from "electron";
+import {createRequire as ccodeLocalCreateRequire} from "node:module";
+const ccodeLocalRequire=ccodeLocalCreateRequire(import.meta.url);
+ccodeLocalRequire(process.resourcesPath+"/activity/main.cjs").register({app:ccodeLocalApp,ipcMain:ccodeLocalIpcMain});
+ccodeLocalRequire(process.resourcesPath+"/mcp/main.cjs").register({app:ccodeLocalApp,ipcMain:ccodeLocalIpcMain});
+ccodeLocalRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcMain:ccodeLocalIpcMain});
+ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
 '''
- preload=view.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("ccodeVoice",{start:(options)=>ipcRenderer.invoke("ccode-voice:start",options),stop:()=>ipcRenderer.invoke("ccode-voice:stop"),cancel:()=>ipcRenderer.invoke("ccode-voice:cancel")});contextBridge.exposeInMainWorld("ccodeActivity",{summary:(options)=>ipcRenderer.invoke("ccode-activity:summary",options)});contextBridge.exposeInMainWorld("ccodeTokenSavers",{snapshot:()=>ipcRenderer.invoke("ccode-token-savers:snapshot"),save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)});contextBridge.exposeInMainWorld("ccodeDetect",{run:()=>ipcRenderer.invoke("ccode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("ccode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("ccode-mcp-catalog:install",options)});})();\n'''
+ preload=view.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("ccodeActivity",{summary:(options)=>ipcRenderer.invoke("ccode-activity:summary",options)});contextBridge.exposeInMainWorld("ccodeTokenSavers",{snapshot:()=>ipcRenderer.invoke("ccode-token-savers:snapshot"),save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)});contextBridge.exposeInMainWorld("ccodeDetect",{run:()=>ipcRenderer.invoke("ccode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("ccode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("ccode-mcp-catalog:install",options)});})();\n'''
  replacements[renderer]=s.encode();replacements[manifest['main_asset']]=main.encode();replacements[manifest['preload_asset']]=preload.encode()
  storage.patch_archive(view,replacements,renderer)
  early_main='out/main/chunk-HH7N2YVI.js'
@@ -108,16 +104,18 @@ ccodeVoiceRequire(process.resourcesPath+"/commands/main.cjs").register();
  agent=runtime_tuning.patch_agent(subagents.patch_agent(n8n_plugin.patch_agent(skills_plugin.patch_agent(token_savers.patch_agent(marketplace.patch_agent(cloud.patch_agent(storage.patch_agent(rebrand.apply(agent_base.read_text())))))))))
  agent=default_commands.patch_agent(agent)
  rebrand.assert_clean(agent,AGENT_RESOURCE)
- output=ROOT/'runtime/build/resources';view.write(output/'app.asar',replacements,renamed_entries(archive))
+ output=ROOT/'runtime/build/resources'
+ if (output/'voice').is_symlink():(output/'voice').unlink()
+ elif (output/'voice').exists():shutil.rmtree(output/'voice')
+ view.write(output/'app.asar',replacements,renamed_entries(archive))
  (output/'glm').mkdir(parents=True,exist_ok=True);(output/AGENT_RESOURCE).write_text(agent)
  (output/BUNDLE_META).write_text(rebrand.apply((ROOT/'app/resources'/BUNDLE_META).read_text()))
  (output/'app-update.yml').write_text(rebrand.apply((ROOT/'app/resources/app-update.yml').read_text()))
- (output/'voice').mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/'src/main/voice.cjs',output/'voice/main.cjs')
  (output/'activity').mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/'src/main/activity.cjs',output/'activity/main.cjs')
  (output/'token-savers').mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/'src/main/token-savers.cjs',output/'token-savers/main.cjs')
  shutil.copy2(ROOT/'src/main/token-savers-runtime.cjs',output/'token-savers/token-savers-runtime.cjs')
- rebrand.rewrite_tree(output/'voice');rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers')
+ rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers')
  command_files=default_commands.stage(output)
  (output/marketplace.RESOURCE_DIR).mkdir(parents=True,exist_ok=True)
  (output/marketplace.RESOURCE_FILE).write_text(marketplace.render_runtime())
@@ -129,7 +127,7 @@ ccodeVoiceRequire(process.resourcesPath+"/commands/main.cjs").register();
  subprocess.run(['node',str(ROOT/'services/mcp/stage.cjs'),str(output/'mcp')],check=True,cwd=ROOT)
  rebrand.rewrite_tree(output/'mcp')
  mcp_files=sorted(str(path.relative_to(output)) for path in (output/'mcp').rglob('*') if path.is_file())
- files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','voice/main.cjs','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
+ files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
         'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,'plugin_payload':payload,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}

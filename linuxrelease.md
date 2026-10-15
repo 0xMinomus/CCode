@@ -94,7 +94,19 @@ Perkiraan: −150 MB mentah (± −65 MB terkompresi) dari artifact; user yang m
 |---|---|
 | Rename MCP jadi `linux-desktop` | ✅ selesai (`2357847`) |
 | Entry Computer Use didaftarkan aplikasi sendiri | ✅ selesai (`7a616f7`, `b58b654`) |
-| A. Hapus Voice total | ⬜ belum |
-| B. n8n lewat marketplace | ⬜ belum |
-| C. Rebuild dan rilis | ⬜ belum |
-| D. Portabilitas Computer Use, uji lintas distro, Windows | ⬜ belum |
+| A. Hapus Voice total | Selesai: source/resource/build/apply bersih; AppImage dan RPM terpasang membuka workspace dengan 12 command, 0 kontrol Voice, dan 0 error renderer. Ukuran akhir dicatat di bawah. |
+| B. n8n lewat marketplace | Selesai: zip 53.556.338 byte, native install + handshake MCP + 15 skill + disable lulus; [release plugin](https://github.com/0xMinomus/CCode/releases/tag/n8n-plugin-v1.0.0). |
+| C. Rebuild dan rilis | Build/test/apply/packaging/checksum lulus; AppImage dan RPM terpasang lolos smoke terisolasi, deb diekstrak dan hash inti cocok. Siap dipublikasikan sebagai rilis Linux unsigned. |
+| D. Portabilitas Computer Use, uji lintas distro, Windows | Ditunda sesuai instruksi pemilik; tidak dikerjakan. |
+
+Pin plugin: SHA256 `2e6f31257601c64b69be1a04386e5ad5193992b2a0e13aa46481652d49023dfd`, runtime `n8n-mcp` 2.92.1. Download ulang asset publik menghasilkan checksum yang sama. Audit dependency mengeluarkan 56 paket eksklusif, mempertahankan 346 paket dan seluruh resolusi dependency bersama.
+
+Gate kode: `make build && make test && make obsidian` lulus (189 tes, 6 dilewati). Smoke tool nyata Context7, Codegraph, LSP, dan Ripgrep lulus setelah pemangkasan dependency. Tidak ada prompt model yang dikirim untuk inspeksi UI.
+
+Artifact akhir: AppImage 345.135.608 byte (329,15 MiB), deb 273.278.176 byte (260,62 MiB), rpm 287.562.286 byte (274,24 MiB). Masing-masing hasil RPM/deb memuat 13.612 berkas reguler di `/opt/ccode`; hash ASAR, agent, launcher, metadata, dan NOTICE cocok. Tidak ada resource Voice, plugin n8n bawaan, atau paket `n8n-mcp` pada artifact.
+
+AppImage diuji lewat `--appimage-extract-and-run` dengan AppImageLauncher dinonaktifkan hanya untuk proses uji. RPM diuji memakai `sudo rpm --root <root sementara> -i --nodeps --noscripts`, lalu launcher hasil instalasi dibuka pada namespace terpisah. Ini bukan pengujian dependency atau scriptlet di distro bersih; batas distro/Computer Use tetap berlaku.
+
+UI tetap memakai composer, kartu Marketplace, detail plugin, form konfigurasi, dan switch native. Screenshot composer dan konfigurasi diperiksa pada aplikasi nyata; tidak ada stylesheet, font, ikon, atau pola layout baru. Instalasi n8n dari asset publik, penyimpanan form native, disable native, dan operasi MCP `get_node` pada database terpaket lulus.
+
+Publikasi tetap mencatat batas lisensi pihak ketiga yang belum terverifikasi di `docs/THIRD_PARTY.md`. Pemilik mengizinkan upload gratis/open source; izin itu bukan bukti lisensi dari pemegang hak pihak ketiga.

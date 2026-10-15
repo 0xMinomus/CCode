@@ -1,0 +1,20 @@
+{
+  "name": "ccode-plugins-official",
+  "plugins": [
+    {
+      "name": "n8n",
+      "version": "1.0.0",
+      "description": "Connect your n8n instance with workflow tools and 15 skills. Download once, then run locally with the included MCP runtime.",
+      "displayName": "n8n",
+      "author": { "name": "CCode" },
+      "category": "developer-tools",
+      "homepage": "https://github.com/0xMinomus/CCode",
+      "source": {
+        "source": "url",
+        "type": "zip",
+        "url": "https://github.com/0xMinomus/CCode/releases/download/n8n-plugin-v1.0.0/ccode-n8n-plugin-1.0.0.zip",
+        "sha256": "2e6f31257601c64b69be1a04386e5ad5193992b2a0e13aa46481652d49023dfd"
+      }
+    }
+  ]
+}

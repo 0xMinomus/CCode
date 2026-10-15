@@ -2,6 +2,25 @@
 
 ## 2026-10-15
 
+### Eksekusi rilis Linux
+
+- Voice dihapus dari source main/renderer, worker, model/venv lokal, preload IPC, composer, staging, inventory, dan packaging. Resource terpasang yang sudah pensiun dicadangkan oleh apply dan dipulihkan bila promosi gagal; paket menolak resource lama yang belum dipensiunkan.
+- n8n dipindahkan ke plugin Marketplace yang diunduh pengguna, dengan runtime `n8n-mcp` 2.92.1 dan 15 skill dalam satu zip. Runtime aplikasi mempertahankan dependency bersama; audit lockfile mencatat 56 paket eksklusif yang dikeluarkan.
+- Smoke instalasi native menemukan `ERR_PACKAGE_PATH_NOT_EXPORTED`: `n8n-mcp` hanya mengekspor package root. Entrypoint kini me-resolve entry publik lalu memuat wrapper MCP yang bersebelahan lewat path absolut. Instalasi zip nyata pada namespace terisolasi berhasil, MCP menawarkan `search_nodes`, `get_node`, dan `validate_workflow`, seluruh 15 skill aktif, lalu MCP dan skill hilang setelah disable.
+- Plugin terbit di [n8n-plugin-v1.0.0](https://github.com/0xMinomus/CCode/releases/tag/n8n-plugin-v1.0.0), 53.556.338 byte, SHA256 `2e6f31257601c64b69be1a04386e5ad5193992b2a0e13aa46481652d49023dfd`. Download ulang cocok dengan pin. Instalasi melalui Marketplace UI dari asset publik, penyimpanan konfigurasi native, disable native, dan operasi `get_node` untuk `nodes-base.httpRequest` lulus tanpa credentials/workflow live.
+- Verifikasi akhir: `make build && make test && make obsidian` lulus (189 tes, 6 dilewati); tool nyata Context7, Codegraph, LSP, dan Ripgrep lulus setelah dependency dipangkas. `make apply` lulus saat aplikasi tertutup. AppImage dijalankan dengan `--appimage-extract-and-run` pada root terisolasi; RPM dipasang ke root sementara dengan `rpm --root … -i --nodeps --noscripts` dan dijalankan dari hasil instalasi. Keduanya membuka workspace tanpa login, memiliki 12 command dan 0 kontrol Voice, tanpa `Unknown channel`, `No handler registered`, `ReferenceError`, `TypeError`, atau error renderer.
+- Deb diekstrak dan dibandingkan dengan hasil RPM: masing-masing memuat 13.612 berkas reguler di `/opt/ccode`; hash ASAR, agent, launcher, metadata, dan NOTICE sama. Resource Voice dan payload/dependency n8n bawaan tidak ada. Ketiga checksum artifact lulus. Artifact tidak ditandatangani; mesin/distro bersih lain belum diuji.
+
+| Artifact Linux setelah cutover | Byte | MiB |
+|---|---:|---:|
+| AppImage | 345.135.608 | 329,15 |
+| deb | 273.278.176 | 260,62 |
+| rpm | 287.562.286 | 274,24 |
+
+- Provenance 15 skill n8n diverifikasi terhadap sumber MIT `czlonkowski/n8n-skills` pada commit `cb6caa7b3ae8d4206c768d7f69f598438ef25595`. Skill `emil-design-eng` cocok byte demi byte dengan sumber MIT resmi pada commit `2d228630ba1446365f614a108cb8252f1feda202`; teks lisensinya ikut payload.
+- Pemilik mengizinkan publikasi gratis/open source. Lisensi pihak ketiga untuk `design-taste-frontend` dan 17 skill workflow masih belum terverifikasi; izin pemilik workspace tidak menggantikan izin pemegang hak. Batas ini dicatat di `docs/THIRD_PARTY.md`, bukan dilabeli sebagai lisensi universal aplikasi.
+- Windows, portabilitas Computer Use, dan pengujian lintas distro tidak dikerjakan dalam perubahan ini.
+
 ### Rencana kerja rilis
 
 - `linuxrelease.md` mencatat daftar kerja rilis yang sudah disetujui: hapus total fitur Voice (Linux dan Windows), pindahkan n8n ke Plugin Marketplace (zip sebagai release asset di fork publik, dependency `n8n-mcp` ikut di dalam zip), lalu rebuild dan verifikasi artifact Linux.

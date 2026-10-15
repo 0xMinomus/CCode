@@ -3,7 +3,7 @@ tags: [ccode, fedora, project]
 ---
 # CCode
 
-Branding CCode untuk workspace patch upstream **3.14.5** di Fedora: varian mandiri tanpa akun, Computer Use lewat `linux-desktop`, Voice bilingual lokal, dan provider model diatur sendiri di Settings.
+Branding CCode untuk workspace patch upstream **3.14.5** di Fedora: varian mandiri tanpa akun, Computer Use lewat `linux-desktop`, dan provider model diatur sendiri di Settings.
 
 Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AGENTS.md`, dan `docs/` adalah file asli; `make obsidian` hanya menyegarkan note ini.
 
@@ -19,7 +19,6 @@ Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AG
 - [[docs/NO_LOGIN_TEST|NO_LOGIN_TEST]]
 - [[docs/OPERATIONS|OPERATIONS]]
 - [[docs/THIRD_PARTY|THIRD_PARTY]]
-- [[docs/VOICE|VOICE]]
 
 ## Fakta kunci
 
