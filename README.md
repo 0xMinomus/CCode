@@ -87,6 +87,11 @@ The Linux build has been checked on the project's Fedora workstation, not clean 
 
 n8n is a separate [Marketplace plugin download](https://github.com/0xMinomus/CCode/releases/tag/n8n-plugin-v1.0.0), including its runtime and 15 skills. Voice is not shipped.
 
+### Windows boot-test candidate
+
+An unsigned [Windows x64 M1 prerelease](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) is available for boot testing, not normal use or feature parity. Download its ZIP, choose **Extract All**, then double-click `app\CCode.exe`; no terminal is needed for the initial startup check. Direct launch stores test data in `%LOCALAPPDATA%\CCode`. Windows runtime verification is still open; see the release notes and [Windows milestone gates](windowsrelease.md).
+
+
 ## Build and run
 
 ```bash

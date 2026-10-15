@@ -18,7 +18,7 @@ Sumber shell dan native Windows adalah [installer vendor v3.14.3](https://github
 
 Packager mengganti nama/ikon executable dan hash header ASAR pada resource integrity, mempertahankan atribusi copyright shell, dan membuang referensi Authenticode vendor setelah modifikasi. Kandidat unsigned. Native unpacked memakai byte dari installer terpinsel, dengan ukuran/hash metadata ASAR dihitung ulang; metadata vendor yang berubah dicatat dalam `candidate-manifest.json`.
 
-Codegraph Windows memakai `@sdsrs/code-graph-win32-x64@0.169.0`; URL dan SHA512 integrity npm dipin di packager serta dicatat dalam manifest kandidat. Batas hak distribusi skill di bawah tetap berlaku. ZIP M1 untuk pengujian lokal tidak dinyatakan sebagai rilis Windows publik.
+Codegraph Windows memakai `@sdsrs/code-graph-win32-x64@0.169.0`; URL dan SHA512 integrity npm dipin di packager serta dicatat dalam manifest kandidat. Batas hak distribusi skill di bawah tetap berlaku. ZIP M1 awalnya dirakit untuk pengujian lokal, lalu dipublikasikan atas permintaan pemilik sebagai [prerelease uji](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016), bukan rilis Windows final; notices di ZIP mempertahankan catatan saat kandidat dirakit.
 
 ## MCP bawaan dan opsional
 
