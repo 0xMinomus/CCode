@@ -3,6 +3,9 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const { spawn } = require('node:child_process');
 const { pathToFileURL, fileURLToPath } = require('node:url');
 const active = new Set(), busy = new Set();
+// Computer Use registers itself as `linux-desktop`; the legacy name is only read so an
+// install that predates the rename keeps its settings.
+const DESKTOP_SERVER = 'linux-desktop', DESKTOP_SERVER_LEGACY = 'fedora-desktop';
 function paths(options = {}) {
   const resources = path.resolve(options.resourcesPath || process.resourcesPath || path.join(__dirname, '../../app/resources'));
   const root = path.resolve(options.root || process.env.CCODE_STANDALONE_ROOT || path.join(os.homedir(), '.local/share/ccode'));
@@ -35,6 +38,57 @@ function definition(p, item) {
   const env = { ELECTRON_RUN_AS_NODE: '1', ...item.env };
   return { command: p.node, args: [path.join(p.payload, 'launch.cjs'), item.id, runtimePath(p, item), path.join(p.state, 'home', item.id)], env };
 }
+function projectRoot(resources) {
+  for (let dir = path.resolve(resources);; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'project.json'))) return dir;
+    if (path.dirname(dir) === dir) return null;
+  }
+}
+// The desktop backend lives beside the application, so its absolute paths depend on where
+// the tree sits: a package prefix, a source checkout, or a fresh AppImage mount each run.
+function desktopDefinition(resources) {
+  if (process.platform !== 'linux') return null;
+  const root = projectRoot(resources);
+  if (!root) return null;
+  const command = path.join(root, 'services/desktop/bin/screen-mcp');
+  if (!fs.existsSync(command)) return null;
+  return { command, args: [], env: { SCREEN_PYTHON: path.join(root, 'services/desktop/.venv/bin/python'),
+    MCP_SCREEN_NO_AUTO_DEPS: '1', MCP_SCREEN_PROFILE: 'ccode-fast', MCP_SCREEN_MAX_EDGE: '1280',
+    MCP_SCREEN_MAX_OUTPUT_KB: '250', MCP_SCREEN_ATSPI: '1' } };
+}
+function applyDesktopDefinition(server, value) {
+  server.command = value.command;
+  if (!Array.isArray(server.args)) server.args = value.args;
+  const env = object(server.env) ? server.env : (server.env = {});
+  for (const [name, setting] of Object.entries(value.env)) if (!(name in env)) env[name] = setting;
+}
+// Seeds the Computer Use server for any layout that ships `services/desktop`. The marker
+// keeps a deliberate deletion deleted, while an existing entry is refreshed because an
+// AppImage mount point changes between runs.
+function seedDesktopServer(resources, snapshot, seeded) {
+  if (process.platform !== 'linux') return false;
+  const servers = snapshot.data.mcp.servers, value = desktopDefinition(resources);
+  const seededBefore = seeded.includes(DESKTOP_SERVER);
+  const legacy = servers[DESKTOP_SERVER_LEGACY];
+  if (!Object.hasOwn(servers, DESKTOP_SERVER) && object(legacy)) {
+    servers[DESKTOP_SERVER] = legacy;
+    delete servers[DESKTOP_SERVER_LEGACY];
+    if (value) applyDesktopDefinition(servers[DESKTOP_SERVER], value);
+    if (!seededBefore) seeded.push(DESKTOP_SERVER);
+    return true;
+  }
+  if (Object.hasOwn(servers, DESKTOP_SERVER)) {
+    if (!seededBefore) seeded.push(DESKTOP_SERVER);
+    if (!value || !object(servers[DESKTOP_SERVER])) return !seededBefore;
+    const before = JSON.stringify(servers[DESKTOP_SERVER]);
+    applyDesktopDefinition(servers[DESKTOP_SERVER], value);
+    return JSON.stringify(servers[DESKTOP_SERVER]) !== before;
+  }
+  if (seededBefore || !value) return false;
+  servers[DESKTOP_SERVER] = value;
+  seeded.push(DESKTOP_SERVER);
+  return true;
+}
 function bootstrap(options = {}) {
   const p = paths(options), entries = catalog(p), marker = path.join(p.state, 'default-seed.json');
   let seeded = [];
@@ -48,6 +102,7 @@ function bootstrap(options = {}) {
     if (!Object.hasOwn(snapshot.data.mcp.servers, item.id)) { snapshot.data.mcp.servers[item.id] = definition(p, item); changed = true; }
     seeded.push(item.id);
   }
+  if (seedDesktopServer(p.resources, snapshot, seeded)) changed = true;
   if (changed) commit(p, snapshot);
   atomic(marker, { seeded });
   return { ok: true };
@@ -231,7 +286,8 @@ function register({ app, ipcMain }) {
   });
   app.on('before-quit', () => { for (const stop of active) stop(); });
 }
-module.exports = { register, bootstrap, list, install, test, paths, definition, trusted };
+module.exports = { register, bootstrap, list, install, test, paths, definition, trusted,
+  DESKTOP_SERVER, DESKTOP_SERVER_LEGACY };
 if (require.main === module && process.argv[2] === '--bootstrap') {
   try { bootstrap({ root: process.argv[3], resourcesPath: process.argv[4] }); }
   catch { process.stderr.write('CCode MCP default bootstrap failed. Check the packaged runtime and standalone config.\n'); process.exitCode = 1; }

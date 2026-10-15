@@ -129,7 +129,7 @@ Ikon aplikasi disalurkan lewat rantai yang sama dengan resource lain: `scripts/b
 
 ## Desktop
 
-UI mengatur MCP bernama `linux-desktop` (`src/local_only/desktop_mcp.py`; nama lama `fedora-desktop` masih dibaca dan diadopsi agar konfigurasi pengguna tidak hilang). `services/desktop/server.py` memuat `ccode_fast_profile.py` saat `MCP_SCREEN_PROFILE=ccode-fast`. Profil itu batas edit project untuk backend desktop: file vendor (`server.py`, `capture.py`, `input.py`, `grounding.py`) dibiarkan apa adanya.
+UI mengatur MCP bernama `linux-desktop`. Entry itu disemai aplikasi sendiri di `src/main/mcp-catalog.cjs` saat bootstrap: `command`/`env` dihitung dari tree tempat aplikasi berjalan, nama lama `fedora-desktop` diadopsi di tempat, dan marker `mcp/default-seed.json` menjaga entry yang sengaja dihapus pengguna tetap terhapus. `services/desktop/server.py` memuat `ccode_fast_profile.py` saat `MCP_SCREEN_PROFILE=ccode-fast`. Profil itu batas edit project untuk backend desktop: file vendor (`server.py`, `capture.py`, `input.py`, `grounding.py`) dibiarkan apa adanya.
 
 Yang ditetapkan profil:
 

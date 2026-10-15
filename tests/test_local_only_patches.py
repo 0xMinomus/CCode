@@ -9,30 +9,6 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 cloud = importlib.import_module('local_only.cloud')
-desktop_mcp = importlib.import_module('local_only.desktop_mcp')
-
-
-class DesktopMcpEntryTests(unittest.TestCase):
-    def test_legacy_entry_is_adopted_with_its_settings(self):
-        servers = {'fedora-desktop': {'command': '/old', 'env': {'MCP_SCREEN_ATSPI': '1'}, 'enabled': True}}
-        entry = desktop_mcp.ensure_server(servers, command='/opt/ccode/screen-mcp', args=[],
-                                          env={'SCREEN_PYTHON': '/opt/ccode/python'})
-        self.assertNotIn('fedora-desktop', servers)
-        self.assertIs(entry, servers['linux-desktop'])
-        self.assertEqual(entry['command'], '/opt/ccode/screen-mcp')
-        self.assertEqual(entry['env'], {'MCP_SCREEN_ATSPI': '1', 'SCREEN_PYTHON': '/opt/ccode/python'})
-        self.assertIs(entry['enabled'], True)
-
-    def test_user_entries_and_args_survive_the_update(self):
-        servers = {'linux-desktop': {'args': ['--keep']}, 'fedora-desktop': {'command': '/user'}}
-        entry = desktop_mcp.ensure_server(servers, command='/new', args=['--replaced'], env={})
-        self.assertEqual(entry['command'], '/new')
-        self.assertEqual(entry['args'], ['--keep'])
-        self.assertIn('fedora-desktop', servers)
-
-    def test_invalid_entry_is_rejected(self):
-        with self.assertRaises(ValueError):
-            desktop_mcp.ensure_server({'linux-desktop': {'env': []}}, command='/new', args=[], env={})
 
 
 class SplitTopLevelTests(unittest.TestCase):

@@ -4,10 +4,11 @@
 
 ### Computer Use tanpa nama distro
 
-- Entry MCP desktop berganti nama dari `fedora-desktop` menjadi `linux-desktop`; backend (`services/desktop`) dan paket sistemnya tidak berubah. `src/local_only/desktop_mcp.py` menjadi satu tempat kepemilikan entry itu: saat `make install` berjalan, entry lama diadopsi lengkap dengan `enabled`/`env` pengguna, entry lain milik pengguna tidak pernah dihapus, dan entry baru dibuat bila belum ada.
-- Renderer (`src/renderer/linux-computer-use.js`) mencari `linux-desktop` dan masih menerima `fedora-desktop`, jadi instalasi lama tetap jalan sebelum migrasi. Teks UI tidak lagi menyebut Fedora ("system dialog"), nama fungsi internal menjadi `LinuxCuaSettings`/`LinuxCuaShortcut`, testid menjadi `linux-computer-use-shortcut`, dan anchor build di `scripts/build.py` ikut diperbarui.
-- Verifikasi: `python3 -m unittest tests.test_local_only_patches -v` (tiga tes baru: adopsi nama lama, argumen pengguna bertahan, entry invalid ditolak), lalu `make build` dan `make test` lulus (187 lulus, 8 dilewati).
-- Belum selesai: paket rilis belum mendaftarkan entry `linux-desktop` otomatis pada instalasi baru, dan Computer Use di distro non-Fedora masih butuh venv Python yang cocok plus paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`).
+- Entry MCP desktop berganti nama dari `fedora-desktop` menjadi `linux-desktop`; backend (`services/desktop`) dan paket sistemnya tidak berubah. Kepemilikan entry itu pindah ke aplikasi: `src/main/mcp-catalog.cjs` menyemainya saat bootstrap (berjalan setiap aplikasi start dan lewat `--bootstrap`), dan menghitung `command`/`env` dari tree tempat aplikasi berjalan — prefix paket, checkout sumber, atau mount AppImage. Entry lama diadopsi di tempat lengkap dengan `enabled`/`env` pengguna; entry yang dihapus pengguna tidak dihidupkan lagi (marker `mcp/default-seed.json`); entry yang sudah ada cukup di-refresh karena path mount AppImage berubah tiap kali dijalankan. `src/local_only/desktop_mcp.py` beserta blok di `scripts/install_local.py` dihapus supaya hanya ada satu pemilik.
+- Karena itu, paket hasil build kini mendaftarkan Computer Use tanpa `make install`: begitu aplikasi dijalankan, entry `linux-desktop` muncul di namespace dan panel tidak lagi menampilkan "Backend not found".
+- Renderer (`src/renderer/linux-computer-use.js`) mencari `linux-desktop` dan masih menerima `fedora-desktop`. Teks UI tidak lagi menyebut Fedora ("system dialog"), nama fungsi internal menjadi `LinuxCuaSettings`/`LinuxCuaShortcut`, testid menjadi `linux-computer-use-shortcut`, dan anchor build di `scripts/build.py` ikut diperbarui.
+- Verifikasi: `python3 -m unittest tests.test_mcp_catalog -v` (empat tes: entry dibuat untuk tree yang berjalan, command di-refresh saat tree berpindah sambil mempertahankan setting pengguna, entry yang dihapus tetap hilang, nama lama diadopsi bersama `enabled`/`env`), lalu `make build` dan `make test`.
+- Belum selesai: Computer Use di distro non-Fedora masih butuh venv Python yang cocok (venv bawaan dibuat untuk Python 3.14) plus paket sistem PyGObject/GStreamer/portal/`wl-clipboard`.
 
 ### Paket rilis Linux x86_64
 
