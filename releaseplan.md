@@ -102,6 +102,7 @@ Kriteria selesai: build dari sumber setara dengan hasil patch sekarang pada daft
 Kriteria selesai: artifact setiap format dapat dipasang dan dibuka pada mesin target bersih tanpa instalasi upstream atau dependency pengembang yang tidak didokumentasikan.
 
 ### F4 — Rilis pertama
+- ✅ **Selesai sebagian 2026-10-15 — Linux x64**: [prerelease `v1.0.0+upstream.3.14.5`](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5) publik di fork, berisi AppImage/deb/rpm, `SHA256SUMS`, `LICENSE`, dan `NOTICE.md`; digest asset GitHub cocok dengan checksum lokal. Source: commit `e1af2ee` (`origin/main`, snapshot publik `fork/ccode-workspace`). Label prerelease dipakai karena artifact unsigned dan belum diuji di distro bersih lain. Windows belum dibangun, jadi gate Windows di bawah masih terbuka.
 - Tag `v<ccode>+upstream.<x.y.z>` (contoh `v1.0.0+upstream.3.15.1`) + GitHub Release berisi artifact, checksum, NOTICE, dan riwayat perubahan.
 - Release notes: versi dan SHA upstream, perubahan CCode, kewajiban lisensi, status signing, serta batasan per OS berdasarkan hasil pengujian. Jangan mengklaim Computer Use/model-sync Windows siap sebelum terverifikasi.
 - Verifikasi Linux: instalasi, startup, fungsi utama, uninstall, dan upgrade/rollback pada Fedora serta satu distro lain. Gunakan VM/desktop nyata untuk fitur yang memerlukan sesi grafis; container saja tidak membuktikan Computer Use.

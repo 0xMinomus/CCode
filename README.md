@@ -81,7 +81,7 @@ Side by side, at a glance:
 
 ## Linux downloads
 
-Download the unsigned Linux x86-64 AppImage, `.deb`, or `.rpm` from [GitHub Releases](https://github.com/0xMinomus/CCode/releases). Verify the download with the release's `SHA256SUMS` before running it.
+Download the unsigned Linux x86-64 AppImage, `.deb`, or `.rpm` from the [1.0.0 Linux release](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5). Verify the download with the release's `SHA256SUMS` before running it.
 
 The Linux build has been checked on the project's Fedora workstation, not clean installations of other distributions. Computer Use still needs compatible Python and system desktop libraries. See the release notes and [Linux verification record](linuxrelease.md) for exact limits. Windows is not part of this release.
 

@@ -96,7 +96,7 @@ Perkiraan: −150 MB mentah (± −65 MB terkompresi) dari artifact; user yang m
 | Entry Computer Use didaftarkan aplikasi sendiri | ✅ selesai (`7a616f7`, `b58b654`) |
 | A. Hapus Voice total | Selesai: source/resource/build/apply bersih; AppImage dan RPM terpasang membuka workspace dengan 12 command, 0 kontrol Voice, dan 0 error renderer. Ukuran akhir dicatat di bawah. |
 | B. n8n lewat marketplace | Selesai: zip 53.556.338 byte, native install + handshake MCP + 15 skill + disable lulus; [release plugin](https://github.com/0xMinomus/CCode/releases/tag/n8n-plugin-v1.0.0). |
-| C. Rebuild dan rilis | Build/test/apply/packaging/checksum lulus; AppImage dan RPM terpasang lolos smoke terisolasi, deb diekstrak dan hash inti cocok. Siap dipublikasikan sebagai rilis Linux unsigned. |
+| C. Rebuild dan rilis | Selesai: [Linux prerelease `v1.0.0+upstream.3.14.5`](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5) publik, berisi AppImage/deb/rpm, SHA256SUMS, LICENSE, dan NOTICE. Digest asset GitHub cocok dengan hasil lokal. |
 | D. Portabilitas Computer Use, uji lintas distro, Windows | Ditunda sesuai instruksi pemilik; tidak dikerjakan. |
 
 Pin plugin: SHA256 `2e6f31257601c64b69be1a04386e5ad5193992b2a0e13aa46481652d49023dfd`, runtime `n8n-mcp` 2.92.1. Download ulang asset publik menghasilkan checksum yang sama. Audit dependency mengeluarkan 56 paket eksklusif, mempertahankan 346 paket dan seluruh resolusi dependency bersama.
@@ -108,5 +108,7 @@ Artifact akhir: AppImage 345.135.608 byte (329,15 MiB), deb 273.278.176 byte (26
 AppImage diuji lewat `--appimage-extract-and-run` dengan AppImageLauncher dinonaktifkan hanya untuk proses uji. RPM diuji memakai `sudo rpm --root <root sementara> -i --nodeps --noscripts`, lalu launcher hasil instalasi dibuka pada namespace terpisah. Ini bukan pengujian dependency atau scriptlet di distro bersih; batas distro/Computer Use tetap berlaku.
 
 UI tetap memakai composer, kartu Marketplace, detail plugin, form konfigurasi, dan switch native. Screenshot composer dan konfigurasi diperiksa pada aplikasi nyata; tidak ada stylesheet, font, ikon, atau pola layout baru. Instalasi n8n dari asset publik, penyimpanan form native, disable native, dan operasi MCP `get_node` pada database terpaket lulus.
+
+Source rilis: commit `e1af2ee`, dipush ke `origin/main` dan snapshot publik `fork/ccode-workspace`. Rilis diberi label prerelease karena unsigned dan belum diuji pada distro/mesin bersih lain; Windows tidak dibangun atau diunggah.
 
 Publikasi tetap mencatat batas lisensi pihak ketiga yang belum terverifikasi di `docs/THIRD_PARTY.md`. Pemilik mengizinkan upload gratis/open source; izin itu bukan bukti lisensi dari pemegang hak pihak ketiga.

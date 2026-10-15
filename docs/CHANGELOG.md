@@ -17,6 +17,7 @@
 | deb | 273.278.176 | 260,62 |
 | rpm | 287.562.286 | 274,24 |
 
+- Rilis Linux terbit sebagai [prerelease `v1.0.0+upstream.3.14.5`](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5) berisi ketiga artifact plus `SHA256SUMS`, `LICENSE`, dan `NOTICE.md`; digest asset GitHub cocok dengan checksum lokal. Source rilis: commit `e1af2ee` di `origin/main` dan snapshot publik `fork/ccode-workspace`. Label prerelease dipakai karena artifact unsigned dan belum diuji di distro/mesin bersih lain; Windows tidak dibangun.
 - Provenance 15 skill n8n diverifikasi terhadap sumber MIT `czlonkowski/n8n-skills` pada commit `cb6caa7b3ae8d4206c768d7f69f598438ef25595`. Skill `emil-design-eng` cocok byte demi byte dengan sumber MIT resmi pada commit `2d228630ba1446365f614a108cb8252f1feda202`; teks lisensinya ikut payload.
 - Pemilik mengizinkan publikasi gratis/open source. Lisensi pihak ketiga untuk `design-taste-frontend` dan 17 skill workflow masih belum terverifikasi; izin pemilik workspace tidak menggantikan izin pemegang hak. Batas ini dicatat di `docs/THIRD_PARTY.md`, bukan dilabeli sebagai lisensi universal aplikasi.
 - Windows, portabilitas Computer Use, dan pengujian lintas distro tidak dikerjakan dalam perubahan ini.
