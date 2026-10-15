@@ -2,6 +2,13 @@
 
 ## 2026-10-15
 
+### Computer Use tanpa nama distro
+
+- Entry MCP desktop berganti nama dari `fedora-desktop` menjadi `linux-desktop`; backend (`services/desktop`) dan paket sistemnya tidak berubah. `src/local_only/desktop_mcp.py` menjadi satu tempat kepemilikan entry itu: saat `make install` berjalan, entry lama diadopsi lengkap dengan `enabled`/`env` pengguna, entry lain milik pengguna tidak pernah dihapus, dan entry baru dibuat bila belum ada.
+- Renderer (`src/renderer/linux-computer-use.js`) mencari `linux-desktop` dan masih menerima `fedora-desktop`, jadi instalasi lama tetap jalan sebelum migrasi. Teks UI tidak lagi menyebut Fedora ("system dialog"), nama fungsi internal menjadi `LinuxCuaSettings`/`LinuxCuaShortcut`, testid menjadi `linux-computer-use-shortcut`, dan anchor build di `scripts/build.py` ikut diperbarui.
+- Verifikasi: `python3 -m unittest tests.test_local_only_patches -v` (tiga tes baru: adopsi nama lama, argumen pengguna bertahan, entry invalid ditolak), lalu `make build` dan `make test` lulus (187 lulus, 8 dilewati).
+- Belum selesai: paket rilis belum mendaftarkan entry `linux-desktop` otomatis pada instalasi baru, dan Computer Use di distro non-Fedora masih butuh venv Python yang cocok plus paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`).
+
 ### Paket rilis Linux x86_64
 
 - `scripts/pack_linux.py` (target `make pack-linux`) membangun AppImage, `.deb`, dan `.rpm` dari AppDir yang sudah `make apply`, lalu menulis `SHA256SUMS` dan `release-notes.md` di `runtime/release/`. Artifact yang dihasilkan: `CCode-1.0.0+upstream.3.14.5-x86_64.AppImage` (871 MiB), `ccode_1.0.0+upstream.3.14.5_amd64.deb` (790 MiB), `ccode-1.0.0+upstream.3.14.5-1.x86_64.rpm` (806 MiB). Build memerlukan `squashfs-tools`, `dpkg`, dan `rpm-build`; runtime AppImage type 2 diambil ke `runtime/release-input/` dengan SHA256 yang dipin di skrip.

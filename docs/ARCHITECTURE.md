@@ -7,7 +7,7 @@
 Patch renderer:
 
 1. Halaman `iOn` asli diubah menjadi `originalCuaSettings`.
-2. Wrapper memilih `FedoraCuaSettings` untuk workspace Linux lokal; workspace lain memakai halaman asli.
+2. Wrapper memilih `LinuxCuaSettings` untuk workspace Linux lokal; workspace lain memakai halaman asli.
 3. Composer `mit` memilih pintasan Linux; `CCodeVoiceInput` ditambahkan di dekat toolbar Computer Use.
 4. Source custom ditambahkan pada modul renderer yang sama sehingga dapat menggunakan React dan komponen bundled.
 
@@ -129,7 +129,7 @@ Ikon aplikasi disalurkan lewat rantai yang sama dengan resource lain: `scripts/b
 
 ## Desktop
 
-UI mengatur MCP bernama `fedora-desktop`. `services/desktop/server.py` memuat `ccode_fast_profile.py` saat `MCP_SCREEN_PROFILE=ccode-fast`. Profil itu batas edit project untuk backend desktop: file vendor (`server.py`, `capture.py`, `input.py`, `grounding.py`) dibiarkan apa adanya.
+UI mengatur MCP bernama `linux-desktop` (`src/local_only/desktop_mcp.py`; nama lama `fedora-desktop` masih dibaca dan diadopsi agar konfigurasi pengguna tidak hilang). `services/desktop/server.py` memuat `ccode_fast_profile.py` saat `MCP_SCREEN_PROFILE=ccode-fast`. Profil itu batas edit project untuk backend desktop: file vendor (`server.py`, `capture.py`, `input.py`, `grounding.py`) dibiarkan apa adanya.
 
 Yang ditetapkan profil:
 

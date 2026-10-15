@@ -12,7 +12,7 @@ import sys
 import urllib.parse
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'src'))
-from local_only import branding, rebrand
+from local_only import branding, desktop_mcp, rebrand
 
 from data_backup import (DEFAULT_LEGACY_ROOT, assert_offline, atomic_json, namespace_lock, namespace_root,
                          private_dir, safe_path)
@@ -316,14 +316,14 @@ def main():
             mcp = data.setdefault('mcp', {})
             if not isinstance(mcp, dict) or not isinstance(mcp.setdefault('servers', {}), dict):
                 raise ValueError('Invalid standalone MCP servers')
-            server = mcp['servers'].setdefault('fedora-desktop', {})
-            if not isinstance(server, dict) or not isinstance(server.setdefault('env', {}), dict):
-                raise ValueError('Invalid standalone desktop MCP server')
-            server['command'] = str(ROOT / 'services/desktop/bin/screen-mcp')
-            server.setdefault('args', [])
-            server['env'].update({'SCREEN_PYTHON': str(ROOT / 'services/desktop/.venv/bin/python'),
-                'MCP_SCREEN_NO_AUTO_DEPS': '1', 'MCP_SCREEN_PROFILE': 'ccode-fast', 'MCP_SCREEN_MAX_EDGE': '1280',
-                'MCP_SCREEN_MAX_OUTPUT_KB': '250', 'MCP_SCREEN_ATSPI': '1'})
+            desktop_mcp.ensure_server(
+                mcp['servers'],
+                command=ROOT / 'services/desktop/bin/screen-mcp',
+                args=[],
+                env={'SCREEN_PYTHON': ROOT / 'services/desktop/.venv/bin/python',
+                     'MCP_SCREEN_NO_AUTO_DEPS': '1', 'MCP_SCREEN_PROFILE': 'ccode-fast',
+                     'MCP_SCREEN_MAX_EDGE': '1280', 'MCP_SCREEN_MAX_OUTPUT_KB': '250',
+                     'MCP_SCREEN_ATSPI': '1'})
             backup_integration(config, namespace)
             if imported is not None:
                 # Link an exclusive private file so concurrent UI writes cannot be overwritten.

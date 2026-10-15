@@ -67,10 +67,10 @@ def main():
  archive=Archive(base);replacements={};view=Rebranded(archive,replacements)
  renderer=manifest['renderer_asset'];s=view.read(renderer).decode()
  s=replace_once(s,'function iOn({isDesktop:','function originalCuaSettings({isDesktop:')
- s=replace_once(s,'function mit(e){let t=Wo()','function mit(e){if(fedoraCuaLocal(e))return $.jsx(FedoraCuaShortcut,e);let t=Wo()')
+ s=replace_once(s,'function mit(e){let t=Wo()','function mit(e){if(linuxCuaLocal(e))return $.jsx(LinuxCuaShortcut,e);let t=Wo()')
  anchor='(0,$.jsx)(git,{workspacePath:v,workspaceIdentity:y,remoteSessionId:b,isWebRemoteControl:_,currentSessionBusy:$t})'
  s=replace_once(s,anchor,anchor+',(0,$.jsx)(CCodeVoiceInput,{disabled:h||_})')
- s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\nfunction iOn(p){return fedoraCuaLocal(p)?$.jsx(FedoraCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
+ s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\nfunction iOn(p){return linuxCuaLocal(p)?$.jsx(LinuxCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
  s+='\n'+(ROOT/'src/renderer/voice-input.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/activity-panel.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/token-savers-panel.js').read_text()+'\n'
