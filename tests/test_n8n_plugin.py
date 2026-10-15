@@ -21,7 +21,7 @@ from local_only import n8n_plugin, rebrand, storage
 class N8nPluginLifecycleTests(unittest.TestCase):
     def test_activation_controls_mcp_and_all_skills(self):
         baseline = ROOT / json.loads((ROOT / 'project.json').read_text())['agent_baseline']
-        executable = ROOT / 'app/ccode'
+        executable = ROOT / 'app' / ('CCode.exe' if os.name == 'nt' else 'ccode')
         artifact = ROOT / 'runtime/release-plugin/ccode-n8n-plugin-1.0.0.zip'
         if not baseline.is_file() or not executable.is_file() or not artifact.is_file():
             self.skipTest('pinned agent, Electron runtime, and packaged n8n zip are required')
@@ -33,8 +33,13 @@ class N8nPluginLifecycleTests(unittest.TestCase):
             agent.parent.mkdir(parents=True)
             packages = agent.parent / 'packages'
             packages.mkdir()
-            (packages / 'ccode-guide-plugin').symlink_to(ROOT / 'app/resources/glm/packages/ccode-guide-plugin',
-                                                        target_is_directory=True)
+            source = ROOT / 'app/resources/glm/packages/ccode-guide-plugin'
+            link = packages / 'ccode-guide-plugin'
+            try:
+                link.symlink_to(source, target_is_directory=True)
+            except OSError:
+                # Windows without developer mode cannot create symlinks; a copy keeps the layout.
+                shutil.copytree(source, link)
             handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(artifact.parent))
             server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
             thread = threading.Thread(target=server.serve_forever, daemon=True)

@@ -12,6 +12,28 @@ MAIN = ROOT / 'src/main/token-savers.cjs'
 PANEL = ROOT / 'src/renderer/token-savers-panel.js'
 NODE = shutil.which('node')
 
+RTK_STUBS = {
+    'posix': {
+        'status': '#!/bin/sh\ncase "$RTK_TEST_STATUS" in\n  0) printf "%s\\n" "rtk rg --smart-case"; exit 0 ;;\n  2) exit 2 ;;\n  3) printf "%s\\n" "rtk rg --smart-case"; exit 3 ;;\n  *) exit 1 ;;\nesac\n',
+        'gain': '#!/bin/sh\nif [ "$1" = "gain" ]; then printf "%s\\n" \'{"summary":{"total_saved":5},"daily":[{"date":"2025-01-01","saved_tokens":5}]}\' ; exit 0; fi\nexit 1\n',
+    },
+    'win32': {
+        'status': '@echo off\r\nif "%RTK_TEST_STATUS%"=="0" (\r\n  echo rtk rg --smart-case\r\n  exit /b 0\r\n)\r\nif "%RTK_TEST_STATUS%"=="3" (\r\n  echo rtk rg --smart-case\r\n  exit /b 3\r\n)\r\nif "%RTK_TEST_STATUS%"=="2" exit /b 2\r\nexit /b 1\r\n',
+        'gain': '@echo off\r\nif not "%~1"=="gain" exit /b 1\r\necho {"summary":{"total_saved":5},"daily":[{"date":"2025-01-01","saved_tokens":5}]}\r\nexit /b 0\r\n',
+    },
+}
+
+
+def write_rtk_stub(folder, kind):
+    if os.name == 'nt':
+        binary = pathlib.Path(folder) / 'rtk.cmd'
+        binary.write_text(RTK_STUBS['win32'][kind])
+    else:
+        binary = pathlib.Path(folder) / 'rtk'
+        binary.write_text(RTK_STUBS['posix'][kind])
+        binary.chmod(0o700)
+    return binary
+
 
 def run_node(script, extra_env=None):
     if NODE is None:
@@ -39,6 +61,8 @@ console.log(JSON.stringify({{saved,path:a.settingsPath()}}));'''
             expected = data_root / '.ccode/v2/token-savers.json'
             self.assertEqual(pathlib.Path(result['path']), expected)
             self.assertEqual(result['saved']['caveman'], {'enabled': True, 'level': 'ultra'})
+            if os.name == 'nt':
+                self.skipTest('POSIX file mode 0o600 is not reported on Windows')
             self.assertEqual(expected.stat().st_mode & 0o777, 0o600)
 
     def test_prompt_modes_are_opt_in_and_preserve_existing_instructions(self):
@@ -74,9 +98,7 @@ console.log(JSON.stringify({{path:a.settingsPath()}}));'''
 class TokenSaversRtkTests(unittest.TestCase):
     def test_rewrite_and_approval_follow_rtk_decisions(self):
         with tempfile.TemporaryDirectory() as folder:
-            binary = pathlib.Path(folder) / 'rtk'
-            binary.write_text('#!/bin/sh\ncase "$RTK_TEST_STATUS" in\n  0) printf "%s\\n" "rtk rg --smart-case"; exit 0 ;;\n  2) exit 2 ;;\n  3) printf "%s\\n" "rtk rg --smart-case"; exit 3 ;;\n  *) exit 1 ;;\nesac\n')
-            binary.chmod(0o700)
+            write_rtk_stub(folder, 'status')
             script = f'''const a=require({json.dumps(str(RUNTIME))});
 const assert=require('node:assert/strict');
 const env={{PATH:{json.dumps(folder)},HOME:{json.dumps(folder)},CCODE_DATA_BASE_DIR:{json.dumps(folder)},RTK_TEST_STATUS:'0'}};
@@ -116,9 +138,7 @@ a.writeSettings({{rtk:{{enabled:true}},caveman:{{enabled:false,level:'full'}},po
 
     def test_main_ipc_persists_settings_and_returns_local_rtk_analytics(self):
         with tempfile.TemporaryDirectory() as folder:
-            binary = pathlib.Path(folder) / 'rtk'
-            binary.write_text('#!/bin/sh\nif [ "$1" = "gain" ]; then printf "%s\\n" \'{"summary":{"total_saved":5},"daily":[{"date":"2025-01-01","saved_tokens":5}]}\' ; exit 0; fi\nexit 1\n')
-            binary.chmod(0o700)
+            write_rtk_stub(folder, 'gain')
             script = f'''const main=require({json.dumps(str(MAIN))});
 const assert=require('node:assert/strict');
 const handlers=new Map();

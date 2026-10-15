@@ -74,7 +74,7 @@ class RuntimeContractTests(unittest.TestCase):
         (self.plugin / REMOTE_PLUGIN_DIR).mkdir(parents=True)
         (self.plugin / REMOTE_PLUGIN_DIR / 'plugin.json').write_text(json.dumps(PUBLISHED_MANIFEST, ensure_ascii=False))
         (self.plugin / 'skills/blender').mkdir(parents=True)
-        (self.plugin / 'skills/blender/SKILL.md').write_text(PUBLISHED_SKILL)
+        (self.plugin / 'skills/blender/SKILL.md').write_text(PUBLISHED_SKILL, newline='\n')
 
     def run_node(self, script):
         command = node_command()
@@ -147,7 +147,8 @@ class RuntimeContractTests(unittest.TestCase):
     def test_payload_localization_keeps_local_manifest_and_missing_payloads(self):
         report = self.node_json(
             "const fs=require('node:fs');"
-            "const local=plugin.replace(/\\/plugin$/, '/local-plugin');"
+            "const path=require('node:path');"
+            "const local=path.join(path.dirname(plugin),'local-plugin');"
             "fs.mkdirSync(local+'/.ccode-plugin',{recursive:true});"
             "fs.writeFileSync(local+'/.ccode-plugin/plugin.json',JSON.stringify({name:'plain',description:'Plain plugin'}));"
             "check('untouched',compat.localizePluginTree(local),0);"

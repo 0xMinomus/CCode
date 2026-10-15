@@ -61,7 +61,10 @@ class PromotionTests(unittest.TestCase):
                                                     'Icon=zcode\nStartupWMClass=ZCode\nComment=ZCode Desktop App\n')
         (self.app_dir / 'AppRun').write_text('#!/bin/bash\nBIN="$APPDIR/zcode"\nexec "$BIN"\n')
         (self.app_dir / 'zcode').write_bytes(b'electron-binary')
-        (self.app_dir / 'zcode.png').symlink_to('usr/share/icons/hicolor/1024x1024/apps/zcode.png')
+        try:
+            (self.app_dir / 'zcode.png').symlink_to('usr/share/icons/hicolor/1024x1024/apps/zcode.png')
+        except OSError:
+            self.skipTest('POSIX symlink privilege is unavailable on this host')
         self.namespace = self.root / 'namespace'
         self.cache = self.namespace / 'data/.ccode/v2/runtime/provider/linux-x86_64/3.14.5/endpoint-test/ccode-builtin.json'
         self.cache.parent.mkdir(parents=True, exist_ok=True)
@@ -560,7 +563,7 @@ class SkillPackStagingTests(unittest.TestCase):
             self.assertEqual((self.pack / rel).read_bytes(), data)
         self.assertFalse(stale_plugin.exists())
         self.assertFalse((self.pack / '.ccode-plugin').exists())
-        self.assertEqual(files, sorted(str(path.relative_to(self.output)) for path in self.pack.rglob('*') if path.is_file()))
+        self.assertEqual(files, sorted(path.relative_to(self.output).as_posix() for path in self.pack.rglob('*') if path.is_file()))
 
     def test_missing_ownership_marker_preserves_all_noncanonical_skills(self):
         (self.installed / '.ccode-skills.json').unlink()
@@ -594,7 +597,7 @@ class SkillPackStagingTests(unittest.TestCase):
                 if path.is_file():
                     relative = path.relative_to(source)
                     self.assertEqual((self.pack / 'skills' / relative).read_bytes(), path.read_bytes())
-                    self.assertIn(str((self.pack / 'skills' / relative).relative_to(self.output)), files)
+                    self.assertIn((self.pack / 'skills' / relative).relative_to(self.output).as_posix(), files)
         for rel, data in self.vendor.items():
             self.assertEqual((self.pack / rel).read_bytes(), data)
 
@@ -612,7 +615,10 @@ class MaintenanceTests(unittest.TestCase):
         for stamp in stamps:
             (backups / stamp).mkdir(parents=True)
         (backups / 'not-a-backup').mkdir()
-        (backups / 'link').symlink_to(backups / 'not-a-backup', target_is_directory=True)
+        try:
+            (backups / 'link').symlink_to(backups / 'not-a-backup', target_is_directory=True)
+        except OSError:
+            self.skipTest('POSIX symlink privilege is unavailable on this host')
         removed = apply_build.prune_backups(backups, backups / stamps[-1])
         self.assertEqual(sorted(p.name for p in removed), stamps[:2])
         self.assertEqual(sorted(p.name for p in backups.iterdir()),

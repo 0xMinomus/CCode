@@ -80,6 +80,7 @@ class StageHygieneTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 pack_linux.assert_no_personal_paths(root)
 
+    @unittest.skipIf(os.name != 'posix', 'POSIX file modes are not meaningful on Windows')
     def test_normalize_modes_makes_the_tree_readable_for_installed_users(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)

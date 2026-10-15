@@ -58,6 +58,7 @@ class BundledSkillBundleTests(unittest.TestCase):
                         if line and not line[0].isspace() and ':' in line and not line.startswith('-')}
                 self.assertLessEqual(keys, APP_FRONTMATTER_KEYS, f'unexpected frontmatter keys: {sorted(keys)}')
 
+    @unittest.skipIf(os.name != 'posix', 'POSIX file modes are not meaningful on Windows')
     def test_scripts_that_the_skills_execute_keep_their_executable_bit(self):
         script = BUNDLE / 'impeccable/scripts/impeccable'
         self.assertTrue(script.is_file())

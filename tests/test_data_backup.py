@@ -14,6 +14,13 @@ backup = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(backup)
 
 
+def symlink_or_skip(test, target, destination, target_is_directory=False):
+    try:
+        destination.symlink_to(target, target_is_directory)
+    except OSError:
+        test.skipTest('POSIX symlink privilege is unavailable on this host')
+
+
 class DataBackupTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -52,6 +59,11 @@ class DataBackupTests(unittest.TestCase):
         self.assertFalse(copied.with_name('db.sqlite-wal').exists())
         self.assertEqual((self.snapshot / 'files/data/.ccode/v2/workspace/task/messages.json').read_bytes(), self.task.read_bytes())
         self.assertEqual((self.snapshot / 'files/electron/Preferences').read_bytes(), self.profile.read_bytes())
+
+    @unittest.skipIf(os.name != 'posix', 'POSIX file modes are not meaningful on Windows')
+    def test_snapshot_permissions_are_private(self):
+        self.create_database()
+        backup.backup(self.root, self.snapshot)
         for path in (self.snapshot, *self.snapshot.rglob('*')):
             self.assertEqual(path.stat().st_mode & 0o077, 0, str(path))
 
@@ -99,16 +111,16 @@ class DataBackupTests(unittest.TestCase):
     def test_symlink_policy_keeps_inside_links_and_refuses_escape(self):
         self.create_database().close()
         link = self.root / 'data/outside'
-        link.symlink_to(self.folder)
+        symlink_or_skip(self, self.folder, link)
         with self.assertRaisesRegex(ValueError, 'Unsafe'):
             backup.backup(self.root, self.snapshot)
         link.unlink()
         alias = self.folder / 'namespace-alias'
-        alias.symlink_to(self.root, target_is_directory=True)
+        symlink_or_skip(self, self.root, alias, target_is_directory=True)
         with self.assertRaisesRegex(ValueError, 'Symlink'):
             backup.backup(alias, self.snapshot)
         backup.backup(self.root, self.snapshot)
-        (self.snapshot / 'files/electron/escape').symlink_to(self.profile)
+        symlink_or_skip(self, self.profile, self.snapshot / 'files/electron/escape')
         with self.assertRaisesRegex(ValueError, 'Unsafe'):
             backup.restore(self.root, self.snapshot)
         with self.assertRaisesRegex(ValueError, 'Symlink'):
@@ -118,7 +130,7 @@ class DataBackupTests(unittest.TestCase):
         self.create_database().close()
         link = self.root / 'data/.ccode/workspace/node_modules/.bin/tool'
         link.parent.mkdir(parents=True, exist_ok=True)
-        link.symlink_to('../../cli/tool.js')
+        symlink_or_skip(self, '../../cli/tool.js', link)
         backup.backup(self.root, self.snapshot)
         manifest = backup.validate_snapshot(self.snapshot)
         self.assertEqual([entry['path'] for entry in manifest['links']],
@@ -134,7 +146,7 @@ class DataBackupTests(unittest.TestCase):
         self.create_database().close()
         link = self.root / 'data/.ccode/workspace/tool'
         link.parent.mkdir(parents=True, exist_ok=True)
-        link.symlink_to('../../cli/tool.js')
+        symlink_or_skip(self, '../../cli/tool.js', link)
         backup.backup(self.root, self.snapshot)
         manifest_path = self.snapshot / 'manifest.json'
         manifest = json.loads(manifest_path.read_text())
@@ -145,7 +157,8 @@ class DataBackupTests(unittest.TestCase):
 
     def test_electron_singletons_are_not_restored(self):
         self.create_database().close()
-        (self.root / 'electron/SingletonLock').symlink_to('host-1234')
+        (self.root / 'electron/SingletonLock').parent.mkdir(parents=True, exist_ok=True)
+        symlink_or_skip(self, 'host-1234', self.root / 'electron/SingletonLock')
         backup.backup(self.root, self.snapshot)
         backup.restore(self.root, self.snapshot)
         self.assertFalse((self.root / 'electron/SingletonLock').is_symlink())
@@ -181,6 +194,35 @@ class DataBackupTests(unittest.TestCase):
                 backup.restore(self.root, self.snapshot)
         self.assertEqual(self.task.read_text(), 'original must survive')
         self.assertEqual(list(self.folder.glob('.standalone-restore-*')), [])
+
+
+class WindowsNamespaceMatcherTests(unittest.TestCase):
+    def test_matches_only_the_running_namespace(self):
+        root = pathlib.PureWindowsPath('C:/Users/x/AppData/Local/CCode')
+        quoted = '"C:\\app\\CCode.exe" --type=gpu-process --user-data-dir="C:\\Users\\x\\AppData\\Local\\CCode\\electron"'
+        unquoted = '"C:\\app\\CCode.exe" --user-data-dir=C:\\Users\\x\\AppData\\Local\\CCode\\electron'
+        self.assertTrue(backup.windows_namespace_in_use(root, [quoted]))
+        self.assertTrue(backup.windows_namespace_in_use(root, [unquoted]))
+        self.assertTrue(backup.windows_namespace_in_use(root, [quoted.upper()]), 'the match is case-insensitive')
+        self.assertTrue(backup.windows_namespace_in_use(root, [quoted.replace('\\', '/')]), 'forward slashes are accepted')
+
+    def test_ignores_other_roots_and_unrelated_clients(self):
+        root = pathlib.PureWindowsPath('C:/Users/x/AppData/Local/CCode')
+        other = '"C:\\app\\CCode.exe" --user-data-dir="D:\\isolated\\root\\electron"'
+        sibling = '"C:\\app\\CCode.exe" --user-data-dir="C:\\Users\\x\\AppData\\Local\\CCode-other\\electron"'
+        bare = '"C:\\app\\CCode.exe" '
+        self.assertFalse(backup.windows_namespace_in_use(root, [other]))
+        self.assertFalse(backup.windows_namespace_in_use(root, [sibling]), 'a shared prefix is not this namespace')
+        self.assertFalse(backup.windows_namespace_in_use(root, [bare]))
+        self.assertFalse(backup.windows_namespace_in_use(root, []))
+        self.assertFalse(backup.windows_namespace_in_use(root, None))
+        self.assertFalse(backup.windows_namespace_in_use(root, [None, 3]))
+
+    def test_default_root_and_isolated_root_do_not_collide(self):
+        running = pathlib.PureWindowsPath('C:/Users/x/AppData/Local/CCode')
+        lines = ['"C:\\app\\CCode.exe" --user-data-dir="C:\\Users\\x\\AppData\\Local\\CCode\\electron"']
+        self.assertTrue(backup.windows_namespace_in_use(running, lines))
+        self.assertFalse(backup.windows_namespace_in_use(pathlib.PureWindowsPath('C:/tmp/isolated'), lines))
 
 
 if __name__ == '__main__':

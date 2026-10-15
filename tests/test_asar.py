@@ -47,7 +47,10 @@ class NativeOverlayTests(unittest.TestCase):
                 with self.subTest(name=name), self.assertRaises(ValueError):
                     archive.write(root / 'candidate.asar', {}, unpacked={name: b'x'})
             target = root / 'linked.asar'
-            pathlib.Path(str(target) + '.unpacked').symlink_to(root, target_is_directory=True)
+            try:
+                pathlib.Path(str(target) + '.unpacked').symlink_to(root, target_is_directory=True)
+            except OSError:
+                self.skipTest('POSIX symlink privilege is unavailable on this host')
             with self.assertRaises(ValueError):
                 archive.write(target, {}, unpacked={'escape.node': b'x'})
             self.assertFalse((root / 'escape.node').exists())

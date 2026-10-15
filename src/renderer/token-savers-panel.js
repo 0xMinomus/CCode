@@ -34,10 +34,14 @@ function CCodeTokenSaversPanel(){
  const updateFeature=(name,enabled)=>save({...settings,[name]:{...settings[name],enabled}});
  const updateLevel=(name,level)=>save({...settings,[name]:{...settings[name],level}});
  const ready=state.status==='ready';
+ const rtkAvailable=rtk.available===true;
+ const rtkReason=rtk.path?'RTK was found but could not be used on this machine.':'RTK is not installed on this machine. It is looked up as rtk, rtk.exe, or rtk.cmd in PATH plus ~/.local/bin and ~/.cargo/bin.';
+ const rtkControl=$.jsx(Xx,{'aria-label':'Enable RTK',checked:rtkAvailable&&settings.rtk.enabled===true,disabled:!ready||saving||!rtkAvailable,onCheckedChange:enabled=>updateFeature('rtk',enabled)});
  return $.jsxs('div',{className:'space-y-4','data-testid':'ccode-token-savers-panel',children:[
   $.jsx('p',{className:'text-ui-sm text-foreground-subtle',children:'Choose which local token-saving tools shape shell commands and agent instructions.'}),
   $.jsxs(Q1,{children:[
-   $.jsx(Z1,{label:'RTK',description:'RTK rewrites supported commands; no-match preserves CCode approval, while errors stop execution.',control:$.jsx(Xx,{'aria-label':'Enable RTK',checked:settings.rtk.enabled,disabled:!ready||saving,onCheckedChange:enabled=>updateFeature('rtk',enabled)})}),
+   $.jsx(Z1,{label:'RTK',description:'RTK rewrites supported commands; no-match preserves CCode approval, while errors stop execution.',control:rtkControl}),
+   rtkAvailable?null:$.jsx('p',{className:'text-ui-sm text-foreground-subtle','data-testid':'ccode-token-savers-rtk-unavailable',children:rtkReason}),
    $.jsx(Z1,{label:'Caveman',description:'Apply a concise response style to agent instructions. Lite, Full, or Ultra compression.',control:CCodeTokenSaversFeatureControl('Caveman',settings.caveman,level=>updateLevel('caveman',level),enabled=>updateFeature('caveman',enabled),!ready||saving)}),
    $.jsx(Z1,{label:'Ponytail',description:'Avoid unnecessary work while preserving correctness and safety. Lite, Full, or Ultra pruning.',control:CCodeTokenSaversFeatureControl('Ponytail',settings.ponytail,level=>updateLevel('ponytail',level),enabled=>updateFeature('ponytail',enabled),!ready||saving)})
   ]}),

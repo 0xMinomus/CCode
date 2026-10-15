@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -27,10 +28,9 @@ class DefaultCommandTests(unittest.TestCase):
 
     def test_agent_discovers_seeded_user_command_in_standalone_namespace(self):
         runtime = ROOT / 'runtime/build/resources/glm/ccode.cjs'
-        electron = ROOT / 'app/ccode'
+        electron = ROOT / 'app' / ('CCode.exe' if os.name == 'nt' else 'ccode')
         if not runtime.is_file() or not electron.is_file():
             self.skipTest('staged agent and Electron are unavailable')
-        import os
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
             storage = root / 'data/.ccode'

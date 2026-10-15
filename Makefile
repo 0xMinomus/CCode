@@ -1,4 +1,4 @@
-.PHONY: build test check apply run install dry-run models icons obsidian obsidian-check migrate pack-linux
+.PHONY: build test check apply run install dry-run models icons obsidian obsidian-check migrate pack-linux pack-windows
 # Standalone namespace the model sync reads and writes; override with
 # `make models STANDALONE_ROOT=/path` when testing against another root.
 STANDALONE_ROOT ?= $(HOME)/.local/share/ccode
@@ -26,6 +26,12 @@ models:
 PACK_ARGS ?=
 pack-linux:
 	python3 scripts/pack_linux.py $(PACK_ARGS)
+# Windows x64 release artifacts (per-user NSIS installer + portable ZIP) from the staged build.
+# Needs 7-Zip, ImageMagick, and NSIS; the script resolves them from PATH or their standard
+# install directories. Override with `make pack-windows PACK_WINDOWS_ARGS="--zip-only"`.
+PACK_WINDOWS_ARGS ?=
+pack-windows:
+	python3 scripts/pack_windows.py $(PACK_WINDOWS_ARGS)
 obsidian:
 	python3 scripts/export_obsidian.py
 obsidian-check:

@@ -52,7 +52,7 @@ def stage_skill_pack(skill_source,installed,output):
  (pack/SKILL_MARKER).write_text(json.dumps({'skills':skills},indent=2)+'\n')
  shutil.rmtree(output/'glm/packages/ccode-skills-plugin',ignore_errors=True)
  rebrand.rewrite_tree(pack)
- files=sorted(str(path.relative_to(output)) for path in pack.rglob('*') if path.is_file())
+ files=sorted(path.relative_to(output).as_posix() for path in pack.rglob('*') if path.is_file())
  return skills,files
 def installed_catalog():
  """Installed provider catalog; the deployed copy keeps its name across applies."""
@@ -68,7 +68,7 @@ def main():
  renderer=manifest['renderer_asset'];s=view.read(renderer).decode()
  s=replace_once(s,'function iOn({isDesktop:','function originalCuaSettings({isDesktop:')
  s=replace_once(s,'function mit(e){let t=Wo()','function mit(e){if(linuxCuaLocal(e))return $.jsx(LinuxCuaShortcut,e);let t=Wo()')
- s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\nfunction iOn(p){return linuxCuaLocal(p)?$.jsx(LinuxCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
+ s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\n'+(ROOT/'src/renderer/windows-computer-use.js').read_text()+'\nfunction iOn(p){return linuxCuaLocal(p)?$.jsx(LinuxCuaSettings,p):windowsCuaLocal(p)?$.jsx(WindowsCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
  s+='\n'+(ROOT/'src/renderer/activity-panel.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/token-savers-panel.js').read_text()+'\n'
  s=skills_plugin.patch_renderer(s)
@@ -115,7 +115,9 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  (output/'token-savers').mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/'src/main/token-savers.cjs',output/'token-savers/main.cjs')
  shutil.copy2(ROOT/'src/main/token-savers-runtime.cjs',output/'token-savers/token-savers-runtime.cjs')
- rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers')
+ (output/'model-sync').mkdir(parents=True,exist_ok=True)
+ shutil.copy2(ROOT/'src/main/model-sync.cjs',output/'model-sync/main.cjs')
+ rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers');rebrand.rewrite_tree(output/'model-sync')
  command_files=default_commands.stage(output)
  (output/marketplace.RESOURCE_DIR).mkdir(parents=True,exist_ok=True)
  (output/marketplace.RESOURCE_FILE).write_text(marketplace.render_runtime())
@@ -126,8 +128,8 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  skills,pack_files=stage_skill_pack(ROOT/'src/skills',ROOT/'app/resources/glm/packages'/skills_plugin.PACK_DIR,output)
  subprocess.run(['node',str(ROOT/'services/mcp/stage.cjs'),str(output/'mcp')],check=True,cwd=ROOT)
  rebrand.rewrite_tree(output/'mcp')
- mcp_files=sorted(str(path.relative_to(output)) for path in (output/'mcp').rglob('*') if path.is_file())
- files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
+ mcp_files=sorted(path.relative_to(output).as_posix() for path in (output/'mcp').rglob('*') if path.is_file())
+ files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','model-sync/main.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
         'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,'plugin_payload':payload,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}

@@ -3,12 +3,20 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const { spawn } = require('node:child_process');
 const { pathToFileURL, fileURLToPath } = require('node:url');
 const active = new Set(), busy = new Set();
-// Computer Use registers itself as `linux-desktop`; the legacy name is only read so an
-// install that predates the rename keeps its settings.
-const DESKTOP_SERVER = 'linux-desktop', DESKTOP_SERVER_LEGACY = 'fedora-desktop';
+// Computer Use registers itself as `linux-desktop` on Linux and `windows-desktop` on Windows:
+// one backend per platform, and neither id is ever seeded on the other. The legacy name is only
+// read on Linux, where it predates the rename.
+const DESKTOP_SERVER = process.platform === 'win32' ? 'windows-desktop' : 'linux-desktop',
+  DESKTOP_SERVER_LEGACY = 'fedora-desktop';
+// The standalone root mirrors src/local_only/storage.py: %LOCALAPPDATA%\CCode on Windows with a
+// homedir fallback, ~/.local/share/ccode elsewhere.
+function standaloneRoot() {
+  if (process.platform !== 'win32') return path.join(os.homedir(), '.local/share/ccode');
+  return path.join((process.env.LOCALAPPDATA || '').trim() || path.join(os.homedir(), 'AppData', 'Local'), 'CCode');
+}
 function paths(options = {}) {
   const resources = path.resolve(options.resourcesPath || process.resourcesPath || path.join(__dirname, '../../app/resources'));
-  const root = path.resolve(options.root || process.env.CCODE_STANDALONE_ROOT || path.join(os.homedir(), '.local/share/ccode'));
+  const root = path.resolve(options.root || process.env.CCODE_STANDALONE_ROOT || standaloneRoot());
   return { resources, root, payload: path.join(resources, 'mcp'), state: path.join(root, 'mcp'), config: path.join(root, 'data/.ccode/cli/config.json'), node: options.node || process.execPath };
 }
 function catalog(p) { return JSON.parse(fs.readFileSync(path.join(p.payload, 'catalog.json'), 'utf8')); }
@@ -46,9 +54,10 @@ function projectRoot(resources) {
 }
 // The desktop backend lives beside the application, so its absolute paths depend on where
 // the tree sits: a package prefix, a source checkout, or a fresh AppImage mount each run.
-function desktopDefinition(resources) {
+function desktopDefinition(p) {
+  if (process.platform === 'win32') return windowsDesktopDefinition(p);
   if (process.platform !== 'linux') return null;
-  const root = projectRoot(resources);
+  const root = projectRoot(p.resources);
   if (!root) return null;
   const command = path.join(root, 'services/desktop/bin/screen-mcp');
   if (!fs.existsSync(command)) return null;
@@ -56,21 +65,32 @@ function desktopDefinition(resources) {
     MCP_SCREEN_NO_AUTO_DEPS: '1', MCP_SCREEN_PROFILE: 'ccode-fast', MCP_SCREEN_MAX_EDGE: '1280',
     MCP_SCREEN_MAX_OUTPUT_KB: '250', MCP_SCREEN_ATSPI: '1' } };
 }
+// The Windows backend is a Node stdio server run by Electron-as-Node (no Python runtime in the
+// package). Packaged trees ship it under resources/desktop-win; checkouts keep it in services.
+function windowsDesktopDefinition(p) {
+  const root = projectRoot(p.resources);
+  const script = [path.join(p.resources, 'desktop-win/main.cjs'), root && path.join(root, 'services/desktop-win/main.cjs')]
+    .find(candidate => candidate && fs.existsSync(candidate));
+  if (!script) return null;
+  return { command: p.node, args: [script], env: { ELECTRON_RUN_AS_NODE: '1', MCP_SCREEN_PROFILE: 'ccode-fast',
+    MCP_SCREEN_MAX_EDGE: '1280', MCP_SCREEN_MAX_OUTPUT_KB: '250' } };
+}
 function applyDesktopDefinition(server, value) {
   server.command = value.command;
   if (!Array.isArray(server.args)) server.args = value.args;
   const env = object(server.env) ? server.env : (server.env = {});
   for (const [name, setting] of Object.entries(value.env)) if (!(name in env)) env[name] = setting;
 }
-// Seeds the Computer Use server for any layout that ships `services/desktop`. The marker
-// keeps a deliberate deletion deleted, while an existing entry is refreshed because an
-// AppImage mount point changes between runs.
-function seedDesktopServer(resources, snapshot, seeded) {
-  if (process.platform !== 'linux') return false;
-  const servers = snapshot.data.mcp.servers, value = desktopDefinition(resources);
+// Seeds the Computer Use server for any layout that ships its backend. The marker keeps a
+// deliberate deletion deleted, while an existing entry is refreshed because an AppImage mount
+// point (or a moved Windows install folder) changes between runs.
+function seedDesktopServer(p, snapshot, seeded) {
+  const platform = process.platform;
+  if (platform !== 'linux' && platform !== 'win32') return false;
+  const servers = snapshot.data.mcp.servers, value = desktopDefinition(p);
   const seededBefore = seeded.includes(DESKTOP_SERVER);
   const legacy = servers[DESKTOP_SERVER_LEGACY];
-  if (!Object.hasOwn(servers, DESKTOP_SERVER) && object(legacy)) {
+  if (platform === 'linux' && !Object.hasOwn(servers, DESKTOP_SERVER) && object(legacy)) {
     servers[DESKTOP_SERVER] = legacy;
     delete servers[DESKTOP_SERVER_LEGACY];
     if (value) applyDesktopDefinition(servers[DESKTOP_SERVER], value);
@@ -102,7 +122,7 @@ function bootstrap(options = {}) {
     if (!Object.hasOwn(snapshot.data.mcp.servers, item.id)) { snapshot.data.mcp.servers[item.id] = definition(p, item); changed = true; }
     seeded.push(item.id);
   }
-  if (seedDesktopServer(p.resources, snapshot, seeded)) changed = true;
+  if (seedDesktopServer(p, snapshot, seeded)) changed = true;
   if (changed) commit(p, snapshot);
   atomic(marker, { seeded });
   return { ok: true };
@@ -126,7 +146,9 @@ function list(options = {}) {
 }
 function cleanEnv(home) {
   const env = {};
-  for (const key of ['PATH', 'LANG', 'LC_ALL', 'TMPDIR', 'SYSTEMROOT']) if (process.env[key]) env[key] = process.env[key];
+  for (const key of ['PATH', 'LANG', 'LC_ALL', 'TMPDIR', 'SYSTEMROOT', 'TEMP', 'TMP', 'USERPROFILE',
+    'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'COMSPEC', 'PATHEXT', 'NUMBER_OF_PROCESSORS', 'OS',
+    'PROCESSOR_ARCHITECTURE']) if (process.env[key]) env[key] = process.env[key];
   return { ...env, HOME: home, XDG_CONFIG_HOME: path.join(home, '.config'), XDG_CACHE_HOME: path.join(home, '.cache'), ELECTRON_RUN_AS_NODE: '1' };
 }
 function npmInstall(p, item) {
@@ -209,11 +231,43 @@ async function probe(client, item, dir, timeout) {
     return 'Indexed local code and retrieved its AST symbol';
   }
   if (item.id === 'lsp') {
-    const diagnostics = await call('lsp_diagnostics', { file_path: path.join(dir, 'smoke.ts'), severity_filter: 'all' });
-    if (!/2322|not assignable/i.test(textResult(diagnostics))) throw Error('Language server did not report the fixture type error.');
-    const found = await call('lsp_document_symbols', { file_path: path.join(dir, 'smoke.ts') });
-    if (!textResult(found).includes('ccodeSmokeAdd')) throw Error('Language server did not return the fixture symbol.');
-    return 'lsp_document_symbols found the function; lsp_diagnostics reported its known TypeScript type error';
+    const file = path.join(dir, 'smoke.ts');
+    // A cold server can refuse or truncate the first symbol read while the project loads, so the
+    // open+read pair is retried. The assertion itself is unchanged.
+    let found = null, symbolError = null;
+    for (let attempt = 0; attempt < 3 && !found; attempt++) {
+      if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        await call('lsp_index_files', { files: [file] });
+        const read = await call('lsp_document_symbols', { file_path: file });
+        if (textResult(read).includes('ccodeSmokeAdd')) found = read;
+      } catch (error) { symbolError = error; }
+    }
+    if (!found) {
+      const failure = Error('Language server did not return the fixture symbol.' + (symbolError ? ' ' + symbolError.message : ''));
+      failure.mcpTool = 'lsp_document_symbols';
+      throw failure;
+    }
+    if (process.platform !== 'win32') {
+      const diagnostics = await call('lsp_diagnostics', { file_path: file, severity_filter: 'all' });
+      if (!/2322|not assignable/i.test(textResult(diagnostics))) throw Error('Language server did not report the fixture type error.');
+      return 'lsp_document_symbols found the function; lsp_diagnostics reported its known TypeScript type error';
+    }
+    // lsp_workspace_diagnostics is cache-only: it reports nothing until the file has been opened
+    // in the session, so each pass refreshes with lsp_diagnostics first. That per-file answer is
+    // empty on Windows (the server publishes lowercase-drive URIs while it keys on the caller's
+    // spelling), which is why the workspace view is what the assertion reads.
+    const deadline = Date.now() + 10000;
+    for (;;) {
+      try { await call('lsp_diagnostics', { file_path: file, severity_filter: 'all' }); }
+      catch { /* the refresh only has to open the file; its own answer is not asserted here */ }
+      const diagnostics = await call('lsp_workspace_diagnostics', { severity_filter: 'all', limit: 200 });
+      if (/2322|not assignable/i.test(textResult(diagnostics))) {
+        return 'lsp_document_symbols found the function; lsp_workspace_diagnostics reported its known TypeScript type error (per-file lsp_diagnostics is empty on Windows)';
+      }
+      if (Date.now() >= deadline) throw Error('Language server did not report the fixture type error.');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
   if (item.id === 'ripgrep') {
     const found = await call('search', { pattern: 'ccodeSmokeAdd', path: dir });
@@ -276,7 +330,16 @@ async function test(request, options = {}) {
 function trusted(event) {
   const frame = event.senderFrame;
   if (!frame || frame !== event.sender.mainFrame) return false;
-  try { const url = new URL(frame.url); return url.protocol === 'file:' && fileURLToPath(url).endsWith('/out/renderer/index.html'); } catch { return false; }
+  try {
+    const url = new URL(frame.url);
+    if (url.protocol !== 'file:') return false;
+    // fileURLToPath returns backslashes on Windows and refuses a drive-less file URL there, so
+    // the suffix accepts both separators and falls back to the URL path instead of refusing the
+    // frame. The URL path is always POSIX, which is why both spellings have to match.
+    let path;
+    try { path = fileURLToPath(url); } catch { path = url.pathname; }
+    return /[\\/]out[\\/]renderer[\\/]index\.html$/.test(path);
+  } catch { return false; }
 }
 function register({ app, ipcMain }) {
   bootstrap();

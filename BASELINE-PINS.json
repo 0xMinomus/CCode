@@ -1,0 +1,7 @@
+{
+  "baseline": "baselines/upstream-3.14.5-original.asar",
+  "baseline_sha256": "fcc1e6af5e65ad1f0711addf35b125a0596179afb9976d257ced1a3aa2836d31",
+  "agent_baseline": "baselines/upstream-3.14.5-original-agent.cjs",
+  "agent_baseline_sha256": "fad4c35c4c36ec210d8a06d3fa0e77de23c8545e2eb6ff90aea1eb38d1e6275f",
+  "plugins_baseline_sha256": "5a891a5dc4a061abe8b1a0882ca04ac20b6f934e45c44c30e21d6d7d82318d9b"
+}

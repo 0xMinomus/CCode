@@ -35,8 +35,14 @@ PPTX_RERUN = ('then fix the real hits and re-run.',
 
 
 def _baseline_files():
+    """Payload paths in POSIX spelling, ordered by that spelling.
+
+    The digest is pinned in project.json and must be identical on every host, so
+    the order must not come from Path comparison: WindowsPath orders case-folded
+    with backslashes and produced a different digest there.
+    """
     paths = []
-    for path in sorted(BASELINE.rglob('*')):
+    for path in BASELINE.rglob('*'):
         if not path.is_file():
             continue
         relative = path.relative_to(BASELINE).as_posix()
@@ -45,7 +51,7 @@ def _baseline_files():
         paths.append(relative)
     if not paths:
         raise ValueError('Plugin payload baseline is empty: ' + str(BASELINE))
-    return paths
+    return sorted(paths)
 
 
 def _staged_files():

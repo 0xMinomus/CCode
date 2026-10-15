@@ -39,15 +39,21 @@ Verifikasi sebelum dipublikasikan: jalankan AppImage dengan root uji lewat `CCOD
 
 Stage menolak build bila jalur home mesin build atau `provider_config*.json` ikut terbawa, dan menormalkan izin berkas supaya tree dapat dibaca pengguna yang memasangnya. Venv layanan hanya membawa interpreter (`bin/python*`); console script, `pyvenv.cfg` yang memuat jalur build, cache `__pycache__`, dan state lokal model-sync dibuang. Computer Use masih memerlukan paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`) karena layer itu tidak dapat dibundel.
 
-## Gate kandidat Windows hibrida
+## Paket rilis Windows
 
-Kandidat M1 bukan installer atau rilis Windows siap pakai. Gunakan hanya root uji terisolasi; jangan menunjuk ke data Linux atau namespace harian. Default Windows adalah `%LOCALAPPDATA%\CCode`, tetapi `CCODE_STANDALONE_ROOT` tetap menimpa default tersebut di main, host, scheduler, dan agent.
+`make pack-windows` membangun `CCode-<versi>-win-x64.exe` (installer NSIS per-user), `CCode-<versi>-win-x64.zip` (portable), `SHA256SUMS`, dan `package-manifest.json` di `runtime/release-windows/`. Prasyarat: 7-Zip, ImageMagick, dan NSIS (dicari lewat PATH lalu lokasi instalasi standar), plus jaringan untuk installer vendor dan paket native. Versi rilis Windows ada di `project.json` (`windows_release_version`). Kandidat prarilis M1 sudah digantikan installer rilis.
 
-Pengguna Windows harus mencatat versi OS, checksum kandidat, startup tanpa login, lokasi profil/data, log runtime/IPC, serta hasil terminal/pty. Jangan mengirim API key atau konfigurasi provider live bersama log. Tutup aplikasi secara normal setelah uji. M2–M5 menunggu bukti M1; Wine, inspeksi archive, dan tes namespace tersimulasi tidak menggantikan pengujian Windows. Daftar penerimaan lengkap ada di [windowsrelease.md](../windowsrelease.md).
+Installer tidak meminta admin: aplikasi dipasang di `%LOCALAPPDATA%\Programs\CCode`, dengan shortcut Start Menu, entri uninstall di HKCU, skema URL `ccode://`, dan dua task model-sync (`CCode Model Sync` ONLOGON dan `CCode Model Sync (daily)`). Installer dan uninstaller hanya menahan bila ada `CCode.exe` yang berjalan dari folder install tujuan; instance lain (mis. ZIP uji atau salinan portable) tidak memblokir. Uninstaller menghapus aplikasi, shortcut, registry, dan task; data `%LOCALAPPDATA%\CCode` dipertahankan kecuali pengguna mencentang opsi hapus.
+
+Portable ZIP: ekstrak ke folder yang dapat ditulis, lalu jalankan `app\CCode.exe` (namespace default yang sama), atau `powershell -NoProfile -ExecutionPolicy Bypass -File .\CCode.ps1` untuk root uji terisolasi. Artifact unsigned sehingga SmartScreen memperingatkan. Tidak ada feed update; aplikasi hanya menghubungi endpoint provider yang pengguna konfigurasi.
+
+Verifikasi cepat di mesin Windows: cocokkan `SHA256SUMS` (`certutil -hashfile` atau `Get-FileHash`), pasang, buka workspace tanpa layar login, pastikan `/` menampilkan 12 command dan Settings tidak menampilkan kontrol Voice, jalankan `cmd /c echo CCODE_PTY_OK` di terminal bawaan, tutup normal lalu buka ulang untuk persistensi, dan ambil snapshot dengan `python3 scripts/data_backup.py backup --root %LOCALAPPDATA%\CCode` saat aplikasi tertutup. Batas yang wajib ditulis di release notes: Computer Use Windows tidak dapat mengendalikan jendela elevated atau secure desktop (UIPI), perilaku multi-monitor/mixed-DPI belum terverifikasi, dan `lsp_diagnostics` per-file mengembalikan kosong di Windows — pakai `lsp_workspace_diagnostics` atau tool navigasi `lsp_*`.
 
 ## Computer Use: satu backend, dua tempat
 
 Computer Use Linux diatur dari **Settings → Computer Use**, dan entry yang sama (`linux-desktop`) juga tampil sebagai baris di **Settings → MCP Servers**. Keduanya bukan dua backend: keduanya menulis state `enabled` yang sama, jadi menyalakan/mematikan di salah satu tempat memberi hasil yang sama. Panel Computer Use menambahkan hal yang tidak ada di daftar MCP: status koneksi + jumlah tool, petunjuk izin, dan sakelar pintasan di kotak chat. Teks panel menyebut hal ini supaya tidak jadi pertanyaan "yang mana yang dipakai?".
+
+Di Windows pola yang sama berlaku untuk `windows-desktop`: panel Settings menampilkan status/daftar tool dari entry yang sama di daftar MCP, menyebut batas UIPI dan tidak adanya dialog izin portal, dan menyembunyikan sakelar dengan pesan jujur bila entry itu tidak ada. Tidak ada sakelar mati dan tidak ada pintasan composer di Windows.
 
 ## Computer Use: klik/ketik ditolak
 
@@ -107,6 +113,8 @@ python3 scripts/data_backup.py restore ~/ccode-backups/2026-10-12 --root ~/.loca
 ```
 
 Snapshot memakai SQLite backup API, menolak path traversal, dan menyimpan manifest berisi hash setiap entri. Symlink yang menunjuk di dalam namespace (mis. `node_modules/.bin/*` di workspace atau link tool MCP) dicatat sebagai `links` dan dibuat ulang saat restore; symlink yang keluar namespace, entri non-regular, dan alias root tetap ditolak. Restore menahan lock operasi eksklusif, menolak bila aplikasi masih berjalan, dan menyimpan namespace lama sebagai `<root>-pre-restore-<stamp>`.
+
+Di Windows perintahnya sama dengan `--root %LOCALAPPDATA%\CCode`. Deteksi "aplikasi sedang berjalan" mencocokkan argumen `--user-data-dir` proses `CCode.exe` dengan `<root>\electron`, jadi snapshot root uji terisolasi tetap dapat diambil sementara instance default pengguna berjalan; lock antar-skrip memakai `LockFileEx`, bukan `flock`.
 
 ## Rollback
 

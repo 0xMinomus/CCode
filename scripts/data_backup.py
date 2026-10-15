@@ -3,7 +3,6 @@
 import argparse
 import contextlib
 import datetime
-import fcntl
 import hashlib
 import json
 import os
@@ -11,9 +10,15 @@ import pathlib
 import shutil
 import sqlite3
 import stat
+import subprocess
 import sys
 import tempfile
 import urllib.parse
+
+try:
+    import fcntl
+except ImportError:  # Windows: try_lock takes the same lock through LockFileEx.
+    fcntl = None
 
 PROJECT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT / 'src'))
@@ -64,23 +69,115 @@ def atomic_json(path, value):
             os.unlink(name)
 
 
+def try_lock(stream, exclusive=True):
+    """Take a non-blocking lock on an open stream; raise when another holder exists.
+
+    Shared code (data_backup, model-sync) calls this so the Windows path keeps the
+    same fail-fast semantics as POSIX flock.
+    """
+    message = 'Standalone app or another storage operation is active'
+    if fcntl is not None:
+        try:
+            fcntl.flock(stream, (fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH) | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise ValueError(message) from error
+        return
+    import ctypes
+    import msvcrt
+    class Overlapped(ctypes.Structure):
+        _fields_ = [('Internal', ctypes.c_void_p), ('InternalHigh', ctypes.c_void_p),
+                    ('Offset', ctypes.c_uint32), ('OffsetHigh', ctypes.c_uint32), ('hEvent', ctypes.c_void_p)]
+    lockfile_fail_immediately = 0x1
+    lockfile_exclusive_lock = 0x2
+    kernel32 = ctypes.windll.kernel32
+    kernel32.LockFileEx.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32,
+                                    ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(Overlapped)]
+    kernel32.LockFileEx.restype = ctypes.c_int
+    flags = lockfile_fail_immediately | (lockfile_exclusive_lock if exclusive else 0)
+    overlapped = Overlapped()
+    try:
+        locked = kernel32.LockFileEx(msvcrt.get_osfhandle(stream.fileno()), flags, 0, 1, 0, ctypes.byref(overlapped))
+    except OSError:
+        locked = False
+    if not locked:
+        raise ValueError(message)
+
+
 @contextlib.contextmanager
 def namespace_lock(root, exclusive=True):
     safe_path(root)
     root.parent.mkdir(parents=True, exist_ok=True)
     path = safe_path(root.parent / ('.' + root.name + '.operations.lock'))
-    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
-    os.fchmod(fd, 0o600)
+    fd = os.open(path, os.O_CREAT | os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+    if os.name == 'posix':
+        os.fchmod(fd, 0o600)
     with os.fdopen(fd, 'a') as lock:
-        try:
-            fcntl.flock(lock, (fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH) | fcntl.LOCK_NB)
-        except BlockingIOError as error:
-            raise ValueError('Standalone app or another storage operation is active') from error
+        try_lock(lock, exclusive)
         yield
 
 
+def windows_namespace_in_use(root, command_lines):
+    """True when a CCode client uses this namespace's Electron profile directory.
+
+    Deliberately conservative per line: the namespace is matched by the
+    --user-data-dir value the Electron children carry, so an isolated root is not
+    blocked by an unrelated running app.
+    """
+    profile = (str(root).replace('\\', '/').rstrip('/') + '/electron').lower()
+    marker = '--user-data-dir='
+    for line in command_lines or ():
+        if not isinstance(line, str):
+            continue
+        normalized = line.replace('\\', '/').lower()
+        cursor = 0
+        while True:
+            index = normalized.find(marker, cursor)
+            if index < 0:
+                break
+            value = normalized[index + len(marker):].lstrip('"')
+            if value.startswith(profile) and value[len(profile):len(profile) + 1] in ('', '"', ' '):
+                return True
+            cursor = index + len(marker)
+    return False
+
+
+def windows_process_command_lines():
+    """Command lines of running CCode clients; empty when the query is unavailable.
+
+    A missing PowerShell or a failed query returns no lines, so the caller does not
+    block, mirroring the POSIX branch's PermissionError tolerance.
+    """
+    script = ("Get-CimInstance Win32_Process -Filter \"Name='CCode.exe'\" | "
+              "Select-Object -ExpandProperty CommandLine | ConvertTo-Json -Compress")
+    try:
+        result = subprocess.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', script],
+                                capture_output=True, text=True)
+    except OSError:
+        return []
+    if result.returncode != 0 or not result.stdout.strip():
+        return []
+    try:
+        parsed = json.loads(result.stdout)
+    except ValueError:
+        return []
+    if isinstance(parsed, str):
+        return [parsed]
+    if isinstance(parsed, list):
+        return [line for line in parsed if isinstance(line, str)]
+    return []
+
+
 def assert_offline(root):
-    """Refuse when a process uses this namespace, including a direct-launched default app."""
+    """Refuse when a process uses this namespace, including a direct-launched default app.
+
+    Windows has no /proc, so it matches the namespace through the Electron children's
+    --user-data-dir instead of an environment marker; when the process query is
+    unavailable the check does not block, like the POSIX PermissionError path.
+    """
+    if os.name == 'nt':
+        if windows_namespace_in_use(root, windows_process_command_lines()):
+            raise ValueError('Close the standalone app before restoring data')
+        return
     executable = str((PROJECT / 'app/ccode').resolve())
     marker = ('CCODE_STANDALONE_ROOT=' + str(root)).encode()
     default = pathlib.Path(DEFAULT_ROOT)

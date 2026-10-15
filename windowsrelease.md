@@ -1,6 +1,6 @@
 # Rencana kerja rilis Windows x64
 
-Status: 2026-10-16. Pemilik mengizinkan eksekusi **Windows hibrida M1–M5**. Gate runtime M1 kandidat terpinsel lulus di PC Windows pemilik; build ulang dan suite Windows belum lulus. M2–M5 belum dijalankan. Rencana tingkat tinggi tetap di [releaseplan.md](releaseplan.md); pelaksanaan Linux ada di [linuxrelease.md](linuxrelease.md).
+Status: 2026-10-16. Rilis Windows x64 hibrida dibangun dan diverifikasi di PC Windows pemilik (Windows 11 x64 build 26200). M1–M5 dijalankan di mesin target; artifact rilis ada di `runtime/release-windows/`. Rencana tingkat tinggi tetap di [releaseplan.md](releaseplan.md); pelaksanaan Linux ada di [linuxrelease.md](linuxrelease.md).
 
 Target: fitur Windows sama dengan rilis Linux 1.0.0 saat ini — tanpa akun, namespace data sendiri, provider BYOK + 9Router, 12 slash command, 32 skill Default, 12 subagent, Token savers, Activity, MCP katalog, Plugin Marketplace + n8n, backup/restore, dan Computer Use. Voice tetap dihapus.
 
@@ -278,18 +278,51 @@ Hasil ditulis sebagai catatan: versi Windows, nama artifact + SHA256, langkah, t
 |---|---|
 | Rencana Windows (file ini) | ✅ selesai |
 | M0. Fakta + pin baseline vendor | ✅ selesai (SHA256 installer + isi tercatat) |
-| K1–K7. Keputusan pemilik | K1 hibrida dipilih; K2 namespace Windows diterapkan; K3–K5 mengikuti rekomendasi saat milestone terkait; K6 PC pemilik; K7 kandidat unsigned |
-| M1. Bukti boot di Windows (spike) | ✅ kandidat terpinsel lulus di Windows 11 build 26200; bukti di bawah. Build ulang lokal belum lulus |
-| Kandidat ZIP M1 (bukan bukti boot) | Dirakit; CRC ZIP dan 10.937 hash berkas lulus; 13 native Windows, tanpa native Linux |
-| M2. Paritas fitur | ⬜ belum |
-| M3. Computer Use `windows-desktop` + panel | ⬜ belum |
-| M4. Packaging installer Windows | ⬜ belum (butuh `makensis`, belum terpasang) |
-| M5. Gate verifikasi di Windows | ⬜ belum |
-| A–H. Rincian pekerjaan | ⬜ belum |
+| K1–K7. Keputusan pemilik | K1 hibrida dipilih; K2 `%LOCALAPPDATA%\CCode` diterapkan; K3 Task Scheduler per-user; K4 backend Node + PowerShell; K5 payload per platform; K6 PC pemilik; K7 unsigned |
+| M1. Bukti boot di Windows (spike) | ✅ kandidat terpinsel lulus di Windows 11 build 26200 (boot, namespace, log, PTY, restart) |
+| Kandidat ZIP M1 (bukan bukti boot) | Dirakit; CRC ZIP dan 10.937 hash berkas lulus; 13 native Windows, tanpa native Linux; digantikan rilis 1.0.0 |
+| Build ulang lokal + suite | ✅ `make build && make test` lulus di Windows (295 tes, 41 skip eksplisit POSIX, `Checks passed`) |
+| M2. Paritas fitur | ✅ MCP 4/4 tool nyata, model-sync Node + Auto Detect, token savers jujur, backup/restore, Activity; detail di bukti M5 |
+| M3. Computer Use `windows-desktop` + panel | ✅ backend + seeding + panel; aksi live dan guard `STOPPED` terukur |
+| M4. Packaging installer Windows | ✅ installer NSIS per-user + ZIP portable + ikon `.ico`; install/launch/uninstall terukur |
+| M5. Gate verifikasi di Windows | ✅ F1–F10 dijalankan di mesin pemilik; catatan dan batas ada di bawah |
+| A–H. Rincian pekerjaan | ✅ per milestone, dengan pengecualian yang ditulis di batas |
 
 Belum ada baris di tabel ini yang boleh ditandai selesai tanpa bukti yang dijalankan di Windows; build berhasil saja bukan bukti.
 
-### Kandidat yang harus diuji pengguna
+### Bukti verifikasi rilis (M5, 2026-10-16)
+
+Mesin: Windows 11 Home Single Language x64 build 26200 (PC pemilik). Artifact rilis di `runtime/release-windows/`:
+
+| Artifact | Byte | SHA256 |
+|---|---:|---|
+| `CCode-1.0.0-win-x64.exe` | 155.042.988 | `94b7f2c51ba30b312b59c185897f017a3bbd51b4d314dfab4dbdcdb754a240a1` |
+| `CCode-1.0.0-win-x64.zip` | 251.698.803 | `bddb62be9c7af79726e1c30a9795bc15a23b7800fa208991b9d9a9474581fbfa` |
+
+Pendamping: `SHA256SUMS`, `package-manifest.json`, `RELEASE-NOTES.txt`. Gate identitas packager memeriksa 8.378 berkas teks dan 27.057 entri ASAR: tanpa sisa ejaan produk upstream, tanpa viewBox mark lama, tanpa native Linux. Guard "aplikasi berjalan" memakai `guard.ps1` (WMI `Win32_Process`, sama untuk setup dan uninstaller) karena `Get-Process .Path` kosong ketika dipanggil uninstaller.
+
+- **F1 — Installer + boot.** Installer per-user `/S` selesai tanpa admin; 10.990 berkas di `%LOCALAPPDATA%\Programs\CCode` (termasuk `guard.ps1`, `model-sync.cmd`, `app/resources/desktop-win/main.cjs`, `app/resources/model-sync/main.cjs`); Start Menu shortcut, entri uninstall HKCU, skema `ccode://`, dan task `CCode Model Sync` (ONLOGON) + `CCode Model Sync (daily)` terbentuk. Task harian disimpan sebagai `/c "<install>\model-sync.cmd"` dan form `/TR` yang sama diuji dengan task scratch yang benar-benar berjalan. Tree rilis dibuka dengan root terisolasi: workspace tanpa layar login; stdout/stderr launcher dan log aplikasi tidak memuat `Unknown channel`, `No handler registered`, `ReferenceError`, atau `TypeError`.
+- **F2 — Permukaan fitur.** `/` menampilkan 12 command; Settings → Commands 12 (Documents 6, Development 3, Quality 3); Settings → Skills badge Default 33 (32 skill paket CCode + seed vendor `dynamic-workflows`); Subagents → Built-in subagents 12; tidak ada teks atau menu Voice; panel Token savers tampil; Activity menjawab dari database sesi lokal. Terminal bawaan menjalankan `cmd /c echo CCODE_PTY_OK` dan output terlihat.
+- **F3 — Provider dan Auto Detect.** Template 9Router ditambahkan lewat UI, lalu **tombol Auto Detect** menjalankan discovery nyata terhadap gateway uji dan melaporkan `Added 3 providers · 17 models`: `9router` (combo), `9router-cmc` (12 model), `9router-lainnya` (4 model), 17 manual rule di `provider_config.json`. Tanpa gateway hidup, jalur gagal memberi pesan jujur dan tidak menulis config.
+- **F4 — Persistensi, backup, uninstall.** Pengaturan Token savers (caveman lite, ponytail ultra) dan provider hasil Auto Detect bertahan setelah aplikasi ditutup dan dibuka ulang; onboarding tidak muncul lagi. `python3 scripts/data_backup.py backup --root <root>` **menolak** saat instance root itu berjalan dan sukses saat tertutup; `verify` melaporkan 10.162 entri / 0 link; `restore` memulihkan data (token savers identik, provider utuh) dan menyimpan salinan pra-restore. Guard "aplikasi berjalan" diukur: dengan aplikasi dari folder install berjalan, installer `/S` meninggalkan payload apa adanya dan uninstaller `/S` tidak menghapus apa pun (berkas, shortcut, registry, task semua utuh); tanpa aplikasi berjalan keduanya berjalan normal dan `%LOCALAPPDATA%\CCode` tetap ada (himpunan nama berkas identik sebelum/sesudah; ukuran bergerak karena instance pengguna yang lain menulis log/cache-nya sendiri). Persistensi task/sesi chat belum diuji karena tidak ada provider yang dikonfigurasi untuk mengirim prompt.
+- **F5 — MCP.** Context7 dan Codegraph dipakai tanpa unduhan saat pemakaian; baris katalog LSP dan Ripgrep tampil di daftar Installed dan **Install** dari UI menulis entri native. Smoke tool nyata pada payload rilis lulus 4/4: Context7 resolve + docs, Codegraph index + AST, LSP `lsp_document_symbols` + `lsp_workspace_diagnostics` (error 2322), Ripgrep search. Batas Windows: `lsp_diagnostics` per-file kosong karena cache URI case-sensitive upstream; `lsp_workspace_diagnostics` bekerja.
+- **F6 — Marketplace dan n8n.** Marketplace menampilkan entri n8n yang dapat dipasang. Tes lifecycle memakai **zip rilis publik** (SHA256 `2e6f31257601c64b69be1a04386e5ad5193992b2a0e13aa46481652d49023dfd`, identik dengan rilis Linux): install → 15 skill aktif + MCP `plugin:n8n:n8n` menawarkan `search_nodes`/`get_node`/`validate_workflow` lewat handshake nyata → disable mencabut MCP dan seluruh skill. Tidak ada instance n8n di mesin ini, jadi handshake yang dipakai, bukan workflow live.
+- **F7 — Computer Use.** Entry `windows-desktop` disemai dengan path tree yang benar dan panel Settings menampilkan status, daftar tool, batas UIPI, dan ketiadaan dialog izin portal. Aksi live pada Notepad: `screen_focus`, `screen_screenshot` (1280x800, skala 0.5), `screen_read_text` (35 elemen), klik element, `screen_type`, `screen_scroll`, `screen_wait_text`, screenshot region + annotate. Guard takeover terukur: setelah klik menetapkan titik `commanded`, kursor yang digerakkan terus-menerus membatalkan aksi dengan pesan `STOPPED`, dan gerakan yang berhenti kembali idle sehingga aksi lanjut. Tidak ada mode `force` yang mengklaim menembus elevasi.
+- **F8 — Token savers.** RTK tidak terpasang di mesin ini: snapshot melaporkan `rtk.available:false` beserta alasan, switch RTK nonaktif dengan penjelasan di panel, dan Caveman/Ponytail tetap berfungsi serta bertahan setelah restart.
+- **F9 — Upgrade/rollback + data.** Install ulang di atas instalasi yang ada (`/S` kedua, 10.990 berkas, himpunan nama tidak berubah) selesai tanpa error dan tidak menyentuh data namespace; uninstall menghapus aplikasi, shortcut, registry, dan task, sementara `%LOCALAPPDATA%\CCode` tetap ada — uninstall senyap selalu mempertahankan data, dan opsi hapus hanya muncul di jalur interaktif. Namespace uji terisolasi tetap terpisah: tidak ada impor otomatis dari instalasi lain. Rollback ke versi Windows yang lebih tua belum diuji karena hanya ada satu versi Windows.
+- **F10 — `python3 scripts/check.py`.** Lulus di Windows: 295 tes, 41 skip eksplisit POSIX dengan alasan; mencakup pemeriksaan sintaks source dan staged, boundary launcher n8n, boundary katalog MCP, dan seluruh unit test.
+
+Batas yang tidak diklaim setara Linux:
+
+- UIPI: jendela elevated dan secure desktop tidak dapat dikendalikan dari proses normal; tidak ada `force` yang menembusnya. Tidak ada dialog izin portal di Windows.
+- Multi-monitor dan mixed-DPI belum diuji.
+- `lsp_diagnostics` per-file kosong di Windows; pakai `lsp_workspace_diagnostics` atau tool navigasi.
+- Persistensi task/sesi chat belum diuji dengan provider sungguhan.
+- Artifact unsigned (SmartScreen memperingatkan); tanpa feed update/signing.
+- Upgrade diuji sebagai install-ulang versi yang sama, bukan dari versi lama yang lebih tua.
+- Pada mode senyap, installer/uninstaller yang ditolak bisa tetap melaporkan exit code 0; verifikasi lewat keadaan filesystem, bukan exit code.
+
+### Kandidat M1 (historis; digantikan rilis 1.0.0)
 
 - Berkas: `runtime/release-windows/CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.
 - SHA256: `7b9a90ef87c27ad42c1b9e5fbff9afaf860f9ce9aa5d086d831cc9f7bca45962`.
@@ -301,7 +334,7 @@ Belum ada baris di tabel ini yang boleh ditandai selesai tanpa bukti yang dijala
 
 Kandidat diterbitkan atas permintaan pemilik sebagai [prerelease uji M1](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016), bukan rilis final. Ukuran dan digest SHA256 asset GitHub cocok dengan kandidat lokal. Untuk pengujian awal tanpa terminal: unduh ZIP, pilih **Extract All**, buka folder `app`, lalu klik dua kali `CCode.exe`. Jalur langsung memakai `%LOCALAPPDATA%\CCode`; screenshot startup dan hasil buka ulang tidak menutup gate terminal/pty. Tidak ada hasil Windows yang dicatat sebagai lulus sampai bukti diterima.
 
-### Bukti lokal Windows M1 (2026-10-16)
+### Bukti lokal Windows M1 (historis, 2026-10-16)
 
 - OS: Microsoft Windows 11 Home Single Language, 10.0.26200, x64. Tidak memakai Wine atau simulasi platform.
 - Transfer baseline: `CCode-pristine-baselines-3.14.5.zip`, 81.915.813 byte, SHA256 `44d10c3e5fa674348a16acc963b1bb90221b99490f1443cdbcef41a666f7a329`, cocok dengan `Downloads/SHA256SUMS`. Seluruh 268 hash dalam `BASELINE-FILES.sha256` lulus sebelum ekstraksi ke root checkout, bukan `app/`; pin transfer cocok dengan `project.json`.

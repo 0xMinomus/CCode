@@ -72,24 +72,26 @@ Side by side, at a glance:
 
 ## Requirements
 
-- **Platform:** Linux x86-64 is the supported target today. The Electron/Chromium runtime ships with the application,
-  so no separate Node.js installation is needed to run it. Windows and macOS builds are on the [roadmap](#roadmap).
-- **Source builds:** Python 3, GNU Make, and a checkout of this workspace. Regenerating the brand icons needs
-  ImageMagick; nothing else is required to build the patched bundle.
-- **Optional capabilities:** A desktop portal session with AT-SPI for Computer Use; `gtk-update-icon-cache` for
-  launcher icons on GTK desktops.
+- **Platform:** Linux x86-64 and Windows x64 are the supported targets. The Electron/Chromium runtime ships with the
+  application, so no separate Node.js installation is needed to run it. macOS is not supported.
+- **Source builds:** Python 3 and a checkout of this workspace; GNU Make on Linux, or `make build` plus
+  `make pack-windows` with 7-Zip, ImageMagick, and NSIS on Windows. Regenerating the brand icons needs
+  ImageMagick.
+- **Optional capabilities:** On Linux, a desktop portal session with AT-SPI for Computer Use and `gtk-update-icon-cache`
+  for launcher icons on GTK desktops. On Windows, Computer Use needs no extra packages: capture, UI Automation, and
+  `SendInput` come from the OS.
 
 ## Linux downloads
 
 Download the unsigned Linux x86-64 AppImage, `.deb`, or `.rpm` from the [1.0.0 Linux release](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5). Verify the download with the release's `SHA256SUMS` before running it.
 
-The Linux build has been checked on the project's Fedora workstation, not clean installations of other distributions. Computer Use still needs compatible Python and system desktop libraries. See the release notes and [Linux verification record](linuxrelease.md) for exact limits. Windows is not part of this release.
+The Linux build has been checked on the project's Fedora workstation, not clean installations of other distributions. Computer Use still needs compatible Python and system desktop libraries. See the release notes and [Linux verification record](linuxrelease.md) for exact limits. Windows ships as a separate release, below.
 
 n8n is a separate [Marketplace plugin download](https://github.com/0xMinomus/CCode/releases/tag/n8n-plugin-v1.0.0), including its runtime and 15 skills. Voice is not shipped.
 
-### Windows boot-test candidate
+### Windows downloads
 
-An unsigned [Windows x64 M1 prerelease](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) is available for boot testing, not normal use or feature parity. Download its ZIP, choose **Extract All**, then double-click `app\CCode.exe`; no terminal is needed for the initial startup check. Direct launch stores test data in `%LOCALAPPDATA%\CCode`. The pinned candidate passed isolated boot, namespace, runtime-log, and terminal/PTY checks on Windows 11 build 26200. Local Windows rebuilds and the test suite still fail; M2–M5 remain unverified. See the [Windows milestone evidence](windowsrelease.md#bukti-lokal-windows-m1-2026-10-16).
+Download the unsigned Windows x64 installer or portable ZIP from the [1.0.0 Windows release](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0-win-x64); verify `SHA256SUMS` first. The installer is per-user (no admin): it installs to `%LOCALAPPDATA%\Programs\CCode`, adds a Start Menu shortcut, registers the `ccode://` scheme and the model-sync scheduled tasks, and the uninstaller keeps `%LOCALAPPDATA%\CCode` unless you ask it to delete the data. Verification ran on Windows 11 x64 build 26200; Computer Use runs as the `windows-desktop` MCP server and cannot drive elevated windows (UIPI). See the [Windows verification record](windowsrelease.md) and the release notes for exact limits. The earlier [M1 boot-test prerelease](https://github.com/0xMinomus/CCode/releases/tag/windows-m1-20261016) is superseded.
 
 
 ## Build and run

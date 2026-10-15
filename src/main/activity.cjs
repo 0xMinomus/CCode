@@ -82,6 +82,23 @@ let detection = null;
 
 function projectRoot() { return path.resolve(__dirname, '..', '..', '..'); }
 
+// Auto Detect runs the standalone Python script on Linux. Windows targets have no
+// Python runtime, so they run the Node port through the Electron binary acting as
+// Node; both write the same artifacts into the same namespace.
+function detectionCommand() {
+  if (process.platform === 'win32') {
+    // process.resourcesPath is the deployed <install>/resources; the fallback only
+    // covers running this file outside Electron.
+    const resources = process.resourcesPath ?? path.resolve(__dirname, '..', '..', 'app', 'resources');
+    const script = path.join(resources, 'model-sync', 'main.cjs');
+    if (!fs.existsSync(script)) return { error: `Model sync script is missing: ${script}` };
+    return { command: process.execPath, script, env: { ELECTRON_RUN_AS_NODE: '1' } };
+  }
+  const script = path.join(projectRoot(), 'services', 'model-sync', 'sync.py');
+  if (!fs.existsSync(script)) return { error: `Model sync script is missing: ${script}` };
+  return { command: '/usr/bin/python3', script, env: {} };
+}
+
 function namespacePaths() {
   const root = process.env.CCODE_STANDALONE_ROOT?.trim();
   if (!root) return null;
@@ -119,12 +136,12 @@ function runDetection() {
   detection = (async () => {
     const paths = namespacePaths();
     if (!paths) return { ok: false, error: 'The standalone namespace is not available in this window.' };
-    const script = path.join(projectRoot(), 'services', 'model-sync', 'sync.py');
-    if (!fs.existsSync(script)) return { ok: false, error: `Model sync script is missing: ${script}` };
+    const target = detectionCommand();
+    if (target.error) return { ok: false, error: target.error };
     const started = Date.now();
     const result = await new Promise(resolve => {
-      const child = spawn('/usr/bin/python3', [script, '--discover', '--bootstrap'], {
-        env: { ...process.env, CCODE_STANDALONE_ROOT: paths.root, CCODE_MODEL_SYNC_CONFIG: paths.config, CCODE_MODEL_SYNC_STATE: paths.state },
+      const child = spawn(target.command, [target.script, '--discover', '--bootstrap'], {
+        env: { ...process.env, ...target.env, CCODE_STANDALONE_ROOT: paths.root, CCODE_MODEL_SYNC_CONFIG: paths.config, CCODE_MODEL_SYNC_STATE: paths.state },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let text = '';
@@ -220,6 +237,7 @@ exports.sessionDbPath = sessionDbPath;
 exports.collect = collect;
 exports.promptQuery = PROMPT_QUERY;
 exports.runDetection = runDetection;
+exports.detectionCommand = detectionCommand;
 exports.detectionOutcome = detectionOutcome;
 exports.detectionSummary = detectionSummary;
 exports.namespacePaths = namespacePaths;

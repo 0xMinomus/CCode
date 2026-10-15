@@ -130,8 +130,9 @@ class AutoDetectTests(unittest.TestCase):
             f"const a=require({json.dumps(str(MODULE))});"
             "console.log(JSON.stringify(a.namespacePaths()))",
             extra_env={'CCODE_STANDALONE_ROOT': '/tmp/ns-root'}))
-        self.assertEqual(paths['config'], '/tmp/ns-root/data/.ccode/v2/provider_config.json')
-        self.assertEqual(paths['state'], '/tmp/ns-root/model-sync')
+        self.assertEqual(pathlib.PurePath(paths['config']),
+                         pathlib.PurePath('/tmp/ns-root/data/.ccode/v2/provider_config.json'))
+        self.assertEqual(pathlib.PurePath(paths['state']), pathlib.PurePath('/tmp/ns-root/model-sync'))
 
 
 class ActivitySummaryTests(unittest.TestCase):
@@ -202,7 +203,8 @@ class ActivityDatabaseTests(unittest.TestCase):
             "console.log(JSON.stringify(a.sessionDbPath()))"
         )
         env = {'CCODE_SESSION_DB_PATH': '', 'CCODE_STORAGE_DIR': '/tmp/ccode-activity-test'}
-        self.assertEqual(json.loads(run_node(script, env)), '/tmp/ccode-activity-test/cli/db/db.sqlite')
+        self.assertEqual(pathlib.PurePath(json.loads(run_node(script, env))),
+                         pathlib.PurePath('/tmp/ccode-activity-test/cli/db/db.sqlite'))
 
 
 PANEL_LOADER = ("const fs=require('fs');const mod={exports:{}};"

@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 """Enrich explicitly registered Vansrouter models; preserve manual field overrides."""
-import contextlib, copy, datetime, fcntl, json, os, pathlib, sys, tempfile, time, urllib.request
+import contextlib, copy, datetime, json, os, pathlib, sys, tempfile, time, urllib.request
 ROOT=pathlib.Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT.parents[1]/'scripts'))
-from data_backup import namespace_lock, namespace_root, private_dir, safe_path
+from data_backup import namespace_lock, namespace_root, private_dir, safe_path, try_lock
 CATALOG_URL='https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/core/src/models-dev/snapshot.txt'
 ALIASES={'oc':'opencode','ocg':'opencode-go','gq':'groq','cmc':'commandcode','or':'openrouter'}
 # Local 9Router gateway: its /v1/models list drives discovery and grouping. The
@@ -451,11 +451,11 @@ def main(argv=None):
         else:state_root.mkdir(parents=True,exist_ok=True)
         lock_path=state_root/'sync.lock'
         if namespace:safe_path(lock_path)
-        fd=os.open(lock_path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+        fd=os.open(lock_path,os.O_RDWR|os.O_CREAT|getattr(os,'O_NOFOLLOW',0),0o600)
         os.fchmod(fd,0o600)
         with os.fdopen(fd,'a') as lock:
-            try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-            except BlockingIOError:return
+            try:try_lock(lock)
+            except ValueError:return
             for attempt in range(3):
                 status=run_once(args,config,state_root,namespace)
                 if status!='concurrent':break

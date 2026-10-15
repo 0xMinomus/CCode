@@ -6,7 +6,7 @@ async function snapshot() {
   let settings = runtime.defaultSettings(), settingsError = null;
   try { settings = runtime.readSettings(); } catch (error) { settingsError = `Settings could not be read: ${error?.message ?? error}`; }
   const executable = runtime.resolveRtkPath();
-  const rtk = { available: !!executable, daily: [], totalSaved: 0, updatedAt: Date.now(), error: executable ? null : 'RTK was not found on PATH.' };
+  const rtk = { enabled: settings.rtk.enabled, available: !!executable, path: executable, daily: [], totalSaved: 0, updatedAt: Date.now(), error: executable ? null : 'RTK was not found on PATH.' };
   if (executable) {
     const result = await runtime.runRtk(['gain', '--daily', '--format', 'json'], { executable, timeoutMs: 4000, maxBytes: 1_048_576 });
     if (!result.available) {

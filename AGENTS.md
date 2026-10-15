@@ -50,7 +50,7 @@ There is no need to reinstall dependencies or run vendor setup scripts for routi
 
 ## Release scope (locked)
 
-- Release order: Linux x64 first, then Windows x64. The concrete work lists live in `linuxrelease.md` (executed 2026-10-15) and `windowsrelease.md` (planned; execution waits for the owner's go-ahead).
+- Release order: Linux x64 first, then Windows x64. The concrete work lists live in `linuxrelease.md` (executed 2026-10-15) and `windowsrelease.md` (executed 2026-10-16; Windows x64 shipped as `v1.0.0-win-x64`). Windows work now happens on the Windows checkout: `make build`, `make test`, and `make pack-windows` with 7-Zip, ImageMagick, and NSIS installed.
 - **Voice is removed entirely** — code, UI, resources, and artifacts, on Linux *and* Windows (Windows must stay light).
 - n8n stays available but is installed by the user from the Plugin Marketplace: zip hosted as a release asset on the public fork `0xMinomus/CCode`, `n8n-mcp` dependencies inside that zip.
 - Computer Use registers itself as the `linux-desktop` MCP server; the app seeds the entry, so packages work without `make install`.

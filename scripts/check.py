@@ -6,6 +6,7 @@ for p in list((ROOT/'scripts').glob('*.py'))+list((ROOT/'src/local_only').glob('
 for p in list((ROOT/'src/renderer').glob('*.js'))+list((ROOT/'src/main').glob('*.cjs'))+list((ROOT/'services/mcp').glob('*.cjs')):
  subprocess.run(['node','--check',str(p)],check=True)
 subprocess.run(['node',str(ROOT/'services/mcp/test-n8n.cjs')],check=True,cwd=ROOT)
+subprocess.run(['node',str(ROOT/'services/mcp/test.cjs')],check=True,cwd=ROOT)
 subprocess.run([sys.executable,'-m','unittest','discover','-s',str(ROOT/'tests'),'-v'],check=True,cwd=ROOT)
 staged=ROOT/'runtime/build/resources/app.asar'
 if staged.exists():
@@ -21,6 +22,7 @@ if staged.exists():
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/activity/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/token-savers-runtime.cjs')],check=True)
+ subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/model-sync/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/commands/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/marketplace/marketplace-compat.cjs')],check=True)
  subprocess.run(['node','--check',str(staged.parent/'mcp/main.cjs')],check=True)

@@ -78,13 +78,35 @@ function writeSettings(value, env = process.env) {
 
 function resolveRtkPath(env = process.env) {
   const candidates = [];
-  for (const directory of String(env.PATH ?? '').split(path.delimiter).filter(Boolean)) candidates.push(path.join(directory, 'rtk'));
+  const directories = String(env.PATH ?? '').split(path.delimiter).filter(Boolean);
   const home = env.HOME?.trim() || env.USERPROFILE?.trim() || os.homedir();
-  candidates.push(path.join(home, '.local', 'bin', 'rtk'), path.join(home, '.cargo', 'bin', 'rtk'), '/usr/local/bin/rtk', '/usr/bin/rtk');
+  if (process.platform === 'win32') {
+    const names = ['rtk.exe', 'rtk.cmd'];
+    for (const directory of directories) for (const name of names) candidates.push(path.join(directory, name));
+    for (const directory of [path.join(home, '.local', 'bin'), path.join(home, '.cargo', 'bin')]) for (const name of names) candidates.push(path.join(directory, name));
+  } else {
+    for (const directory of directories) candidates.push(path.join(directory, 'rtk'));
+    candidates.push(path.join(home, '.local', 'bin', 'rtk'), path.join(home, '.cargo', 'bin', 'rtk'), '/usr/local/bin/rtk', '/usr/bin/rtk');
+  }
   for (const candidate of new Set(candidates)) {
-    try { fs.accessSync(candidate, fs.constants.X_OK); return candidate; } catch {}
+    try {
+      fs.accessSync(candidate, process.platform === 'win32' ? fs.constants.F_OK : fs.constants.X_OK);
+      return candidate;
+    } catch {}
   }
   return null;
+}
+
+function quoteCmdArgument(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+function spawnRtk(executable, args, options) {
+  if (process.platform === 'win32' && /\.(?:cmd|bat)$/i.test(executable)) {
+    const line = [executable, ...args].map(quoteCmdArgument).join(' ');
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', `"${line}"`], { ...options, windowsVerbatimArguments: true });
+  }
+  return spawn(executable, args, options);
 }
 
 function runRtk(args, options = {}) {
@@ -94,7 +116,7 @@ function runRtk(args, options = {}) {
   return new Promise(resolve => {
     let child;
     try {
-      child = spawn(executable, args, { cwd: options.cwd, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+      child = spawnRtk(executable, args, { cwd: options.cwd, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     } catch (error) {
       resolve({ available: false, code: null, stdout: '', stderr: '', error: error?.message ?? String(error) });
       return;

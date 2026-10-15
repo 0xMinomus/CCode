@@ -18,6 +18,8 @@ Gateway 9Router di `http://127.0.0.1:20128/v1` menerbitkan daftar modelnya di `G
 
 Timer `ccode-model-sync.timer` menjalankan sync untuk namespace standalone dengan env `CCODE_MODEL_SYNC_CONFIG` dan `CCODE_MODEL_SYNC_STATE`. Tanpa env tersebut, `sync.py` tetap memakai jalur lama (`~/.ccode/v2/provider_config.json`) supaya timer instalasi lama tidak berubah perilakunya.
 
+Di Windows tidak ada systemd: implementasi runtime adalah `src/main/model-sync.cjs` (staged sebagai `resources/model-sync/main.cjs`, konstanta dan aturan sama dengan `sync.py`), dijalankan tombol **Auto Detect** lewat Electron-as-Node. Penjadwal penggantinya dua task Task Scheduler per-user (`CCode Model Sync` ONLOGON + `CCode Model Sync (daily)`) yang memanggil `model-sync.cmd` dari folder install; namespace default `%LOCALAPPDATA%\CCode` dan env `CCODE_MODEL_SYNC_CONFIG`/`CCODE_MODEL_SYNC_STATE` tetap berlaku. `sync.py` tidak dipakai di runtime Windows; `CCODE_MODEL_SYNC_GATEWAY` adalah hook pengujian/portabilitas untuk mengarahkan gateway ke alamat lain.
+
 Status **Auto Detect** (proses, sukses, atau gagal) tampil di kiri tombol. Label dan ukuran tombol tetap selama deteksi; pesan panjang dipotong sesuai ruang header, dengan pesan lengkap pada tooltip dan status yang diumumkan melalui `role="status"`.
 
 ## Reasoning Vansrouter
