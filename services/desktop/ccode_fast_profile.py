@@ -162,6 +162,62 @@ def install_lazy_warmup(ns):
     grounding.warmup = lambda *a, **k: None
 
 
+def portal_denial_message(detail):
+    """Actionable text for a portal input refusal.
+
+    GNOME's portal answers NotifyPointer/NotifyKeyboard with 'Session is not allowed to call
+    NotifyPointer methods (0)' when the granted session has no pointer/keyboard permission.
+    Without this translation the agent sees a raw GDBus traceback and reports a vague
+    "rejected by D-Bus", which is exactly what a human then cannot act on.
+    """
+    return (
+        "Input was refused by the desktop portal: " + detail + "\n"
+        "The portal session has no pointer/keyboard permission, so clicks, keys, and typing "
+        "cannot be injected through it. Perception still works (screenshots, screen_read_text). "
+        "Two fixes, either one is enough:\n"
+        "1. Preferred: use the kernel input backend. /dev/uinput must be writable by this user — "
+        "be in group `input` and add udev rule "
+        'KERNEL=="uinput", SUBSYSTEM=="misc", GROUP="input", MODE="0660", then log out and back '
+        "in.\n"
+        "2. Or re-grant the portal: delete ~/.config/mcp-screen/token and approve the next dialog "
+        "with remote control (pointer and keyboard) allowed.\n"
+        "Do not retry the same call unchanged: it will be refused again until one of the two is "
+        "done."
+    )
+
+
+def install_input_fallback_policy(ns):
+    """Turn a refused portal input into an actionable error instead of a traceback.
+
+    Seam discipline: the vendored input.py keeps raising its raw GError — the translation
+    happens at the handler map, so the vendor file stays untouched.
+    """
+    handlers = ns["HANDLERS"]
+    for name in (
+        "screen_click",
+        "screen_type",
+        "screen_key",
+        "screen_scroll",
+        "screen_drag",
+        "screen_move_mouse",
+        "screen_do",
+    ):
+        original = handlers.get(name)
+        if original is None:
+            continue
+
+        def wrapped(args, fn=original):
+            try:
+                return fn(args)
+            except Exception as exc:
+                text = str(exc)
+                if "not allowed to call" not in text and "Notify" not in text:
+                    raise
+                return {"content": [ns["_txt"](portal_denial_message(text))], "isError": True}
+
+        handlers[name] = wrapped
+
+
 def install(ns):
     from gi.repository import Gio
 
@@ -280,6 +336,7 @@ def install(ns):
     install_pointer_policy(ns)
     install_observation_policy(ns)
     install_lazy_warmup(ns)
+    install_input_fallback_policy(ns)
 
     def apps(query):
         q=query.casefold().strip();matches=[]

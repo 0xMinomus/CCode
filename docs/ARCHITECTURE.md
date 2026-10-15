@@ -146,6 +146,7 @@ Yang ditetapkan profil:
 - Aksi mengembalikan screenshot + baris SENSE secara default; gambar dilewati bila SENSE menyatakan frame tidak berubah, supaya aksi no-op tidak membayar token gambar.
 - Tunggu perubahan memakai mode `hybrid` (event damage dengan lantai poll), bukan polling tiap 60 ms.
 - Kebijakan pointer menggantikan guard takeover: gerakan kursor yang berhenti dianggap idle dan aksi tetap jalan; pengendalian kursor berkelanjutan selama `CCODE_CUA_TAKEOVER_MS` tetap dianggap pengambilalihan dan membatalkan aksi dengan pesan `STOPPED`. `force=true` tetap tersedia dan tetap dilarang dipakai untuk melawan pengguna. Capture dan input memakai portal Fedora/PipeWire; pengendalian kursor yang berkelanjutan oleh pengguna menghentikan aksi agent.
+- Injeksi input punya dua jalur: kernel `uinput` (`uinput_backend.py`, dipakai lebih dulu bila `/dev/uinput` dapat ditulis dan `evdev` ada) dan portal `RemoteDesktop` sebagai cadangan. Jalur portal hanya berhasil bila sesi portal benar-benar mendapat izin pointer/keyboard; kalau tidak, portal menjawab `Session is not allowed to call NotifyPointer methods (0)`. Penolakan itu diterjemahkan `install_input_fallback_policy` menjadi pesan berisi kedua perbaikan (aktifkan `uinput`, atau beri ulang izin portal), bukan traceback mentah; langkah sistemnya ada di [OPERATIONS.md](OPERATIONS.md#computer-use-klikketik-ditolak). Capture tidak terpengaruh — `screen_screenshot` dan `screen_read_text` tetap jalan saat input ditolak.
 
 Rincian dan batasnya ada di [COMPUTER_USE_IMPROVEMENTS.md](COMPUTER_USE_IMPROVEMENTS.md).
 

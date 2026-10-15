@@ -39,6 +39,30 @@ Verifikasi sebelum dipublikasikan: jalankan AppImage dengan root uji lewat `CCOD
 
 Stage menolak build bila jalur home mesin build atau `provider_config*.json` ikut terbawa, dan menormalkan izin berkas supaya tree dapat dibaca pengguna yang memasangnya. Venv layanan hanya membawa interpreter (`bin/python*`); console script, `pyvenv.cfg` yang memuat jalur build, cache `__pycache__`, dan state lokal model-sync dibuang. Computer Use masih memerlukan paket sistem (PyGObject, GStreamer + plugin PipeWire, portal, `wl-clipboard`) karena layer itu tidak dapat dibundel.
 
+## Computer Use: klik/ketik ditolak
+
+Gejala: agent melaporkan klik atau ketik gagal, dan `/tmp/screen_err.txt` memuat
+`GDBus.Error:org.freedesktop.DBus.Error.Failed: Session is not allowed to call NotifyPointer methods (0)`.
+Artinya sesi portal tidak punya izin pointer/keyboard, sedangkan jalur kernel (`uinput`) juga tidak aktif — jadi input tidak punya jalur yang berhasil. Capture tetap jalan (screenshot dan `screen_read_text`), hanya injeksi input yang mati.
+
+Backend desktop memakai dua jalur: kernel `uinput` (dipakai bila tersedia, presisi, tidak bergantung izin portal) dan portal `RemoteDesktop` sebagai cadangan. Sejak profil `ccode-fast`, penolakan portal diterjemahkan menjadi pesan yang menyebut dua perbaikan ini, bukan traceback mentah.
+
+Perbaikan 1 — aktifkan jalur kernel (disarankan):
+
+```bash
+printf 'KERNEL=="uinput", SUBSYSTEM=="misc", GROUP="input", MODE="0660"\n' \
+  | sudo tee /etc/udev/rules.d/99-uinput-ccode.rules
+printf 'uinput\n' | sudo tee /etc/modules-load.d/uinput.conf
+sudo modprobe uinput && sudo usermod -aG input "$USER"
+sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=uinput
+# agar berlaku tanpa logout pada sesi berjalan:
+sudo setfacl -m "u:$USER:rw" /dev/uinput
+```
+
+Verifikasi: `/dev/uinput` menjadi `660 root:input`, `services/desktop/.venv/bin/python -c "import sys;sys.path.insert(0,'services/desktop');import os;print(os.access('/dev/uinput',os.W_OK))"` mencetak `True`. Paket Python `evdev` sudah ada di venv layanan; tanpa grup `input` + aturan udev, izin akan kembali setelah reboot.
+
+Perbaikan 2 — beri ulang izin portal (cadangan): hapus `~/.config/mcp-screen/token`, lalu setujui dialog berikutnya dengan remote control (pointer dan keyboard) diizinkan. Selama salah satu perbaikan belum dilakukan, klik dan ketik akan ditolak lagi; jangan mengulang perintah yang sama.
+
 ## MCP di Settings
 
 Context7 dan Codegraph tersedia setelah instalasi aplikasi. **Settings → MCP Servers** menampilkan daftar **Installed** server native; LSP dan Ripgrep tersedia sebagai baris katalog dengan tombol **Install** di slot switch, tanpa label `Optional`. Setelah di-Install, baris native dengan switch on/off menggantikan baris katalog.

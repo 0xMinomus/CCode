@@ -22,6 +22,14 @@
 - Pemilik mengizinkan publikasi gratis/open source. Lisensi pihak ketiga untuk `design-taste-frontend` dan 17 skill workflow masih belum terverifikasi; izin pemilik workspace tidak menggantikan izin pemegang hak. Batas ini dicatat di `docs/THIRD_PARTY.md`, bukan dilabeli sebagai lisensi universal aplikasi.
 - Windows, portabilitas Computer Use, dan pengujian lintas distro tidak dikerjakan dalam perubahan ini.
 
+### Computer Use: input yang ditolak portal
+
+- Gejala nyata dilaporkan pemilik: klik pada form Google di Brave Origin gagal, agent menulis "Klik via desktop tool ditolak D-Bus". Traceback di `/tmp/screen_err.txt` menunjukkan `GDBus.Error:org.freedesktop.DBus.Error.Failed: Session is not allowed to call NotifyPointer methods (0)` dari `input.py::_notify_motion`.
+- Akar masalah: injeksi input punya dua jalur. Jalur portal `RemoteDesktop` ditolak karena sesi portal tidak memegang izin pointer/keyboard, sedangkan jalur kernel `uinput` tidak aktif karena `/dev/uinput` hanya `600 root:root` dan pengguna belum ada di grup `input`. Jadi tidak ada jalur input yang berhasil; capture tetap jalan, sehingga gejalanya tampak seperti "backend rusak" padahal izin.
+- Perbaikan sistem di mesin ini: udev rule `/etc/udev/rules.d/99-uinput-ccode.rules` (`GROUP="input", MODE="0660"`), `/etc/modules-load.d/uinput.conf`, `modprobe uinput`, `usermod -aG input andikaputra`, plus `setfacl -m u:andikaputra:rw /dev/uinput` supaya berlaku tanpa logout. Bukti: `/dev/uinput` menjadi `660 root:input`, `uinput_backend.available()` mengembalikan `True`, dan `ensure_device(1920,1080)` berhasil membuat device. Jalur kernel dipilih otomatis pada aksi berikutnya (pemeriksaan izin dan bounds dilakukan per aksi), jadi aplikasi tidak perlu di-restart.
+- Perbaikan kode di batas edit project: `services/desktop/ccode_fast_profile.py` menambah `install_input_fallback_policy` yang menerjemahkan penolakan portal menjadi pesan berisi dua langkah perbaikan (aktifkan `uinput`, atau beri ulang izin portal), ditandai `isError` supaya agent tidak mengulang perintah yang sama. File vendor (`input.py` dan lainnya) tidak disentuh. Tes regresi baru ada di `tests/test_desktop_profile.py::InputFallback` (penolakan pointer, penolakan keyboard, dan error tak terkait tetap menyebar).
+- Dokumentasi: langkah perbaikan ditulis di `docs/OPERATIONS.md` (bagian **Computer Use: klik/ketik ditolak**), jalur input ganda dijelaskan di `docs/ARCHITECTURE.md`, dan release notes 1.0.0 di GitHub diperbarui dengan prasyarat yang sama supaya pengguna lain tidak menebak-nebak.
+
 ### Rencana kerja rilis Windows
 
 - `windowsrelease.md` mencatat rancangan rilis Windows x64 dengan fitur yang sama seperti rilis Linux 1.0.0: tanpa akun, namespace sendiri, provider BYOK + 9Router, 12 command, 32 skill, 12 subagent, Token savers, Activity, MCP katalog, Marketplace + n8n, backup/restore, dan Computer Use. Voice tetap dihapus.

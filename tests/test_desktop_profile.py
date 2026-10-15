@@ -260,5 +260,42 @@ class ToolSurface(unittest.TestCase):
         self.assertIn('Never pass force=true', text)
 
 
+class InputFallback(unittest.TestCase):
+    """A refused portal input must read as a fix, not as a raw GDBus traceback."""
+
+    class _Denied(Exception):
+        pass
+
+    def _ns(self, raiser):
+        ns = _build_ns([])
+        for name in ('screen_click', 'screen_type'):
+            def handler(args, r=raiser):
+                raise r
+            ns['HANDLERS'][name] = handler
+        profile.install_input_fallback_policy(ns)
+        return ns
+
+    def test_portal_refusal_becomes_an_actionable_error(self):
+        denied = self._ns(self._Denied(
+            'g-dbus-error-quark: GDBus.Error:org.freedesktop.DBus.Error.Failed: '
+            'Session is not allowed to call NotifyPointer methods (0)'
+        ))
+        result = denied['HANDLERS']['screen_click']({'element': 3})
+        self.assertTrue(result['isError'])
+        text = result['content'][0]['text']
+        self.assertIn('/dev/uinput', text)
+        self.assertIn('mcp-screen/token', text)
+        self.assertIn('Do not retry', text)
+
+    def test_keyboard_refusal_is_translated_too(self):
+        denied = self._ns(self._Denied('Session is not allowed to call NotifyKeyboard methods (0)'))
+        self.assertTrue(denied['HANDLERS']['screen_type']({'text': 'x'})['isError'])
+
+    def test_unrelated_failures_still_raise(self):
+        broken = self._ns(RuntimeError('portal session is not started'))
+        with self.assertRaises(RuntimeError):
+            broken['HANDLERS']['screen_click']({'x': 1, 'y': 2})
+
+
 if __name__ == '__main__':
     unittest.main()
