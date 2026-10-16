@@ -13,10 +13,5 @@
   "main_asset": "out/main/index.js",
   "preload_asset": "out/preload/index.cjs",
   "screen_mcp_commit": "14b88dee70db3a72281b566494e94ccf87258c28",
-  "compatibility_links": {
-    "/home/andikaputra/Documents/Codex/tools/ccode-app": "/home/andikaputra/Documents/CCode/app",
-    "/home/andikaputra/Documents/Codex/tools/screen-mcp": "/home/andikaputra/Documents/CCode/services/desktop",
-    "/home/andikaputra/Documents/Codex/tools/ccode-model-sync": "/home/andikaputra/Documents/CCode/services/model-sync"
-  },
   "plugins_baseline_sha256": "5a891a5dc4a061abe8b1a0882ca04ac20b6f934e45c44c30e21d6d7d82318d9b"
 }

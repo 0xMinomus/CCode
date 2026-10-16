@@ -22,8 +22,8 @@ Folder repo ini dibuka langsung sebagai vault Obsidian. Catatan `README.md`, `AG
 
 ## Fakta kunci
 
-- Repo: `/home/andikaputra/Documents/CCode`
-- Vault: `/home/andikaputra/Documents/CCode`
+- Repo: `~/Documents/CCode`
+- Vault: `~/Documents/CCode`
 - Data aplikasi: `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`)
 - Launcher: `ccode.desktop`; timer: `ccode-model-sync.timer`
 - Data lama `~/.zcode` dan `~/.config/ZCode` tidak disentuh dan tidak diimpor otomatis

@@ -68,7 +68,7 @@ Status per 2026-10-13: sudah dibuat — workspace patch lama di-rename jadi **`0
 ### F0 — Higiene repo rilis
 Deliverable: repo publik bersih + lisensi + CI dasar.
 - `LICENSE`, `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `docs/THIRD_PARTY.md` final.
-- Buang data machine-specific: `project.json.compatibility_links` (berisi `/home/andikaputra/...`), cek `grep -rn "/home/andikaputra" .` = 0 sebelum publik.
+- Buang data machine-specific: tidak ada jalur home pengguna di `project.json` (key `compatibility_links` dihapus 2026-10-16) maupun dokumen (memakai `~`); cek `grep -rn "$HOME" .` = 0 sebelum publik.
 - README: prasyarat OS (Fedora/Ubuntu/Arch), langkah install 3 baris, uninstall, rollback; seksi "Turunan dari ZCode" dengan tautan upstream + lisensi.
 - CI (GitHub Actions) untuk bagian *patch/source* kita: unit test, lint, `node --check`. Build Electron penuh tidak di CI (butuh artifact besar) — build manual per rilis.
 Kriteria selesai: `make test` hijau di runner bersih; tidak ada path/secret pribadi; LICENSE+NOTICE ada.

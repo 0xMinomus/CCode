@@ -83,12 +83,20 @@ def latest_snapshot():
     return f'{candidates[0].parent.name}/{candidates[0].name}' if candidates else 'belum ada snapshot'
 
 
+def display_path(path):
+    """Home-relative display path; generated notes must not leak the machine home prefix."""
+    try:
+        return '~/' + str(pathlib.Path(path).relative_to(pathlib.Path.home()))
+    except ValueError:
+        return str(path)
+
+
 def key_facts(vault, mode):
     refresh = ('Vault ini adalah folder project, jadi tidak ada salinan: catatan `README`, `AGENTS`, dan `docs/` adalah file asli repo.'
                if mode == 'native' else
                'Catatan di folder ini adalah salinan dari repo: setiap file diberi frontmatter `tags` dan `source` agar bisa difilter di tag pane (`#ccode`).')
-    return f'''- Repo: `{ROOT}`
-- Vault: `{vault}`
+    return f'''- Repo: `{display_path(ROOT)}`
+- Vault: `{display_path(vault)}`
 - Data aplikasi: `~/.local/share/ccode` (`data/`, `electron/`, `model-sync/`)
 - Launcher: `ccode.desktop`; timer: `ccode-model-sync.timer`
 - Data lama `~/{rebrand.PREVIOUS_APPDATA}` dan `~/.config/{rebrand.PREVIOUS_APPCONFIG}` tidak disentuh dan tidak diimpor otomatis
