@@ -202,9 +202,18 @@ NSIS installer
   characters, so the setup needs an install directory with roughly 65 characters of room.
   %LOCALAPPDATA%\\{install_dir} fits; a very long user profile path may not.
 
-Not claimed by this packaging: feature parity with the Linux release, the Windows Computer
-Use backend, RTK token savings, code signing, or auto-update. Vendor legal notices and the
-attribution in NOTICE.md ship unchanged.
+This release
+  Computer Use retains the local Windows backend with two native Settings rows and a real
+  composer shortcut. Small pointer nudges are tolerated; sustained takeover still stops input.
+  RTK can be installed from Token savers in one click (pinned official Apache-2.0 OSS binary).
+  Managed MCP launcher paths heal after moving the application folder.
+  General offers background prewarm at login, enabled by default. It consumes RAM while hidden;
+  opening CCode normally shows the already-loaded instance. Disable it to avoid background use.
+
+Limits: Windows UIPI blocks elevated windows and secure desktop input. Multi-monitor/mixed-DPI
+behavior is not verified. Linux startup prewarm runtime awaits owner validation. No fixed RAM,
+startup-time or provider-billed token savings are promised. No code signing or auto-update.
+Vendor legal notices and the attribution in NOTICE.md ship unchanged.
 '''
 
 NSIS = r'''!include "MUI2.nsh"
@@ -343,6 +352,10 @@ Section "Uninstall"
     Pop $0
     nsExec::ExecToLog 'schtasks /Delete /F /TN "@@DAILY_TASK@@"'
     Pop $0
+    ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "CCodeStartupPrewarm"
+    ${If} $0 == '$\"$INSTDIR\app\CCode.exe$\" --hidden'
+      DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "CCodeStartupPrewarm"
+    ${EndIf}
     Delete "$SMPROGRAMS\CCode.lnk"
     DeleteRegKey HKCU "@@UNINSTALL_KEY@@"
     DeleteRegKey HKCU "@@SCHEME_KEY@@"

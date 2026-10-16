@@ -9,8 +9,8 @@ Bootstrap storage yang sama dipakai main, host, scheduler, dan agent. Default Li
 Patch renderer:
 
 1. Halaman `iOn` asli diubah menjadi `originalCuaSettings`.
-2. Wrapper memilih `LinuxCuaSettings` untuk workspace Linux lokal; workspace lain memakai halaman asli.
-3. Composer `mit` memilih pintasan Computer Use Linux.
+2. Wrapper memilih `LinuxCuaSettings` atau `WindowsCuaSettings` untuk workspace desktop lokal; workspace lain memakai halaman asli.
+3. Composer `mit` memilih pintasan Computer Use sesuai platform. Kedua panel memakai dua row native (`Q1`/`Z1`/`Xx`), tanpa kartu penjelasan backend; keterbatasan operasi disimpan di dokumentasi.
 4. Source custom ditambahkan pada modul renderer yang sama sehingga dapat menggunakan React dan komponen bundled.
 
 Simbol versi ini: `Q` = React, `$` = JSX runtime, `X` = Button, `bA/xA/SA` = dropdown root/trigger/content, `TA/EA` = radio group/item, `DA/OA` = label/separator, `Iv` = MCP store, `gv` = settings hook, `uA` = Tooltip (dipakai sel heatmap Activity dan pintasan Computer Use; props `title`, `side`, `children`). Simbol dan anchor dapat berubah pada update upstream. Jangan menebak bahwa nama ini stabil antarversi.
@@ -32,6 +32,9 @@ CSS renderer adalah hasil build Tailwind statis dari upstream: kelas yang tidak 
 RTK memakai kontrak `rtk rewrite`: output `rtk ...` yang valid pada status 0, atau status 3 (RTK 0.51.0 yang terpasang), mengganti perintah sebelum jalur approval CCode; status 1 tanpa output mempertahankan perintah dan approval normal. Status lain, kegagalan RTK, atau output rewrite tidak valid menghentikan perintah.
 
 Grafik 30 hari membaca `saved_tokens` dari `rtk gain --daily --format json`. Nilainya estimasi output shell RTK lintas proyek, bukan token yang ditagihkan provider. Main IPC `window.ccodeTokenSavers` hanya menerima main frame lokal; preferensi disimpan di `data/.ccode/v2/token-savers.json`.
+
+Pemasang `src/main/rtk-installer.cjs` mengunduh arsip RTK resmi per platform dengan SHA256 terpinsel dan memasangnya di namespace privat. IPC instalasi mengikuti boundary main-frame lokal yang sama. Panel mengganti kontrol yang belum tersedia dengan Install, lalu mengaktifkan RTK setelah verifikasi berhasil. Resolver mempertahankan prioritas instalasi milik pengguna; binary terkelola menjadi fallback.
+
 
 ### Built-in subagents
 
@@ -72,6 +75,13 @@ Baris katalog **LSP** dan **Ripgrep** tampil di daftar **Installed** yang sama, 
 `services/mcp/` menyimpan katalog dan dependency yang dipin. `src/main/mcp-catalog.cjs` menangani penyemaian default dan instalasi lewat IPC main-frame lokal (`ccode-mcp-catalog:list/install`). `src/renderer/mcp-catalog.js` hanya menyediakan baris katalog; pemasangannya ke daftar native ada di `src/local_only/mcp_catalog.py` (`FTn`).
 
 Konfigurasi tetap berada di `data/.ccode/cli/config.json` milik namespace standalone. Penyemaian tidak menimpa server user, switch disabled, atau penghapusan yang disengaja. Semua entri katalog bebas credentials; Context7 mengirim permintaan dokumentasi ke layanan Context7, dan Codegraph mengindeks proyek lokal dengan update otomatis serta download model embedding dimatikan.
+
+Bootstrap juga memperbarui path entry katalog yang terbukti milik launcher CCode (layout launcher/runtime/home dan environment Electron harus cocok). Relokasi mempertahankan argumen tambahan, env override, disabled state, dan field pengguna. Marker seed tidak memberi izin menimpa entry custom. Install eksplisit memakai ulang payload sehat dan hanya memasang dependency opsional yang hilang.
+
+### Startup prewarm
+
+`src/local_only/startup_prewarm.py` menambal lifecycle window dengan anchor unik, mempertahankan lock single-instance upstream. Resource `startup-prewarm/main.cjs` mengelola preferensi `<root>/startup-prewarm.json` default aktif, IPC lokal, Windows HKCU Run, dan Linux XDG autostart. `--hidden` tetap memuat renderer workspace tetapi tidak menampilkan window/taskbar atau maximize. Peluncuran eksplisit, tray, dan activate menampilkan renderer yang sama; `--hidden` kedua tidak merebut fokus. AppImage memakai path file stabil, bukan mount sementara. Root terisolasi tidak memodifikasi startup pengguna. Prewarm menukar penggunaan RAM sejak login dengan penghindaran cold-launch; tidak menjanjikan angka percepatan.
+
 
 Websearch, Obsidian, dan GitHub tidak dibundel: Browser Use sudah menyediakan pencarian web, vault Obsidian tersedia lewat plugin, dan GitHub dapat ditambahkan manual lewat formulir **New**. MCP `image_search` dari plugin resmi tidak diregistrasikan karena autentikasi akun Z.ai tidak tersedia.
 

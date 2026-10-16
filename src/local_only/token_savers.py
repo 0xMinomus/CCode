@@ -1,6 +1,6 @@
 """Pinned renderer and agent patches for local Token savers."""
 
-from . import replace_once
+from . import replace_once, storage
 PIGGY_BANK_IMPORT = 'import{default as CCodePiggyBank}from"./piggy-bank-BLUAYYsf.js";'
 
 
@@ -29,18 +29,26 @@ def patch_intl(text):
                         '"settings.memory":`Memory`,"settings.tokenSavers":`Token savers`,"settings.memory.workspaceMemory":')
 
 
-def patch_archive(archive, replacements, renderer_asset, intl_asset):
+def patch_preload(text):
+    return replace_once(text,
+                        'save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)',
+                        'save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings),'
+                        'installRtk:()=>ipcRenderer.invoke("ccode-token-savers:install-rtk")')
+
+
+def patch_archive(archive, replacements, renderer_asset, intl_asset, preload_asset):
     renderer = replacements.get(renderer_asset, archive.read(renderer_asset)).decode()
     replacements[renderer_asset] = patch_renderer(renderer).encode()
     intl = replacements.get(intl_asset, archive.read(intl_asset)).decode()
     replacements[intl_asset] = patch_intl(intl).encode()
+    preload = replacements.get(preload_asset, archive.read(preload_asset)).decode()
+    replacements[preload_asset] = patch_preload(preload).encode()
 
 
 def patch_agent(text):
-    text = replace_once(text,
-                        'const ccodeStandaloneOs=require("node:os"),ccodeStandalonePath=require("node:path");',
-                        'const ccodeStandaloneOs=require("node:os"),ccodeStandalonePath=require("node:path");\n'
-                        'const ccodeTokenSavers=require("../token-savers/token-savers-runtime.cjs");')
+    text = replace_once(text, storage.AGENT_BOOTSTRAP,
+                        storage.AGENT_BOOTSTRAP +
+                        'const ccodeTokenSavers=require("../token-savers/token-savers-runtime.cjs");\n')
     text = replace_once(text, 'userInstructions:l,projectContext:u,diagnostics:o',
                         'userInstructions:ccodeTokenSavers.applyPromptModes(l),projectContext:u,diagnostics:o')
     return replace_once(text, 'needsApproval:o.needsApproval',

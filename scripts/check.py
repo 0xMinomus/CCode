@@ -20,6 +20,7 @@ if staged.exists():
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/glm/ccode.cjs')],check=True)
  assert not (staged.parent/'voice').exists(),'Retired Voice resource survived staging'
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/activity/main.cjs')],check=True)
+ subprocess.run(['node','--check',str(staged.parent/'startup-prewarm/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/main.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/token-savers/token-savers-runtime.cjs')],check=True)
  subprocess.run(['node','--check',str(ROOT/'runtime/build/resources/model-sync/main.cjs')],check=True)

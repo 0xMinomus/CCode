@@ -12,7 +12,7 @@ Chat with coding agents, drive your desktop, and keep every byte of data on your
 [![Platforms: Linux x64, Windows x64](https://img.shields.io/badge/platforms-Linux%20x64%20%7C%20Windows%20x64-6f42c1.svg)](#requirements)
 [![No account required](https://img.shields.io/badge/account-not%20required-success.svg)](#why-ccode-exists)
 
-**[Download for Windows](https://github.com/0xMinomus/CCode/releases/tag/v1.0.1-win-x64)** ·
+**[Download for Windows](https://github.com/0xMinomus/CCode/releases/tag/v1.0.2-win-x64)** ·
 **[Download for Linux](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5)** ·
 **[Build from source](#build-and-run)**
 
@@ -56,10 +56,16 @@ Optional, off by default, each with its own switch in **Settings → Token saver
 - **RTK** rewrites supported shell commands before the approval path, so everyday commands cost fewer output tokens.
   A match keeps CCode's normal approval, an error stops execution instead of guessing. The chart underneath reports
   RTK's estimated shell-output tokens saved across projects, not provider-billed model tokens.
+  Missing RTK can be installed directly from its Settings row: one click downloads a pinned official binary into CCode's namespace, verifies it, and enables the saver.
 - **Caveman** applies a concise response style to agent instructions, in Lite, Full, or Ultra.
 - **Ponytail** avoids unnecessary work while preserving correctness and safety, also in Lite, Full, or Ultra.
 
 Level pickers stay disabled and dimmed while a saver is off, and every value survives a restart.
+
+### Background startup
+
+Windows and Linux can preload the workspace at login without showing a window. Opening CCode normally reveals the same instance. **Settings → General → Start CCode in the background at login** disables this default-on behavior when background memory use is unwanted. Linux login behavior is awaiting owner validation.
+
 
 ### Built-in subagents
 

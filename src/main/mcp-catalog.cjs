@@ -46,6 +46,27 @@ function definition(p, item) {
   const env = { ELECTRON_RUN_AS_NODE: '1', ...item.env };
   return { command: p.node, args: [path.join(p.payload, 'launch.cjs'), item.id, runtimePath(p, item), path.join(p.state, 'home', item.id)], env };
 }
+// The seed marker records deletions, not ownership. Only the catalog launcher's full path
+// layout and Electron environment identify an entry that is safe to relocate.
+function managedDefinition(server, item) {
+  if (!object(server) || typeof server.command !== 'string' || !path.isAbsolute(server.command) ||
+      !Array.isArray(server.args) || !object(server.env) || server.env.ELECTRON_RUN_AS_NODE !== '1') return false;
+  const [launch, id, runtime, home] = server.args;
+  if (id !== item.id || ![launch, runtime, home].every(value => typeof value === 'string' && path.isAbsolute(value))) return false;
+  const payload = path.dirname(launch), state = path.dirname(path.dirname(home));
+  return path.basename(payload) === 'mcp' && path.basename(state) === 'mcp' &&
+    path.normalize(launch) === path.join(payload, 'launch.cjs') &&
+    path.normalize(home) === path.join(state, 'home', item.id) &&
+    path.normalize(runtime) === (item.default ? path.join(payload, 'runtime') : path.join(state, 'packages', item.id));
+}
+function applyManagedDefinition(p, item, server) {
+  const value = definition(p, item);
+  let changed = false;
+  if (server.command !== value.command) { server.command = value.command; changed = true; }
+  for (const [index, arg] of value.args.entries()) if (server.args[index] !== arg) { server.args[index] = arg; changed = true; }
+  for (const [name, setting] of Object.entries(value.env)) if (!Object.hasOwn(server.env, name)) { server.env[name] = setting; changed = true; }
+  return changed;
+}
 function projectRoot(resources) {
   for (let dir = path.resolve(resources);; dir = path.dirname(dir)) {
     if (fs.existsSync(path.join(dir, 'project.json'))) return dir;
@@ -77,7 +98,12 @@ function windowsDesktopDefinition(p) {
 }
 function applyDesktopDefinition(server, value) {
   server.command = value.command;
-  if (!Array.isArray(server.args)) server.args = value.args;
+  // The Windows backend's single argument names the launcher script inside the tree, so a moved
+  // install folder would otherwise leave it stale. Refresh it only while it still points at that
+  // script; a user who replaced the backend keeps their own args.
+  const managed = Array.isArray(server.args) && value.args.length === 1 && server.args.length === 1
+    && /[\\/]desktop-win[\\/]main\.cjs$/.test(String(server.args[0]));
+  if (!Array.isArray(server.args) || managed) server.args = value.args;
   const env = object(server.env) ? server.env : (server.env = {});
   for (const [name, setting] of Object.entries(value.env)) if (!(name in env)) env[name] = setting;
 }
@@ -116,8 +142,10 @@ function bootstrap(options = {}) {
   catch (error) { if (error.code !== 'ENOENT') throw Error('Invalid MCP default seed marker.'); }
   const snapshot = readConfig(p);
   let changed = false;
-  for (const item of entries.filter(entry => entry.default)) {
-    if (seeded.includes(item.id)) continue;
+  for (const item of entries) {
+    const server = snapshot.data.mcp.servers[item.id];
+    if (managedDefinition(server, item) && applyManagedDefinition(p, item, server)) changed = true;
+    if (!item.default || seeded.includes(item.id)) continue;
     if (!fs.existsSync(executable(p, item))) throw Error('Bundled MCP payload is incomplete: ' + item.name);
     if (!Object.hasOwn(snapshot.data.mcp.servers, item.id)) { snapshot.data.mcp.servers[item.id] = definition(p, item); changed = true; }
     seeded.push(item.id);
@@ -170,14 +198,15 @@ async function install(request, options = {}) {
   if (busy.has(item.id)) return { ok: false, error: 'An operation for this server is already running.' };
   busy.add(item.id);
   try {
-    const existing = readConfig(p).data.mcp.servers[item.id];
-    const repair = object(existing) && item.package && !fs.existsSync(executable(p, item)) && existing.args?.[0] === path.join(p.payload, 'launch.cjs') && existing.args?.[1] === item.id;
-    if (existing && !repair) throw Error('A server with this name already exists. Edit or remove it in the native MCP server list before reinstalling.');
-    if (item.package && !item.default) await npmInstall(p, item);
+    const configured = readConfig(p).data.mcp.servers, existing = configured[item.id];
+    const repair = managedDefinition(existing, item);
+    if (Object.hasOwn(configured, item.id) && !repair) throw Error('A server with this name already exists. Edit or remove it in the native MCP server list before reinstalling.');
+    if (item.package && !item.default && !fs.existsSync(executable(p, item))) await npmInstall(p, item);
     if (item.package && !fs.existsSync(executable(p, item))) throw Error('The bundled server executable is missing.');
     const snapshot = readConfig(p), servers = snapshot.data.mcp.servers;
     if (repair) {
       if (JSON.stringify(servers[item.id]) !== JSON.stringify(existing)) throw Error('MCP settings changed concurrently. Retry the operation.');
+      if (applyManagedDefinition(p, item, servers[item.id])) commit(p, snapshot);
     } else {
       if (Object.hasOwn(servers, item.id)) throw Error('MCP settings changed concurrently. Retry the operation.');
       servers[item.id] = definition(p, item);

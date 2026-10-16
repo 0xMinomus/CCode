@@ -2,6 +2,14 @@
 
 ## 2026-10-16
 
+### Computer Use, pemasangan RTK, dan startup background
+
+- Panel Computer Use Linux/Windows memakai dua baris Settings native: enable backend dan tampilkan tombol composer. Windows memakai shortcut composer yang sama perilakunya dengan Linux; engine tetap backend lokal masing-masing platform.
+- Guard mempertahankan STOPPED untuk gerakan berkelanjutan, dengan toleransi gerakan kecil 16 px dan jendela takeover 2500 ms di kedua platform. Guard tidak dimatikan atau dilewati otomatis.
+- Token savers menyediakan tombol Install RTK saat binary belum tersedia. Unduhan rilis resmi dipin SHA256, dipasang di namespace privat, dan diaktifkan setelah verifikasi; RTK milik pengguna tetap diprioritaskan.
+- Bootstrap MCP memperbaiki path launcher/runtime entry katalog milik aplikasi setelah folder aplikasi dipindah — termasuk argumen script `windows-desktop` — tanpa memasang ulang payload sehat atau menimpa server milik pengguna, env tambahan, disabled state, dan penghapusan yang disengaja.
+- Startup prewarm Windows/Linux menjalankan workspace tersembunyi saat login. General menyediakan toggle default aktif; peluncuran eksplisit menampilkan instance yang sama. Prewarm memakai RAM sejak login dan tetap dihitung sebagai aplikasi berjalan oleh guard apply/install. Linux runtime diverifikasi pemilik, bukan diklaim telah diuji di Windows.
+
 ### Rilis Windows x64 hibrida
 
 - Build dan tes kini portabel sepenuhnya: digest payload plugin memakai urutan path POSIX, `services/mcp/stage.cjs` memanggil npm lewat CLI Node (tanpa shell) dan menyelesaikan paket native per platform host, dan manifest staging menulis path POSIX. `make build && make test` lulus di Windows 11 x64 build 26200: 295 tes, 41 skip eksplisit POSIX dengan alasan, `Checks passed`.

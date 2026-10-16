@@ -11,7 +11,7 @@ import time
 # A parked pointer is not a takeover: the user may move the mouse and leave it elsewhere while
 # the agent works. Only continuous driving counts, and input is injected once the pointer is
 # quiet. See classify_pointer_window.
-IDLE_PX = float(os.environ.get("CCODE_CUA_IDLE_PX", "8"))
+IDLE_PX = float(os.environ.get("CCODE_CUA_IDLE_PX", "16"))
 IDLE_MS = int(os.environ.get("CCODE_CUA_IDLE_MS", "600"))
 TAKEOVER_MS = int(os.environ.get("CCODE_CUA_TAKEOVER_MS", "2500"))
 POLL_S = float(os.environ.get("CCODE_CUA_POLL_S", "0.1"))

@@ -13,17 +13,10 @@ function LinuxCuaSettings(p){
  const enabled=!!server?.enabled;
  return $.jsxs("div",{className:"space-y-4",children:[
  $.jsxs(Q1,{children:[
- $.jsx(Z1,{label:"Computer Use — Linux",description:"Drives the whole desktop through screen-mcp and the desktop portal's screen-sharing permission.",control:$.jsx(Xx,{"aria-label":"Enable Linux Computer Use",checked:enabled,disabled:busy||!server,onCheckedChange:toggle})}),
- $.jsx(Z1,{label:"Show the shortcut in the chat box",description:"Opens the Computer Use panel from the chat box.",control:$.jsx(Xx,{"aria-label":"Show Linux Computer Use shortcut",checked:settings?.computerUseComposerEntryHidden===false,disabled:!enabled,onCheckedChange:v=>update({computerUseComposerEntryHidden:!v})})})
+ $.jsx(Z1,{label:"Enable Computer Use",description:"Turning this on makes desktop tools available to new chats.",control:server?$.jsx(Xx,{"aria-label":"Enable Linux Computer Use",checked:enabled,disabled:busy,onCheckedChange:toggle}):$.jsx("span",{className:"text-ui-sm text-foreground-subtle",children:"Backend not found"})}),
+ $.jsx(Z1,{label:"Show Computer Use button in the composer",description:"When off, the composer button is hidden.",control:$.jsx(Xx,{"aria-label":"Show Linux Computer Use shortcut",checked:settings?.computerUseComposerEntryHidden===false,disabled:!enabled,onCheckedChange:v=>update({computerUseComposerEntryHidden:!v})})})
  ]}),
- $.jsxs("div",{className:"rounded-lg border border-border p-4 space-y-2",children:[
- $.jsx("p",{className:"font-medium",children:!server?"Backend not found":enabled?"Computer Use is on":"Computer Use is off"}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:server?.status==="connected"?"Backend connected · "+(server.toolCount??22)+" tools":enabled?"linux-desktop is available to new chats. If you just enabled it, start a new chat.":"Turn it on to expose the desktop tools to new chats."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"On first use, pick a screen and allow mouse/keyboard in the system dialog. Moving the mouse yourself stops the agent's control."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Use a vision model. Example: use linux-desktop to take a screenshot, then open Files."}),
- $.jsx("p",{className:"text-ui-xs text-foreground-subtlest",children:"Local Linux integration: this switch is the linux-desktop entry you also see in Settings → MCP Servers; same backend, one state, either switch works. The macOS/Windows helper backends are not used."}),
  error?$.jsx("p",{className:"text-destructive",children:error}):null
- ]})
  ]});
 }
 function LinuxCuaShortcut(p){

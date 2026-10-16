@@ -102,6 +102,30 @@ class DesktopServerSeedTests(unittest.TestCase):
             self.assertEqual(server['env']['KEEP'], '1')
             self.assertIn('ELECTRON_RUN_AS_NODE' if WINDOWS else 'MCP_SCREEN_ATSPI', server['env'])
 
+    @unittest.skipUnless(WINDOWS, 'the launcher script argument exists on Windows only')
+    def test_a_moved_tree_refreshes_the_windows_launcher_script(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root, resources = self.tree(temporary)
+            stale = 'C:/old/CCode/app/resources/desktop-win/main.cjs'
+            self.write_servers(root, {DESKTOP: {'command': 'C:/old/CCode/app/CCode.exe', 'args': [stale],
+                                                'env': {'ELECTRON_RUN_AS_NODE': '1', 'KEEP': '1'}}})
+            self.seed_marker(root, [DESKTOP])
+            self.bootstrap(resources, root)
+            server = self.servers(root)[DESKTOP]
+            self.assertEqual(server['args'], [str(root / 'services/desktop-win/main.cjs')])
+            self.assertEqual(server['env']['KEEP'], '1')
+
+    @unittest.skipUnless(WINDOWS, 'the launcher script argument exists on Windows only')
+    def test_a_replaced_windows_launcher_keeps_its_own_arguments(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root, resources = self.tree(temporary)
+            custom = ['C:/custom/backend.cjs']
+            self.write_servers(root, {DESKTOP: {'command': 'C:/custom/backend.exe', 'args': custom,
+                                                'env': {'ELECTRON_RUN_AS_NODE': '1'}}})
+            self.seed_marker(root, [DESKTOP])
+            self.bootstrap(resources, root)
+            self.assertEqual(self.servers(root)[DESKTOP]['args'], custom)
+
     def test_a_deleted_server_stays_deleted(self):
         with tempfile.TemporaryDirectory() as temporary:
             root, resources = self.tree(temporary)

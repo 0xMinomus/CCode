@@ -4,7 +4,7 @@
 // driving is, and an undecidable window fails open exactly like the vendored guard does
 // when it cannot read the pointer. Kept dependency-free so the window logic is unit-tested
 // with an injected cursor source.
-const DEFAULTS = { idlePx: 8, idleMs: 600, takeoverMs: 1200, pollMs: 100 };
+const DEFAULTS = { idlePx: 16, idleMs: 600, takeoverMs: 2500, pollMs: 100 };
 
 function envNumbers(env = process.env) {
   const read = (name, fallback) => {

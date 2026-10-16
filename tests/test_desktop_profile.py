@@ -99,6 +99,10 @@ def _build_ns(positions):
 
 
 class PointerWindow(unittest.TestCase):
+    def test_small_repeated_nudges_do_not_count_as_driving(self):
+        samples = [(t, index * 12, 200) for index, t in enumerate(range(0, 2700, 100))]
+        self.assertEqual(profile.classify_pointer_window(samples, idle_ms=600, takeover_ms=2500), 'idle')
+
     def test_parked_pointer_is_not_takeover(self):
         samples = [(0, 900, 400), (60, 902, 401), (150, 902, 401), (240, 901, 400)]
         self.assertEqual(profile.classify_pointer_window(samples), 'idle')
@@ -131,7 +135,7 @@ class PolicyInstall(unittest.TestCase):
         capture = ns['capture']
 
         def moving(refresh=True, prefer_node=None):
-            capture.i += 10
+            capture.i += 30
             return (100 + capture.i, 200)
 
         capture.cursor_pos = moving

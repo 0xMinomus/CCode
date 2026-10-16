@@ -76,9 +76,35 @@ function writeSettings(value, env = process.env) {
   return settings;
 }
 
+function managedRtkRoot(env = process.env) {
+  const settings = settingsPath(env);
+  return settings ? path.join(path.dirname(settings), 'tools', 'rtk') : null;
+}
+
+function isManagedRtkPath(file, env = process.env) {
+  const root = managedRtkRoot(env);
+  if (!root) return false;
+  const relative = path.relative(root, file);
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+}
+
+function managedRtkPath(env = process.env) {
+  const root = managedRtkRoot(env);
+  if (!root) return null;
+  try {
+    const current = JSON.parse(fs.readFileSync(path.join(root, 'current.json'), 'utf8'));
+    if (current.version !== '1.0.1' || current.edition !== 'oss' || typeof current.directory !== 'string' || !/^v1\.0\.1-oss-(?:win32|linux)-x64-[a-f0-9-]+$/.test(current.directory)) return null;
+    const binary = path.join(root, current.directory, process.platform === 'win32' ? 'rtk.exe' : 'rtk');
+    if (!fs.statSync(binary).isFile()) return null;
+    fs.accessSync(binary, process.platform === 'win32' ? fs.constants.F_OK : fs.constants.X_OK);
+    return binary;
+  } catch { return null; }
+}
+
+
 function resolveRtkPath(env = process.env) {
   const candidates = [];
-  const directories = String(env.PATH ?? '').split(path.delimiter).filter(Boolean);
+  const directories = String(env.PATH ?? '').split(path.delimiter).filter(directory => directory && !isManagedRtkPath(directory, env));
   const home = env.HOME?.trim() || env.USERPROFILE?.trim() || os.homedir();
   if (process.platform === 'win32') {
     const names = ['rtk.exe', 'rtk.cmd'];
@@ -90,11 +116,12 @@ function resolveRtkPath(env = process.env) {
   }
   for (const candidate of new Set(candidates)) {
     try {
+      if (!fs.statSync(candidate).isFile()) continue;
       fs.accessSync(candidate, process.platform === 'win32' ? fs.constants.F_OK : fs.constants.X_OK);
       return candidate;
     } catch {}
   }
-  return null;
+  return managedRtkPath(env);
 }
 
 function quoteCmdArgument(value) {
@@ -162,14 +189,20 @@ async function rewriteShellCommand(command, options = {}) {
   if (!executable) return { kind: 'error', error: 'RTK is enabled, but its executable was not found.' };
   const result = await runRtk(['rewrite', command], { executable, cwd: options.cwd, env, timeoutMs: options.timeoutMs ?? 1000, maxBytes: 65_536 });
   if (!result.available || result.error) return { kind: 'error', error: 'RTK could not inspect this shell command.' };
-  if (result.code === 1) return { kind: 'unchanged' };
-  // RTK 0.51.0 emits valid rewrites with status 3 despite documenting status 0.
+  if (result.code === 1 && !result.stdout.trim()) return { kind: 'unchanged' };
+  // Status 3 rewrites while leaving approval to the host, just like status 0 here.
   if (result.code !== 0 && result.code !== 3) return { kind: 'error', error: 'RTK returned an unexpected shell-command status.' };
   const rewritten = String(result.stdout ?? '').trim();
   if (!rewritten || rewritten.includes('\n') || !/^rtk(?:\s|$)/.test(rewritten)) {
     return { kind: 'error', error: 'RTK returned an invalid shell-command rewrite.' };
   }
-  return { kind: 'rewrite', command: rewritten };
+  const directory = path.dirname(executable);
+  const onPath = !isManagedRtkPath(executable, env) && String(env.PATH ?? '').split(path.delimiter).some(entry => entry && path.resolve(entry) === path.resolve(directory));
+  if (onPath) return { kind: 'rewrite', command: rewritten };
+  // Bash snapshots may freeze PATH before installation. Bind the selected RTK in the approved command itself.
+  const shellDirectory = process.platform === 'win32' ? directory.replace(/\\/g, '/').replace(/^([A-Za-z]):\//, (_, drive) => `/${drive.toLowerCase()}/`) : directory;
+  const quoted = `'${shellDirectory.replace(/'/g, `'\\''`)}'`;
+  return { kind: 'rewrite', command: `export PATH=${quoted}:"$PATH"; ${rewritten}` };
 }
 
 async function needsShellApproval(input, context, original, options = {}) {
@@ -236,4 +269,4 @@ function parseRtkAnalytics(output) {
   return { daily, totalSaved: tokenCount(value.summary?.total_saved) || total };
 }
 
-module.exports = { defaultSettings, normalizeSettings, validateSettings, settingsPath, readSettings, writeSettings, resolveRtkPath, runRtk, rewriteShellCommand, needsShellApproval, applyPromptModes, parseRtkAnalytics };
+module.exports = { defaultSettings, normalizeSettings, validateSettings, settingsPath, readSettings, writeSettings, managedRtkRoot, managedRtkPath, isManagedRtkPath, resolveRtkPath, runRtk, rewriteShellCommand, needsShellApproval, applyPromptModes, parseRtkAnalytics };

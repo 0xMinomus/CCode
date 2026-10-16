@@ -1,5 +1,4 @@
 function windowsCuaLocal(p){return typeof navigator!=="undefined"&&/Windows/.test(navigator.userAgent)&&!p.remoteSessionId&&!p.remoteTarget&&!(p.workspaceIdentity?.trim()&&Xa(p.workspaceIdentity.trim()));}
-const WINDOWS_CUA_TOOLS=["screen_screenshot","screen_read_text","screen_click(element or x,y)","screen_type","screen_key","screen_scroll","screen_wait_text","screen_verify","screen_sense","screen_focus"];
 function useWindowsCua(p){
  const services=Dg();
  const server=Iv(s=>s.servers.find(x=>x.name==="windows-desktop"&&x.source==="ccodeagentmcp"));
@@ -9,21 +8,17 @@ function useWindowsCua(p){
  return {server,busy,error,toggle};
 }
 function WindowsCuaSettings(p){
- const {server,busy,error,toggle}=useWindowsCua(p),enabled=!!server?.enabled;
+ const {server,busy,error,toggle}=useWindowsCua(p),{settings,update}=gv(),enabled=!!server?.enabled;
  return $.jsxs("div",{className:"space-y-4",children:[
  $.jsxs(Q1,{children:[
- $.jsx(Z1,{label:"Computer Use — Windows",description:"Drives the Windows desktop through the windows-desktop MCP server: screenshots, UI Automation text and elements, SendInput, and the same pointer-takeover guard as Linux.",control:server?$.jsx(Xx,{"aria-label":"Enable Windows Computer Use",checked:enabled,disabled:busy,onCheckedChange:toggle}):$.jsx("span",{className:"text-ui-sm text-foreground-subtle",children:"No server entry in this installation"})})
+ $.jsx(Z1,{label:"Enable Computer Use",description:"Turning this on makes desktop tools available to new chats.",control:server?$.jsx(Xx,{"aria-label":"Enable Windows Computer Use",checked:enabled,disabled:busy,onCheckedChange:toggle}):$.jsx("span",{className:"text-ui-sm text-foreground-subtle",children:"Backend not found"})}),
+ $.jsx(Z1,{label:"Show Computer Use button in the composer",description:"When off, the composer button is hidden.",control:$.jsx(Xx,{"aria-label":"Show Windows Computer Use shortcut",checked:settings?.computerUseComposerEntryHidden===false,disabled:!enabled,onCheckedChange:v=>update({computerUseComposerEntryHidden:!v})})})
  ]}),
- $.jsxs("div",{className:"rounded-lg border border-border p-4 space-y-2",children:[
- $.jsx("p",{className:"font-medium",children:!server?"Backend not found":enabled?"Computer Use is on":"Computer Use is off"}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:server?server.status==="connected"?"Backend connected · "+(server.toolCount??WINDOWS_CUA_TOOLS.length)+" tools":enabled?"windows-desktop is available to new chats. If you just enabled it, start a new chat.":"Turn it on to expose the desktop tools to new chats.":"This installation has no windows-desktop server, so there is nothing here to switch on. Reinstall CCode, or add the server yourself in the MCP server list, then reopen this page."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Tools: "+WINDOWS_CUA_TOOLS.join(", ")}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Windows has no portal permission dialog. Screen capture runs directly, so there is no screen-picker or remote-control prompt to approve before the first action."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Elevated windows are out of reach. The Windows integrity policy (UIPI) blocks input from this normal-privilege process, so Task Manager, an elevated console, and the UAC secure desktop cannot be driven. No force mode pierces that, and none is offered."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Moving the mouse yourself cancels a pending action with STOPPED and the agent must yield to you. A pointer you parked elsewhere is not treated as takeover."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Multi-monitor and mixed-DPI behaviour is not verified by the build: test on this machine before relying on it."}),
- $.jsx("p",{className:"text-ui-sm text-foreground-subtle",children:"Use a vision model. Example: use windows-desktop to read the screen as text, then click the element it reports."}),
- $.jsx("p",{className:"text-ui-xs text-foreground-subtlest",children:"Local Windows integration: this switch is the windows-desktop entry you also see in Settings → MCP Servers; same backend, one state, either switch works."}),
  error?$.jsx("p",{className:"text-destructive",children:error}):null
- ]})]});
+ ]});
+}
+function WindowsCuaShortcut(p){
+ const {server}=useWindowsCua(p),{settings}=gv(),open=A_(s=>s.openSettingsTab);
+ if(settings?.computerUseComposerEntryHidden!==false||p.isWebRemoteControl)return null;
+ return $.jsx(uA,{title:"Computer Use Windows · "+(server?.enabled?"on":"off"),children:$.jsxs(X,{type:"button",variant:"ghost",size:"default","data-testid":"windows-computer-use-shortcut",className:"h-7 rounded-lg px-1.5 gap-1",onClick:()=>{MS("computerUse");open();},children:[$.jsx($ae,{className:"size-4","aria-hidden":true}),$.jsx("span",{children:"Computer Use"})]})});
 }

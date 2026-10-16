@@ -38,6 +38,11 @@ Websearch, Obsidian, dan GitHub tidak ikut dibundel. n8n-mcp 2.92.1 beserta depe
 
 Installer npm yang dibundel menggunakan Artistic-2.0. Dukungan TypeScript opsional (`typescript` dan `typescript-language-server`) menggunakan Apache-2.0. Package Codegraph dipakai melalui engine native; hook, prompt, dan installer plugin Claude tidak dimasukkan ke runtime CCode.
 
+## RTK opsional
+
+Tombol Install mengunduh [RTK OSS v1.0.1](https://github.com/rtk-ai/rtk/releases/tag/v1.0.1), edisi Apache-2.0 tanpa engine BUSL, langsung dari rilis resmi. Binary tidak ikut installer CCode. Arsip Windows x64 SHA256 `0e53e2eca471e15fbd3636e64e6bc0b182cbc278ed0339c80450a2dd03f4cd6b`; Linux x64 musl `a44e8ffc43981100b4ddf1710399a1649a6c874591aa6d0c0727fe6cbd983c41`. Pemasang memeriksa hash arsip, binary, dan LICENSE, lalu mempertahankan LICENSE di direktori versi privat yang aktif. Tidak memasang hook global atau menjalankan `rtk init`.
+
+
 ## Skill plugin n8n (`src/plugins/n8n/skills`)
 
 15 skill (`using-n8n-mcp-skills` dan seluruh 14 skill berawalan `n8n-`, 85 berkas) berasal dari [`czlonkowski/n8n-skills`](https://github.com/czlonkowski/n8n-skills/tree/cb6caa7b3ae8d4206c768d7f69f598438ef25595), commit `cb6caa7b3ae8d4206c768d7f69f598438ef25595`. Isi berkas sama dengan sumber itu, kecuali frontmatter `SKILL.md` yang disesuaikan untuk scanner CCode; body skill, referensi, dan enam asset self-hosting dipertahankan. `.env.*.example` hanya berisi contoh, bukan credentials. SHA256 tar sumber: `d63e68e8bf98fbd800d062573e3f09f39a88a3a3601ccfde13fe8e6515f13a9d`.

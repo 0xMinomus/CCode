@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once,rebrand
-from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents,default_commands
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents,default_commands,startup_prewarm
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 AGENT_RESOURCE='glm/ccode.cjs'
@@ -67,7 +67,7 @@ def main():
  archive=Archive(base);replacements={};view=Rebranded(archive,replacements)
  renderer=manifest['renderer_asset'];s=view.read(renderer).decode()
  s=replace_once(s,'function iOn({isDesktop:','function originalCuaSettings({isDesktop:')
- s=replace_once(s,'function mit(e){let t=Wo()','function mit(e){if(linuxCuaLocal(e))return $.jsx(LinuxCuaShortcut,e);let t=Wo()')
+ s=replace_once(s,'function mit(e){let t=Wo()','function mit(e){if(linuxCuaLocal(e))return $.jsx(LinuxCuaShortcut,e);if(windowsCuaLocal(e))return $.jsx(WindowsCuaShortcut,e);let t=Wo()')
  s+='\n'+(ROOT/'src/renderer/linux-computer-use.js').read_text()+'\n'+(ROOT/'src/renderer/windows-computer-use.js').read_text()+'\nfunction iOn(p){return linuxCuaLocal(p)?$.jsx(LinuxCuaSettings,p):windowsCuaLocal(p)?$.jsx(WindowsCuaSettings,p):$.jsx(originalCuaSettings,p);}\n'
  s+='\n'+(ROOT/'src/renderer/activity-panel.js').read_text()+'\n'
  s+='\n'+(ROOT/'src/renderer/token-savers-panel.js').read_text()+'\n'
@@ -92,7 +92,8 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  replacements[early_main]=replace_once(view.read(early_main).decode(),storage.ESM_BOOTSTRAP,storage.ESM_BOOTSTRAP+
   'import {createRequire as ccodeMcpBootstrapRequire} from "node:module";\nccodeMcpBootstrapRequire(import.meta.url)(process.resourcesPath+"/mcp/main.cjs").bootstrap();\n').encode()
  cloud.patch_archive(view,replacements,renderer)
- token_savers.patch_archive(view,replacements,renderer,manifest['renderer_intl_asset'])
+ token_savers.patch_archive(view,replacements,renderer,manifest['renderer_intl_asset'],manifest['preload_asset'])
+ startup_prewarm.patch_archive(view,replacements,renderer)
  replacements[cloud.HOST]=subagents.patch_host(skills_plugin.patch_host(default_commands.patch_host(view.read(cloud.HOST).decode()))).encode()
  runtime_tuning.patch_archive(view,replacements,cloud.HOST,renderer)
  branding.patch_archive(view,replacements,{'renderer':renderer,'intl':manifest['renderer_intl_asset'],'icon':manifest['renderer_icon_asset']})
@@ -115,6 +116,9 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  (output/'token-savers').mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/'src/main/token-savers.cjs',output/'token-savers/main.cjs')
  shutil.copy2(ROOT/'src/main/token-savers-runtime.cjs',output/'token-savers/token-savers-runtime.cjs')
+ shutil.copy2(ROOT/'src/main/rtk-installer.cjs',output/'token-savers/rtk-installer.cjs')
+ (output/'startup-prewarm').mkdir(parents=True,exist_ok=True)
+ shutil.copy2(ROOT/'src/main/startup-prewarm.cjs',output/'startup-prewarm/main.cjs')
  (output/'model-sync').mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/'src/main/model-sync.cjs',output/'model-sync/main.cjs')
  rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers');rebrand.rewrite_tree(output/'model-sync')
@@ -129,7 +133,7 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  subprocess.run(['node',str(ROOT/'services/mcp/stage.cjs'),str(output/'mcp')],check=True,cwd=ROOT)
  rebrand.rewrite_tree(output/'mcp')
  mcp_files=sorted(path.relative_to(output).as_posix() for path in (output/'mcp').rglob('*') if path.is_file())
- files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','model-sync/main.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
+ files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','token-savers/rtk-installer.cjs','startup-prewarm/main.cjs','model-sync/main.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
         'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,'plugin_payload':payload,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}

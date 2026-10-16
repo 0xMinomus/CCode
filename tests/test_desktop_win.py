@@ -101,13 +101,13 @@ class McpHandshake(unittest.TestCase):
 
 
 GUARD_SCRIPT = """
-const { TakeoverGuard } = require(process.argv[1] + '/guard.cjs');
+const { TakeoverGuard, DEFAULTS } = require(process.argv[1] + '/guard.cjs');
 const scenario = JSON.parse(process.argv[2]);
 let clock = 0;
 let index = 0;
 const points = scenario.points;
 const cursor = async () => points[Math.min(index++, points.length - 1)];
-const guard = new TakeoverGuard({ cursor, now: () => clock, limits: scenario.limits,
+const guard = new TakeoverGuard({ cursor, now: () => clock, limits: scenario.limits ?? DEFAULTS,
   sleep: ms => { clock += ms; return Promise.resolve(); } });
 if (scenario.commanded) guard.record(scenario.commanded);
 (async () => {
@@ -128,6 +128,16 @@ DRIVING = [{'x': 100 + index * 30, 'y': 200} for index in range(30)]
 class TakeoverGuard(unittest.TestCase):
     def check(self, scenario):
         return run_module(GUARD_SCRIPT, scenario)
+
+    def test_small_repeated_nudges_do_not_cancel_with_shared_desktop_policy(self):
+        points = [{'x': 100 + index * 12, 'y': 200} for index in range(40)]
+        result = self.check({'commanded': {'x': 0, 'y': 0}, 'points': points})
+        self.assertEqual(result['verdict'], 'idle')
+
+    def test_deliberate_movement_still_yields_with_shared_desktop_policy(self):
+        result = self.check({'commanded': {'x': 0, 'y': 0}, 'points': DRIVING})
+        self.assertTrue(result['stopped'])
+        self.assertGreaterEqual(result['clock'], 2500)
 
     def test_a_parked_pointer_is_not_a_takeover(self):
         result = self.check({'limits': LIMITS, 'commanded': {'x': 900, 'y': 400}, 'points': [{'x': 902, 'y': 401}]})

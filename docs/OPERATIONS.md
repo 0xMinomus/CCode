@@ -51,9 +51,20 @@ Verifikasi cepat di mesin Windows: cocokkan `SHA256SUMS` (`certutil -hashfile` a
 
 ## Computer Use: satu backend, dua tempat
 
-Computer Use Linux diatur dari **Settings → Computer Use**, dan entry yang sama (`linux-desktop`) juga tampil sebagai baris di **Settings → MCP Servers**. Keduanya bukan dua backend: keduanya menulis state `enabled` yang sama, jadi menyalakan/mematikan di salah satu tempat memberi hasil yang sama. Panel Computer Use menambahkan hal yang tidak ada di daftar MCP: status koneksi + jumlah tool, petunjuk izin, dan sakelar pintasan di kotak chat. Teks panel menyebut hal ini supaya tidak jadi pertanyaan "yang mana yang dipakai?".
+Computer Use Linux diatur dari **Settings → Computer Use**, dan entry yang sama (`linux-desktop`) juga tampil sebagai baris di **Settings → MCP Servers**. Keduanya menulis state `enabled` yang sama. Panel berisi dua baris: **Enable Computer Use** dan **Show Computer Use button in the composer**. Tombol composer membuka panel Settings ini; mematikannya hanya menyembunyikan tombol, bukan mematikan backend.
 
-Di Windows pola yang sama berlaku untuk `windows-desktop`: panel Settings menampilkan status/daftar tool dari entry yang sama di daftar MCP, menyebut batas UIPI dan tidak adanya dialog izin portal, dan menyembunyikan sakelar dengan pesan jujur bila entry itu tidak ada. Tidak ada sakelar mati dan tidak ada pintasan composer di Windows.
+Di Windows pola yang sama berlaku untuk `windows-desktop`, termasuk tombol composer. Backend yang hilang dan kegagalan toggle tetap dilaporkan, bukan disembunyikan sebagai kontrol palsu. Windows mengambil layar langsung tanpa dialog portal; UIPI memblokir input ke jendela elevated dan secure desktop. Multi-monitor/mixed-DPI belum terverifikasi. Linux meminta izin screen-sharing/input dari portal saat penggunaan pertama. Gunakan model vision. Gerakan kecil ditoleransi 16 px; gerakan berkelanjutan selama 2500 ms tetap menghasilkan STOPPED dan agent wajib menyerahkan kontrol, bukan memaksa input.
+
+## Startup prewarm
+
+**Settings → General → Start CCode in the background at login** mengatur prewarm, default aktif. Windows memakai HKCU Run milik pengguna; Linux memakai entry XDG autostart `ccode-startup-prewarm.desktop`. Login menjalankan `--hidden`: workspace dimuat tanpa jendela/taskbar, lalu shortcut normal menampilkan instance yang sama. RAM tetap terpakai sejak login; matikan toggle bila tidak menginginkannya. Keluar sepenuhnya sebelum apply/install/backup; instance background tetap aplikasi berjalan. Root smoke terisolasi tidak mengubah autostart pengguna. Verifikasi Linux login/restore dilakukan pemilik di mesin Linux.
+
+## Pemasangan RTK dan pemulihan MCP
+
+Saat RTK belum tersedia, slot kontrol di **Settings → Token savers** menampilkan **Install**. Satu klik mengunduh binary resmi ter-pin, memverifikasi SHA256, memasangnya dalam namespace privat, lalu mengaktifkan RTK. Tombol menjadi toggle biasa setelah sukses; kegagalan menampilkan alasan dan dapat dicoba ulang. RTK yang sudah dipasang pengguna tetap didahulukan.
+
+Path entry katalog MCP milik aplikasi dihitung ulang saat bootstrap setelah aplikasi dipindah. Entry Context7/Codegraph lama yang menunjuk folder portable terhapus dipulihkan tanpa unduhan ulang; server custom, env tambahan, disabled state, dan entry yang sengaja dihapus tetap dihormati. Payload opsional yang hilang masih memerlukan tindakan Install eksplisit.
+
 
 ## Computer Use: klik/ketik ditolak
 
