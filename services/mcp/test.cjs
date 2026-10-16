@@ -4,6 +4,11 @@ const runtime = require('../../src/main/mcp-catalog.cjs');
 const catalog = require('./catalog.json');
 
 async function main() {
+  // A native server or installer must never flash a console window on Windows: both spawn
+  // sites pass windowsHide, and the launcher is the only path that starts them.
+  for (const file of [path.join(__dirname, 'launch.cjs'), path.join(__dirname, '../../src/main/mcp-catalog.cjs')]) {
+    assert.match(fs.readFileSync(file, 'utf8'), /windowsHide: true/, path.basename(file) + ' must hide child consoles on Windows');
+  }
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ccode-mcp-boundary-'));
   const resourcesPath = path.join(root, 'resources');
   const payload = path.join(resourcesPath, 'mcp');

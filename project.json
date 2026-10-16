@@ -1,7 +1,7 @@
 {
   "project": "ccode",
   "upstream_version": "3.14.5",
-  "windows_release_version": "1.0.0",
+  "windows_release_version": "1.0.1",
   "baseline": "baselines/upstream-3.14.5-original.asar",
   "baseline_sha256": "fcc1e6af5e65ad1f0711addf35b125a0596179afb9976d257ced1a3aa2836d31",
   "agent_baseline": "baselines/upstream-3.14.5-original-agent.cjs",

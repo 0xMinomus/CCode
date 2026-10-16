@@ -157,7 +157,7 @@ function npmInstall(p, item) {
   atomic(path.join(dir, 'package.json'), { name: 'ccode-mcp-' + item.id, version: '1.0.0', private: true, dependencies: { [item.package]: item.version, ...item.dependencies } });
   const npm = path.join(p.payload, 'runtime/node_modules/npm/bin/npm-cli.js');
   return new Promise((resolve, reject) => {
-    const child = spawn(p.node, [npm, 'install', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund', '--userconfig=' + path.join(home, '.npmrc'), '--cache=' + path.join(p.state, 'npm-cache')], { cwd: dir, env: cleanEnv(home), stdio: 'ignore', detached: process.platform !== 'win32' });
+    const child = spawn(p.node, [npm, 'install', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund', '--userconfig=' + path.join(home, '.npmrc'), '--cache=' + path.join(p.state, 'npm-cache')], { cwd: dir, env: cleanEnv(home), stdio: 'ignore', windowsHide: true, detached: process.platform !== 'win32' });
     const cancel = () => { try { process.kill(process.platform === 'win32' ? child.pid : -child.pid, 'SIGKILL'); } catch {} };
     active.add(cancel);
     const timer = setTimeout(cancel, 180000);
@@ -278,7 +278,7 @@ async function probe(client, item, dir, timeout) {
 }
 async function runNativeIndex(p, item, dir, home) {
   await new Promise((resolve, reject) => {
-    const child = spawn(executable(p, item), ['reindex', '--no-embed'], { cwd: dir, env: { ...cleanEnv(home), ...item.env }, stdio: 'ignore' });
+    const child = spawn(executable(p, item), ['reindex', '--no-embed'], { cwd: dir, env: { ...cleanEnv(home), ...item.env }, stdio: 'ignore', windowsHide: true });
     const stop = () => child.kill('SIGKILL'); active.add(stop);
     const timer = setTimeout(stop, 30000);
     child.once('error', () => { clearTimeout(timer); active.delete(stop); reject(Error('Codegraph native engine could not start.')); });

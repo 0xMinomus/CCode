@@ -322,6 +322,14 @@ Batas yang tidak diklaim setara Linux:
 - Upgrade diuji sebagai install-ulang versi yang sama, bukan dari versi lama yang lebih tua.
 - Pada mode senyap, installer/uninstaller yang ditolak bisa tetap melaporkan exit code 0; verifikasi lewat keadaan filesystem, bukan exit code.
 
+### Patch 1.0.1 (2026-10-16)
+
+- Gejala yang dilaporkan pemilik: jendela konsol kosong muncul tiba-tiba dengan judul path `code-graph-mcp.exe` milik build portabel M1. Penyebab: biner Codegraph adalah program konsol (PE subsystem 3), dan spawn-nya tidak memakai `windowsHide`, sehingga Windows mengalokasikan konsol baru setiap server MCP itu dihidupkan dari proses aplikasi yang tanpa konsol.
+- Perbaikan di source: `services/mcp/launch.cjs` (spawn server native) dan `src/main/mcp-catalog.cjs` (`npmInstall`, `runNativeIndex`) memakai `windowsHide: true`; `services/mcp/test.cjs` menambahkan pemeriksaan kontrak agar properti itu tidak hilang lagi. Server MCP desktop dan RTK sudah memakai `windowsHide` sejak awal.
+- Verifikasi patch: `make build && make test` hijau (300 tes, 41 skip eksplisit) dan smoke MCP nyata pada tree staged tetap 4/4 (Context7, Codegraph, LSP, Ripgrep), jadi pipa stdio tetap bekerja dengan konsol yang tidak dibuat.
+- Artifact: `CCode-1.0.1-win-x64.exe` 155.044.734 byte, SHA256 `fd945bcbd7131604d0e9093d277baa01704da3669b83fff1870aaebc714d4bfa`; `CCode-1.0.1-win-x64.zip` 251.698.814 byte, SHA256 `432b10d82ead2730783fce1ff00f334a9e2288f22731d75613849022526f37d4`. Artifact 1.0.0 tetap terbit tanpa perubahan.
+- Catatan: server opsional Ripgrep masih memakai `cmd.exe` milik paket pihak ketiga (shim de-quote), jadi jendela konsol singkat masih mungkin saat ia benar-benar dipakai; Codegraph, backend desktop, installer, dan reindex kini senyap.
+
 ### Kandidat M1 (historis; digantikan rilis 1.0.0)
 
 - Berkas (dihapus saat pembersihan 2026-10-16): `CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.

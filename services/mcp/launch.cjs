@@ -76,7 +76,7 @@ env.PATH = bin + path.delimiter + (env.PATH || (win ? 'C:\\Windows\\system32;C:\
 const entry = path.join(runtime, 'node_modules', item.nativePackage || item.package, item.entry);
 const command = item.nativePackage ? entry : process.execPath;
 const args = item.nativePackage ? extra : [entry, ...extra];
-const child = spawn(command, args, { cwd: ['codegraph', 'lsp'].includes(id) ? process.cwd() : home, env, stdio: 'inherit', detached: process.platform !== 'win32' });
+const child = spawn(command, args, { cwd: ['codegraph', 'lsp'].includes(id) ? process.cwd() : home, env, stdio: 'inherit', windowsHide: true, detached: process.platform !== 'win32' });
 let stopping = false;
 function stop(signal) {
   if (stopping) return;
