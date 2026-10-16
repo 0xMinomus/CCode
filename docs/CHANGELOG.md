@@ -8,6 +8,7 @@
 - `src/local_only/plugins.py` menulis ulang `skills/computer-use/SKILL.md` (anchor `## Bootstrap every call`; anchor hilang = build gagal) menjadi panduan tool MCP desktop — loop `screen_read_text` → `element=<id>` → verifikasi, aturan view pixel, dan semantik guard STOPPED — serta menambahkan catatan runtime-hilang di depan `docs/computer-use.md`.
 - Cold start Windows dipindah: server MCP `windows-desktop` memanaskan helper saat `initialize`, dan request helper pertama memakai budget cold-start 60 detik; timeout eksplisit per operasi (pointer read 4 detik) tidak berubah. Terukur di mesin pemilik sebelum perbaikan: panggilan MCP pertama 6,7 detik, berikutnya 0,2–1,9 detik.
 - Verifikasi: `python -m unittest discover -s tests -p test_local_only_patches.py` (anchor, isi skill, catatan doc) dan `-p test_desktop_win.py` (handshake + budget cold-start) lulus, lalu gate `make build && make test`.
+- Dirilis sebagai patch Windows **1.0.3** (installer + ZIP, unsigned): `CCode-1.0.3-win-x64.exe` 155.046.256 byte, SHA256 `dbc161b2496e3bb1a43013deaff38adbb08befc8e5a0c1431c32e20981f844e5`; `CCode-1.0.3-win-x64.zip` 251.704.548 byte, SHA256 `5a0ea6bca9ce7518ec9408de71c282768e25a1fc8526d27dbcbc8e2fc4ff4031`. Release notes kini menyebut langkah SmartScreen (verifikasi SHA256 lalu **More info → Run anyway**); keputusan signing tetap milik pemilik.
 
 ### Computer Use, pemasangan RTK, dan startup background
 

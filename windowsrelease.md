@@ -340,6 +340,14 @@ Batas yang tidak diklaim setara Linux:
 - Batas: UIPI/elevated dan multi-monitor/mixed-DPI seperti catatan 1.0.0; prewarm default-aktif berarti instance tersembunyi dihitung sebagai aplikasi berjalan (apply/install/backup harus menutupnya dulu); rewrite RTK terkelola memakai binding POSIX sehingga mengikuti dialek Git Bash di Windows; validasi runtime prewarm Linux dilakukan pemilik, bukan diklaim di sini.
 - Artifact: `CCode-1.0.2-win-x64.exe` 155.061.900 byte, SHA256 `b0401bbe24588ae0b5b7ed6e9a77958e7ea97645cd2b576a5d1a07cb114a9a03`; `CCode-1.0.2-win-x64.zip` 251.708.572 byte, SHA256 `a192639aab2585233b34998ab16b2c54e618d9f95f40115df972b397d62a7707`. Rilis diterbitkan di fork publik `0xMinomus/CCode`.
 
+### Patch 1.0.3 (2026-10-16)
+
+- Gejala yang dilaporkan pemilik pada 1.0.2: task Computer Use pertama gagal tiga kali ("Operation failed") sebelum berjalan. Bukti dari `tool_usage` sesi: tiga panggilan `mcp__node_repl__js` gagal validasi input schema karena skill bawaan plugin `computer-use` mengarahkan agent ke runtime CUA lewat nodeRepl, sedangkan executor plugin itu tidak ikut di payload; setelah gagal, model beralih ke MCP `windows-desktop` dan task selesai (call pertama 6,7 detik).
+- Perbaikan: `src/local_only/plugins.py` menulis ulang `skills/computer-use/SKILL.md` (anchor `## Bootstrap every call`; hilang = build gagal) agar memakai tool MCP desktop, plus catatan di `docs/computer-use.md`; server `windows-desktop` memanaskan helper saat `initialize` dan request helper pertama memakai budget cold-start 60 detik (timeout eksplisit per operasi tidak berubah).
+- Verifikasi: suite 325 tes lulus (41 skip eksplisit) + `Checks passed`; pengukuran pada kandidat terpasang: call MCP pertama 2,6 detik (sebelumnya 6,7 detik), berikutnya 0,26 detik; pada instalasi 1.0.2 pemilik, file terpasang di-hot-patch (sha256 cocok dengan hasil build), app direstart, dan cache plugin namespace memuat skill baru (hash `6bb96b72c557`). Gate aplikasi nyata: workspace terbuka tanpa login, MCP heal menulis ulang entry Context7/Codegraph ke pohon instalasi baru.
+- Batas: build tetap unsigned sehingga SmartScreen memperingatkan (verifikasi SHA256 lalu **More info → Run anyway**; keputusan sertifikat ada di pemilik — OV/EV berbayar, opsi gratis seperti SignPath Foundation perlu memenuhi syarat). Tiga kegagalan `Bash` di sesi pengguna adalah `stream_recovery_interrupted_tool` (gangguan transport), bukan backend desktop.
+- Artifact: `CCode-1.0.3-win-x64.exe` 155.046.256 byte, SHA256 `dbc161b2496e3bb1a43013deaff38adbb08befc8e5a0c1431c32e20981f844e5`; `CCode-1.0.3-win-x64.zip` 251.704.548 byte, SHA256 `5a0ea6bca9ce7518ec9408de71c282768e25a1fc8526d27dbcbc8e2fc4ff4031`. Tag `v1.0.2-win-x64` tetap di commit rilis sebelumnya.
+
 ### Kandidat M1 (historis; digantikan rilis 1.0.0)
 
 - Berkas (dihapus saat pembersihan 2026-10-16): `CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.

@@ -203,6 +203,12 @@ NSIS installer
   %LOCALAPPDATA%\\{install_dir} fits; a very long user profile path may not.
 
 This release
+  1.0.3 fixes the first Computer Use task: the bundled skill drove the plugin's own runtime,
+  which this build does not ship, so the first calls failed before the model fell back to the
+  desktop MCP tools. The skill now targets the desktop MCP server directly, and that backend
+  warms its helper on connect, so the first action no longer waits seconds.
+  SmartScreen warns because the build is unsigned: verify SHA256SUMS first, then choose More
+  info -> Run anyway. Nothing else needs to be disabled.
   Computer Use retains the local Windows backend with two native Settings rows and a real
   composer shortcut. Small pointer nudges are tolerated; sustained takeover still stops input.
   RTK can be installed from Token savers in one click (pinned official Apache-2.0 OSS binary).
