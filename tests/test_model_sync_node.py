@@ -731,6 +731,8 @@ class DetectionWiringTests(unittest.TestCase):
 const assert=require('node:assert/strict');
 const path=require('node:path');
 process.resourcesPath=__RESOURCES__;
+// Pin the win32 decision branch: the command shape must not depend on the test host.
+Object.defineProperty(process,'platform',{value:'win32',configurable:true});
 const a=require(__ACTIVITY__);
 const windows=a.detectionCommand();
 assert.deepStrictEqual(windows.env,{ELECTRON_RUN_AS_NODE:'1'});
@@ -784,6 +786,8 @@ console.log(JSON.stringify(a.detectionCommand()));
             body = f'''
 process.resourcesPath={json.dumps(str(resources))};
 process.env.CCODE_STANDALONE_ROOT={json.dumps(str(root))};
+// Pin the win32 decision branch: the node port is what this test exercises.
+Object.defineProperty(process,'platform',{{value:'win32',configurable:true}});
 const a=require({json.dumps(str(ROOT / 'src/main/activity.cjs'))});
 (async()=>{{ console.log(JSON.stringify(await a.runDetection())); }})().catch(error=>{{console.error(error);process.exitCode=1}});
 '''
@@ -815,6 +819,8 @@ const a=require({json.dumps(str(ROOT / 'src/main/activity.cjs'))});
 process.resourcesPath={json.dumps(str(resources))};
 process.env.CCODE_STANDALONE_ROOT={json.dumps(str(root))};
 process.env.CCODE_MODEL_SYNC_GATEWAY={json.dumps(base_url)};
+// Pin the win32 decision branch: the node port is what this test exercises.
+Object.defineProperty(process,'platform',{{value:'win32',configurable:true}});
 const a=require({json.dumps(str(ROOT / 'src/main/activity.cjs'))});
 (async()=>{{ console.log(JSON.stringify(await a.runDetection())); }})().catch(error=>{{console.error(error);process.exitCode=1}});
 '''

@@ -40,12 +40,9 @@ class PromotionTests(unittest.TestCase):
         self.root = pathlib.Path(self.temp.name)
         self.staged = self.root / 'runtime/build/resources'
         self.target = self.root / 'app/resources'
-        self.names = ['app.asar', 'glm/ccode.cjs', 'glm/.node-bundle-meta.json', 'app-update.yml',
-                      'activity/main.cjs',
-                      'token-savers/main.cjs', 'token-savers/token-savers-runtime.cjs',
-                      *apply_build.default_commands.resource_files(),
-                      'marketplace/marketplace-compat.cjs',
-                      'config/provider/ccode-builtin.json', 'icon.png', 'icon_512x512.png', 'icon_windows.png']
+        # Derive the promoted set from apply_build's own contract: a resource added to
+        # FILES or PACKAGED_ICONS must reach this fixture without a second edit here.
+        self.names = [*apply_build.FILES, *branding.PACKAGED_ICONS]
         self.previous = {}
         for name in self.names:
             old = ('previous:' + name).encode()

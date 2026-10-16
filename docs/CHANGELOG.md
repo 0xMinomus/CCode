@@ -2,6 +2,17 @@
 
 ## 2026-10-16
 
+### Rilis Linux x86_64: batch 1.0.2/1.0.3 dan validasi runtime pertama
+
+- Batch yang sudah terbit di Windows (guard/panel Computer Use, tombol Install RTK sekali klik, bootstrap MCP yang merelokasi entry katalog, startup prewarm, skill `computer-use` memakai tool MCP desktop) sekarang dibangun dan dirilis juga untuk Linux sebagai prerelease `v1.0.3+upstream.3.14.5` (AppImage, deb, rpm, SHA256SUMS; unsigned).
+- Tiga jalur Linux divalidasi runtime untuk pertama kali:
+  - **Prewarm.** Entry XDG autostart dibuat dengan `Exec="<app>/ccode" --hidden` dan penanda milik aplikasi; `--hidden` memuat workspace tanpa jendela lalu peluncuran eksplisit menampilkan instance yang sama (PID dan id target CDP tetap); switch General memakai UI asli dan OFF menghapus entry; root terisolasi tidak menyentuh autostart. Instance `--hidden` tetap dihitung aplikasi berjalan oleh `make apply`.
+  - **RTK.** Binary musl 1.0.1 ter-pin dieksekusi pertama kali di Linux: `--version`, `rewrite` (status 0/3), no-match (status 1), dan `gain --daily --format json` lulus; perintah yang disetujui membawa binding PATH dan dijalankan nyata; RTK milik user di PATH tetap menang.
+  - **Computer Use.** Panel dua baris + tombol composer muncul di UI; guard dengan konstanta rilis (16 px / 2500 ms) tetap mengeluarkan STOPPED pada gerakan berkelanjutan; skill terpasang menunjuk `linux-desktop` (bukan `node_repl`). Guard diuji sebagai modul profil dengan pointer tersimulasi, bukan sesi portal dengan mouse sungguhan.
+- Artifact: AppImage 345.168.376 byte SHA256 `1f345ebb1b29b71567a311c069498b589b981d49ae54ea92d367648338ea5fc9`; deb 273.263.228 byte SHA256 `6cbc419f16a1cc27b46af085f8ad00935a1f6ead2e6d35c2f6d5abc2eb2331e8`; rpm 287.592.178 byte SHA256 `cf1c063c171f25075c695ecf59a7a643d57ec5a50a09ea0eb60ff891baee86cf`. `sha256sum -c SHA256SUMS` lulus; deb (`dpkg-deb -x`, 13.630 berkas) dan rpm (`sudo rpm --root`, 13.614 berkas di `/opt/ccode`) membawa resource batch ini tanpa Voice; payload AppImage diekstrak dari byte rilis dan dijalankan di root terisolasi (workspace terbuka, 0 error IPC/runtime). Mount FUSE tidak diuji — `--appimage-extract-and-run` di mesin ini memicu AppImageLauncher memindahkan berkas, jadi boot diuji lewat ekstraksi langsung. Batas: unsigned, hanya diuji di Fedora pemilik, distro lain belum diuji. Rilis: [prerelease `v1.0.3+upstream.3.14.5`](https://github.com/0xMinomus/CCode/releases/tag/v1.0.3%2Bupstream.3.14.5).
+- Perbaikan suite yang merah di Linux sejak commit `69b7d3d`: `tests/test_apply_build.py` menurunkan daftar resource dari `apply_build.FILES` + `branding.PACKAGED_ICONS` (fixture manual tertinggal saat `startup-prewarm` dan `rtk-installer` ditambahkan), dan `tests/test_model_sync_node.py` mem-pin cabang `win32` di tiga tes port Node. Gate `make build && make test`: 325 tes (9 dilewati), `Checks passed`.
+- README menyamakan tautan unduhan dengan rilis yang berlaku (Windows 1.0.3, Linux 1.0.3) dan badge release.
+
 ### Computer Use: skill plugin memakai backend MCP
 
 - Laporan pemilik setelah 1.0.2: task computer use gagal tiga kali ("Operation failed") sebelum akhirnya berjalan lambat lalu selesai. Akar masalah dari `tool_usage` sesi: tiga panggilan pertama `mcp__node_repl__js` gagal validasi input schema karena skill bawaan plugin `computer-use` mengarahkan agent ke runtime CUA lewat nodeRepl, sedangkan executor plugin itu tidak ikut di payload CCode; setelah gagal, model beralih ke `windows-desktop`.

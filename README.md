@@ -8,12 +8,12 @@
 Chat with coding agents, drive your desktop, and keep every byte of data on your own machine.
 
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Release: 1.0.0](https://img.shields.io/badge/release-1.0.0-brightgreen.svg)](https://github.com/0xMinomus/CCode/releases)
+[![Release: 1.0.3](https://img.shields.io/badge/release-1.0.3-brightgreen.svg)](https://github.com/0xMinomus/CCode/releases)
 [![Platforms: Linux x64, Windows x64](https://img.shields.io/badge/platforms-Linux%20x64%20%7C%20Windows%20x64-6f42c1.svg)](#requirements)
 [![No account required](https://img.shields.io/badge/account-not%20required-success.svg)](#why-ccode-exists)
 
 **[Download for Windows](https://github.com/0xMinomus/CCode/releases/tag/v1.0.3-win-x64)** ·
-**[Download for Linux](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5)** ·
+**[Download for Linux](https://github.com/0xMinomus/CCode/releases/tag/v1.0.3%2Bupstream.3.14.5)** ·
 **[Build from source](#build-and-run)**
 
 </div>
@@ -209,16 +209,16 @@ All builds are unsigned. Verify the download against the release's `SHA256SUMS` 
 
 ### Windows x64
 
-[**CCode 1.0.1 for Windows**](https://github.com/0xMinomus/CCode/releases/tag/v1.0.1-win-x64)
+[**CCode 1.0.3 for Windows**](https://github.com/0xMinomus/CCode/releases/tag/v1.0.3-win-x64)
 
 | File | What it is |
 |---|---|
-| `CCode-1.0.1-win-x64.exe` | Per-user installer, no administrator needed. Start Menu shortcut, `ccode://` scheme, and model-sync tasks included. |
-| `CCode-1.0.1-win-x64.zip` | Portable build. Extract it and run `app\CCode.exe`, or use `CCode.ps1 -Root` for an isolated test namespace. |
+| `CCode-1.0.3-win-x64.exe` | Per-user installer, no administrator needed. Start Menu shortcut, `ccode://` scheme, and model-sync tasks included. |
+| `CCode-1.0.3-win-x64.zip` | Portable build. Extract it and run `app\CCode.exe`, or use `CCode.ps1 -Root` for an isolated test namespace. |
 
 ### Linux x64
 
-[**CCode 1.0.0 for Linux**](https://github.com/0xMinomus/CCode/releases/tag/v1.0.0%2Bupstream.3.14.5)
+[**CCode 1.0.3 for Linux**](https://github.com/0xMinomus/CCode/releases/tag/v1.0.3%2Bupstream.3.14.5)
 
 AppImage, `.deb`, and `.rpm` builds. The Linux packages were checked on the project's Fedora workstation rather than
 clean installations of other distributions; the [Linux verification record](linuxrelease.md) has the details.
