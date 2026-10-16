@@ -2,6 +2,14 @@
 
 ## 2026-10-16
 
+### Workspace per task: folder otomatis + menu file di baris perubahan
+
+- Draft tanpa folder project tidak lagi berbagi `data/.ccode/workspace/default`. Empat titik pembuatan draft memakai RPC `file.createScratchWorkspace` dari upstream dan membuat folder `~/CCodeProject/task-<tanggal>-<jam>-<acak>`, lalu membukanya sebagai workspace biasa. `startDraftInWorkspace` hanya bercabang saat workspace percakapan belum punya draft (jalur bootstrap/focus), tiga titik lain selalu. Draft/task lama tetap memakai path tersimpannya sehingga restore tidak berpindah dan `default` tidak dihapus.
+- `src/local_only/workspace_ux.py` menambal renderer: helper `__ccodeNewTaskFolder` (jendela pakai-ulang 5 detik supaya event beruntun tidak membanjiri folder; RPC gagal → alur lama), `handleCreateConversationTask`, handler "new task" sidebar, `startNewTaskFromActiveWorkspace`, dan `startDraftInWorkspace`. Setiap anchor lewat `replace_once`, jadi drift baseline menggagalkan build, bukan diam-diam melewati patch.
+- Baris file di ringkasan perubahan turn mendapat menu klik-kanan dengan komponen ContextMenu upstream yang sama seperti Git pane: **Reveal in File Manager**, **Copy path**, **Copy relative path**, memakai hook aksi file `Nj` yang sudah ada.
+- Verifikasi runtime di root terisolasi (HOME diarahkan ke direktori sementara): boot membuat tepat satu folder dan mengaktifkannya sebagai workspace; "New task" saat sudah di folder itu tetap di folder yang sama; klik baris Conversations membuat folder baru; idle 20 detik dan penutupan aplikasi tidak menambah folder. `make build && make test` lulus (330 tes, 9 dilewati) dan seluruh aset staged lolos syntax check.
+- Batas: menu baris perubahan belum diuji dengan diff nyata (butuh provider untuk menghasilkan perubahan file); setiap sesi aplikasi (termasuk prewarm) membuat satu folder sehingga folder kosong bisa menumpuk dan aman dihapus; folder baru berada di luar namespace dan tidak ikut snapshot `scripts/data_backup.py`.
+
 ### Audit kebocoran: bersihkan jalur pribadi dari berkas yang dilacak
 
 - Audit seluruh permukaan repo — semua berkas yang dilacak, 89 commit history di semua branch, dan branch fork publik `0xMinomus/CCode` — tidak menemukan kredensial, token, atau API key asli. Semua kandidat yang cocok pola adalah placeholder atau fixture uji: `xoxb-your-token` dan contoh `Bearer sk_live_abc123...` di skill n8n, `N8N_API_KEY:"isolated-handshake-only"` di tes handshake plugin, `password:testroot`/`${USER_PASS}` di VM uji, dan `${POSTGRES_PASSWORD}` di compose n8n.

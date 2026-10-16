@@ -67,6 +67,15 @@ Level pickers stay disabled and dimmed while a saver is off, and every value sur
 Windows and Linux can preload the workspace at login without showing a window. Opening CCode normally reveals the same instance. **Settings → General → Start CCode in the background at login** disables this default-on behavior when background memory use is unwanted. Linux login behavior is awaiting owner validation.
 
 
+### Task folders without a project
+
+Starting a task without picking a project no longer mixes files into one scratch directory. A fresh
+folder (`~/CCodeProject/task-<date>-<time>-<id>`, `%USERPROFILE%\CCodeProject` on Windows) is created
+and opened as the workspace whenever a draft starts outside a project — including the session
+started when CCode opens — while older sessions keep their own folders. In the change summary,
+right-click any changed or generated file for **Reveal in File Manager**, **Copy path**, and
+**Copy relative path**.
+
 ### Built-in subagents
 
 Twelve engineering roles ship enabled and inherit the session model by default:

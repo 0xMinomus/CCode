@@ -203,6 +203,12 @@ Cutover Linux 2026-10-15 mengirim hanya `model-sync,desktop`: Voice dipensiunkan
 
 Installer NSIS berjalan tanpa admin: `%LOCALAPPDATA%\Programs\CCode`, shortcut Start Menu, entri uninstall HKCU, skema URL `ccode://`, dan dua task model-sync (ONLOGON + DAILY). Uninstaller menghapus aplikasi, shortcut, registry, dan task; data `%LOCALAPPDATA%\CCode` dipertahankan kecuali pengguna mencentang opsi hapus. Guard "aplikasi berjalan" hanya menahan bila ada `CCode.exe` yang berjalan dari folder install tujuan. Artifact tidak ditandatangani (SmartScreen memperingatkan); tidak ada feed update.
 
+## Workspace per task
+
+`src/local_only/workspace_ux.py` mengubah dua perilaku renderer. Pertama, draft tanpa folder project tidak lagi berbagi satu folder: helper `__ccodeNewTaskFolder` memanggil RPC upstream `file.createScratchWorkspace` (akar `~/CCodeProject`) dengan nama `task-<tanggal>-<jam>-<acak>` dan hasilnya dipakai sebagai workspace baru. Titik tambal: `handleCreateConversationTask`, handler "new task" sidebar, `startNewTaskFromActiveWorkspace`, dan `startDraftInWorkspace`; yang terakhir hanya bercabang ketika workspace percakapan belum punya draft (jalur bootstrap/focus) dan mengaktifkan folder baru lewat `addTab`, sedangkan tiga titik lain memilih workspace sendiri (`select`/`activateTabByPath` + `addTab`). Helper menyimpan path terakhir selama 5 detik sehingga panggilan beruntun (efek bootstrap, event teardown, klik cepat) memakai satu folder; RPC yang gagal mengembalikan alur ke workspace percakapan tanpa memblokir task. Folder baru tidak ditandai `workspacePurpose: "conversation"`: restore melewati workspace percakapan non-kanonik, sedangkan folder baru harus dipulihkan seperti project biasa.
+
+Kedua, baris file pada ringkasan perubahan turn dibungkus `JA`/`YA` (ContextMenu upstream) dengan item **Reveal in File Manager**, **Copy path**, dan **Copy relative path** dari hook aksi file `Nj` — komponen dan label yang sama dengan menu Git pane. Folder baru berada di luar namespace data sehingga tidak ikut snapshot backup.
+
 ## Data pengguna
 
 Aplikasi berjalan sebagai varian mandiri. Root default Linux `~/.local/share/ccode`; di Windows root default `%LOCALAPPDATA%\CCode`, dengan fallback `<home>\AppData\Local\CCode` bila variabel itu kosong:
@@ -212,7 +218,7 @@ Aplikasi berjalan sebagai varian mandiri. Root default Linux `~/.local/share/cco
 | `data/.ccode/v2` | setting (termasuk `token-savers.json`), provider config, `tasks-index.sqlite`, snapshot sesi |
 | `data/.ccode/cli/db/db.sqlite` | database sesi/message agent |
 | `data/.ccode/cli/config.json` | config MCP pengguna |
-| `data/.ccode/workspace`, `plugin-workspace` | workspace percakapan dan plugin |
+| `data/.ccode/workspace`, `plugin-workspace` | workspace percakapan (hanya `default`, untuk task lama) dan plugin; draft baru memakai `~/CCodeProject/task-*` di luar namespace |
 | `electron/` | profil Electron (localStorage, cookies) |
 | `model-sync/` | state, cache, dan backup model sync varian ini |
 

@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once,rebrand
-from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents,default_commands,startup_prewarm
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents,default_commands,startup_prewarm,workspace_ux
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 AGENT_RESOURCE='glm/ccode.cjs'
@@ -77,6 +77,7 @@ def main():
  s=subagents.patch_renderer(s)
  s+='\n'+(ROOT/'src/renderer/default-commands.js').read_text()+'\n'
  s=default_commands.patch_renderer(s)
+ s=workspace_ux.patch_renderer(s)
  main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeLocalApp,ipcMain as ccodeLocalIpcMain} from "electron";
 import {createRequire as ccodeLocalCreateRequire} from "node:module";
 const ccodeLocalRequire=ccodeLocalCreateRequire(import.meta.url);
