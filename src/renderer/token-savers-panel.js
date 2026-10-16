@@ -34,7 +34,7 @@ function CCodeTokenSaversPanel(){
   if(!api?.installRtk){setInstallError('RTK installation is unavailable. Restart CCode and try again.');return;}
   setInstalling(true);setInstallError(null);
   try{const data=await api.installRtk();setState(s=>({...s,status:'ready',settings:data.settings??s.settings,rtk:data.rtk??null,error:data.settingsError??null}));}
-  catch(error){setInstallError(String(error?.message??error));}
+  catch(error){setInstallError(String(error?.message??error).replace(/^Error invoking remote method '[^']+': Error: /,''));}
   finally{setInstalling(false);}
  };
  if(state.status==='loading')return $.jsx('div',{className:'text-ui-base text-foreground-subtle',children:'Loading Token savers…'});
@@ -46,11 +46,13 @@ function CCodeTokenSaversPanel(){
  const ready=state.status==='ready';
  const rtkAvailable=rtk.available===true;
  const busy=saving||installing||state.refreshing;
+ const installTarget=[rtk.installVersion,rtk.installEdition?'('+rtk.installEdition+')':null].filter(Boolean).join(' ');
+ const installDescription=rtk.installSupported===false?'One-click installation supports Windows x64 and Linux x64 only.':'Install RTK'+(installTarget?' '+installTarget:'')+' for CCode, then enable it automatically.';
  const rtkControl=rtkAvailable?$.jsx(Xx,{'aria-label':'Enable RTK',checked:settings.rtk.enabled===true,disabled:!ready||busy,onCheckedChange:enabled=>updateFeature('rtk',enabled)}):$.jsx(X,{type:'button',variant:'outline',size:'sm','aria-label':installError?'Retry RTK installation':'Install RTK','data-testid':'ccode-token-savers-rtk-install',disabled:!ready||busy||rtk.installSupported===false,onClick:installRtk,children:installing?'Installing…':installError?'Retry':'Install'});
  return $.jsxs('div',{className:'space-y-4','data-testid':'ccode-token-savers-panel',children:[
   $.jsx('p',{className:'text-ui-sm text-foreground-subtle',children:'Choose which local token-saving tools shape shell commands and agent instructions.'}),
   $.jsxs(Q1,{children:[
-   $.jsx(Z1,{label:'RTK',description:rtkAvailable?'RTK rewrites supported commands; no-match preserves CCode approval, while errors stop execution.':rtk.installSupported===false?'One-click installation supports Windows x64 and Linux x64 only.':'Install RTK 1.0.1 (Apache-2.0) for CCode, then enable it automatically.',control:rtkControl}),
+   $.jsx(Z1,{label:'RTK',description:rtkAvailable?'RTK rewrites supported commands; no-match preserves CCode approval, while errors stop execution.':installDescription,control:rtkControl}),
    $.jsx(Z1,{label:'Caveman',description:'Apply a concise response style to agent instructions. Lite, Full, or Ultra compression.',control:CCodeTokenSaversFeatureControl('Caveman',settings.caveman,level=>updateLevel('caveman',level),enabled=>updateFeature('caveman',enabled),!ready||busy)}),
    $.jsx(Z1,{label:'Ponytail',description:'Avoid unnecessary work while preserving correctness and safety. Lite, Full, or Ultra pruning.',control:CCodeTokenSaversFeatureControl('Ponytail',settings.ponytail,level=>updateLevel('ponytail',level),enabled=>updateFeature('ponytail',enabled),!ready||busy)})
   ]}),

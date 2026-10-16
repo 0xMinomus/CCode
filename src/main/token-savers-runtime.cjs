@@ -93,7 +93,10 @@ function managedRtkPath(env = process.env) {
   if (!root) return null;
   try {
     const current = JSON.parse(fs.readFileSync(path.join(root, 'current.json'), 'utf8'));
-    if (current.version !== '1.0.1' || current.edition !== 'oss' || typeof current.directory !== 'string' || !/^v1\.0\.1-oss-(?:win32|linux)-x64-[a-f0-9-]+$/.test(current.directory)) return null;
+    // The recorded version, not a literal, defines a managed install: a released bump must not
+    // silently orphan a binary that is already installed.
+    if (!current || current.edition !== 'oss' || typeof current.version !== 'string' || typeof current.directory !== 'string') return null;
+    if (!/^v\d+(?:\.\d+)+-oss-(?:win32|linux)-x64-[a-f0-9-]+$/.test(current.directory) || !current.directory.startsWith('v' + current.version + '-oss-')) return null;
     const binary = path.join(root, current.directory, process.platform === 'win32' ? 'rtk.exe' : 'rtk');
     if (!fs.statSync(binary).isFile()) return null;
     fs.accessSync(binary, process.platform === 'win32' ? fs.constants.F_OK : fs.constants.X_OK);
@@ -197,7 +200,9 @@ async function rewriteShellCommand(command, options = {}) {
     return { kind: 'error', error: 'RTK returned an invalid shell-command rewrite.' };
   }
   const directory = path.dirname(executable);
-  const onPath = !isManagedRtkPath(executable, env) && String(env.PATH ?? '').split(path.delimiter).some(entry => entry && path.resolve(entry) === path.resolve(directory));
+  const target = path.resolve(directory);
+  const onPath = !isManagedRtkPath(executable, env) && String(env.PATH ?? '').split(path.delimiter)
+    .some(entry => entry && (process.platform === 'win32' ? path.resolve(entry).toLowerCase() === target.toLowerCase() : path.resolve(entry) === target));
   if (onPath) return { kind: 'rewrite', command: rewritten };
   // Bash snapshots may freeze PATH before installation. Bind the selected RTK in the approved command itself.
   const shellDirectory = process.platform === 'win32' ? directory.replace(/\\/g, '/').replace(/^([A-Za-z]):\//, (_, drive) => `/${drive.toLowerCase()}/`) : directory;

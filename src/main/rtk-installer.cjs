@@ -141,6 +141,13 @@ async function install({ runtime, env, root, platform = process.platform, arch =
       fs.renameSync(content, target); promoted = true;
       fs.writeFileSync(pointerTemporary, JSON.stringify({ version: VERSION, edition: 'oss', directory }) + '\n', { flag: 'wx', mode: 0o600 });
       fs.renameSync(pointerTemporary, pointer); activated = true;
+      // A superseded install or a crashed run leaves directories nothing selects any more.
+      for (const entry of fs.readdirSync(root)) {
+        if (entry === directory || entry === 'current.json') continue;
+        const superseded = /^v\d+(?:\.\d+)+-oss-(?:win32|linux)-x64-[a-f0-9-]+$/.test(entry);
+        const interrupted = entry.startsWith('.install-') && path.join(root, entry) !== temporary;
+        if (superseded || interrupted) fs.rmSync(path.join(root, entry), { recursive: true, force: true });
+      }
     }
     const settings = runtime.readSettings(env);
     return runtime.writeSettings({ ...settings, rtk: { enabled: true } }, env);

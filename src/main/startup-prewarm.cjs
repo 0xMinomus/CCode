@@ -107,9 +107,14 @@ function create(options = {}) {
     state = next; error = null;
     return snapshot();
   }
-  function register(ipcMain) {
-    if (state && supported && !isolated) {
+  function register(ipcMain, options = {}) {
+    const reconcile = () => {
       try { save(state.enabled); } catch (cause) { error = cause.message; console.warn('[startup-prewarm]', error); }
+    };
+    if (state && supported && !isolated) {
+      // The patched main calls register() during module evaluation, before first paint, and the
+      // Windows reconcile spawns PowerShell to read the Run value: keep it off the startup path.
+      if (options.deferredReconcile) setImmediate(reconcile); else reconcile();
     } else if (isolated) error = 'Login startup is not changed for an isolated CCode data root.';
     ipcMain.handle('ccode-startup-prewarm:get', event => {
       if (!trusted(event, app)) throw Error('Startup settings require the local CCode window.');

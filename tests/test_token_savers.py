@@ -251,6 +251,23 @@ const options={{runtime,env,download:async()=>payload,extract:async(archive,dest
 }})().catch(error=>{{console.error(error);process.exitCode=1}});'''
             self.assertEqual(run_node(script), {'enabled': True, 'calls': 4})
 
+    def test_release_pins_are_literal_values(self):
+        script = f'''const i=require({json.dumps(str(INSTALLER))});
+const releases=Object.fromEntries(Object.entries(i.RELEASES).map(([key,value])=>[key,{{name:value.name,size:value.size,sha256:value.sha256,binary:value.binary,binarySha256:value.binarySha256,licenseSha256:value.licenseSha256}}]));
+console.log(JSON.stringify({{version:i.VERSION,releases}}));'''
+        pinned = run_node(script)
+        self.assertEqual(pinned['version'], '1.0.1')
+        self.assertEqual(pinned['releases']['win32-x64'], {
+            'name': 'rtk-oss-x86_64-pc-windows-msvc.zip', 'size': 5708680,
+            'sha256': '0e53e2eca471e15fbd3636e64e6bc0b182cbc278ed0339c80450a2dd03f4cd6b',
+            'binary': 'rtk.exe', 'binarySha256': '4346e25f54d4a4aaa39809d8384e59193d6646d8b008f9f9a90acaea5d6b37da',
+            'licenseSha256': '0d4d6a722737b8a3f9bd40868011f8d6522650eb93b6f3c36bf780bb54210a5f'})
+        self.assertEqual(pinned['releases']['linux-x64'], {
+            'name': 'rtk-oss-x86_64-unknown-linux-musl.tar.gz', 'size': 5766270,
+            'sha256': 'a44e8ffc43981100b4ddf1710399a1649a6c874591aa6d0c0727fe6cbd983c41',
+            'binary': 'rtk', 'binarySha256': '38b915f2a52ce4b7ef7d6dc3966aaeccb9f754731b2933571bf85026bcba8677',
+            'licenseSha256': '33f694a31d9f9df3e292a9413a3cdb0113fa72698e2c719f657ff6b53165dcc4'})
+
     def test_managed_rewrite_binds_path_inside_the_approved_command(self):
         with tempfile.TemporaryDirectory(prefix="ccode rtk '") as folder:
             managed = pathlib.Path(folder) / '.ccode/v2/tools/rtk'

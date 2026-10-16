@@ -206,6 +206,8 @@ This release
   Computer Use retains the local Windows backend with two native Settings rows and a real
   composer shortcut. Small pointer nudges are tolerated; sustained takeover still stops input.
   RTK can be installed from Token savers in one click (pinned official Apache-2.0 OSS binary).
+  Its rewrite binds the managed binary through a POSIX `export PATH` prefix, so on Windows it
+  expects the Git Bash dialect (the default); a user-installed RTK on PATH needs no binding.
   Managed MCP launcher paths heal after moving the application folder.
   General offers background prewarm at login, enabled by default. It consumes RAM while hidden;
   opening CCode normally shows the already-loaded instance. Disable it to avoid background use.

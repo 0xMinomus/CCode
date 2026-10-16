@@ -21,7 +21,7 @@ def patch_main(text):
                         'import {createRequire as ccodePrewarmRequire} from "node:module";'
                         'import {ipcMain as ccodePrewarmIpc} from "electron";'
                         'const ccodeStartup=ccodePrewarmRequire(import.meta.url)(process.resourcesPath+"/' + RESOURCE + '").create({app:Z});'
-                        + SINGLE_INSTANCE + 'AV&&ccodeStartup.register(ccodePrewarmIpc);')
+                        + SINGLE_INSTANCE + 'AV&&ccodeStartup.register(ccodePrewarmIpc,{deferredReconcile:!0});')
     text = replace_once(text, WINDOW_OPTIONS,
                         'autoHideMenuBar:kN(),...PN(),show:!ccodeStartup.hidden,skipTaskbar:ccodeStartup.hidden,'
                         'webPreferences:{backgroundThrottling:!ccodeStartup.hidden,preload:e.preloadPath,')

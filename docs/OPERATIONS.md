@@ -61,7 +61,7 @@ Di Windows pola yang sama berlaku untuk `windows-desktop`, termasuk tombol compo
 
 ## Pemasangan RTK dan pemulihan MCP
 
-Saat RTK belum tersedia, slot kontrol di **Settings → Token savers** menampilkan **Install**. Satu klik mengunduh binary resmi ter-pin, memverifikasi SHA256, memasangnya dalam namespace privat, lalu mengaktifkan RTK. Tombol menjadi toggle biasa setelah sukses; kegagalan menampilkan alasan dan dapat dicoba ulang. RTK yang sudah dipasang pengguna tetap didahulukan.
+Saat RTK belum tersedia, slot kontrol di **Settings → Token savers** menampilkan **Install**. Satu klik mengunduh binary resmi ter-pin, memverifikasi SHA256, memasangnya dalam namespace privat, lalu mengaktifkan RTK. Tombol menjadi toggle biasa setelah sukses; kegagalan menampilkan alasan dan dapat dicoba ulang. RTK yang sudah dipasang pengguna tetap didahulukan. Rewrite terkelola membawa binding PATH berbentuk POSIX (`export PATH=…`), jadi di Windows ia mengikuti shell Git Bash (default); dengan dialek CMD, perintah hasil rewrite tidak jalan — RTK milik pengguna yang sudah ada di PATH tidak memakai binding ini.
 
 Path entry katalog MCP milik aplikasi dihitung ulang saat bootstrap setelah aplikasi dipindah. Entry Context7/Codegraph lama yang menunjuk folder portable terhapus dipulihkan tanpa unduhan ulang; server custom, env tambahan, disabled state, dan entry yang sengaja dihapus tetap dihormati. Payload opsional yang hilang masih memerlukan tindakan Install eksplisit.
 
