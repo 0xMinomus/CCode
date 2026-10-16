@@ -2,6 +2,13 @@
 
 ## 2026-10-16
 
+### Computer Use: skill plugin memakai backend MCP
+
+- Laporan pemilik setelah 1.0.2: task computer use gagal tiga kali ("Operation failed") sebelum akhirnya berjalan lambat lalu selesai. Akar masalah dari `tool_usage` sesi: tiga panggilan pertama `mcp__node_repl__js` gagal validasi input schema karena skill bawaan plugin `computer-use` mengarahkan agent ke runtime CUA lewat nodeRepl, sedangkan executor plugin itu tidak ikut di payload CCode; setelah gagal, model beralih ke `windows-desktop`.
+- `src/local_only/plugins.py` menulis ulang `skills/computer-use/SKILL.md` (anchor `## Bootstrap every call`; anchor hilang = build gagal) menjadi panduan tool MCP desktop — loop `screen_read_text` → `element=<id>` → verifikasi, aturan view pixel, dan semantik guard STOPPED — serta menambahkan catatan runtime-hilang di depan `docs/computer-use.md`.
+- Cold start Windows dipindah: server MCP `windows-desktop` memanaskan helper saat `initialize`, dan request helper pertama memakai budget cold-start 60 detik; timeout eksplisit per operasi (pointer read 4 detik) tidak berubah. Terukur di mesin pemilik sebelum perbaikan: panggilan MCP pertama 6,7 detik, berikutnya 0,2–1,9 detik.
+- Verifikasi: `python -m unittest discover -s tests -p test_local_only_patches.py` (anchor, isi skill, catatan doc) dan `-p test_desktop_win.py` (handshake + budget cold-start) lulus, lalu gate `make build && make test`.
+
 ### Computer Use, pemasangan RTK, dan startup background
 
 - Panel Computer Use Linux/Windows memakai dua baris Settings native: enable backend dan tampilkan tombol composer. Windows memakai shortcut composer yang sama perilakunya dengan Linux; engine tetap backend lokal masing-masing platform.

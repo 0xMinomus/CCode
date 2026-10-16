@@ -445,5 +445,40 @@ class ToolHandlers(unittest.TestCase):
         self.assertTrue(self.result['focus'].startswith('{"focused":true'))
 
 
+HOST_SCRIPT = """
+const { HelperHost } = require(process.argv[1] + '/host.cjs');
+const EventEmitter = require('node:events');
+const child = new EventEmitter();
+child.killed = false; child.exitCode = null;
+child.stdin = { lines: [], write(line, callback) { this.lines.push(String(line)); callback?.(); return true; } };
+child.stdout = new EventEmitter(); child.stdout.setEncoding = () => {};
+child.stderr = new EventEmitter(); child.stderr.setEncoding = () => {};
+const host = new HelperHost({ spawn: () => child, timeout: 120 });
+const answer = delay => setTimeout(() => {
+  const line = child.stdin.lines.at(-1);
+  if (line) child.stdout.emit('data', JSON.stringify({ id: JSON.parse(line).id, ok: true, data: {} }) + '\\n');
+}, delay);
+(async () => {
+  const cold = host.request('cursor');
+  answer(240);
+  const coldData = await cold;
+  let warmError = null;
+  const warm = host.request('cursor');
+  answer(240);
+  try { await warm; } catch (error) { warmError = error.message; }
+  process.stdout.write(JSON.stringify({ coldData, warmError }));
+})();
+"""
+
+
+class HelperHostBudget(unittest.TestCase):
+    """The first helper request waits for the cold start; later ones keep the base budget."""
+
+    def test_the_cold_start_gets_a_longer_budget_than_later_requests(self):
+        result = run_module(HOST_SCRIPT)
+        self.assertEqual(result['coldData'], {})
+        self.assertIn('timed out after 120 ms', result['warmError'])
+
+
 if __name__ == '__main__':
     unittest.main()

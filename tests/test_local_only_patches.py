@@ -9,6 +9,34 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 cloud = importlib.import_module('local_only.cloud')
+plugins = importlib.import_module('local_only.plugins')
+
+
+class ComputerUsePluginTests(unittest.TestCase):
+    """The bundled Computer Use skill must drive the desktop MCP backends it ships with."""
+
+    def test_the_skill_replaces_the_missing_runtime_with_the_mcp_loop(self):
+        patched = plugins._patch(plugins.CUA_SKILL, plugins.CUA_SKILL_ANCHOR + '\n\nold body\n')
+        self.assertIn('windows-desktop', patched)
+        self.assertIn('linux-desktop', patched)
+        self.assertIn('screen_read_text', patched)
+        self.assertIn('Do not use', patched)
+        self.assertIn('mcp__node_repl__js', patched)  # named only to forbid it
+        self.assertNotIn('setupComputerUseRuntime', patched)
+        with self.assertRaises(ValueError):
+            plugins._patch(plugins.CUA_SKILL, 'a body without the pinned anchor')
+
+    def test_the_plugin_doc_points_at_the_mcp_tools(self):
+        patched = plugins._patch(plugins.CUA_DOC, 'original doc body\n')
+        self.assertTrue(patched.startswith('> CCode ships this plugin'))
+        self.assertIn('windows-desktop', patched)
+
+    @unittest.skipUnless((plugins.BASELINE / plugins.CUA_SKILL).is_file(), 'pinned plugin baseline is not present')
+    def test_the_pinned_skill_still_matches_the_rewrite_anchor(self):
+        source = (plugins.BASELINE / plugins.CUA_SKILL).read_text()
+        patched = plugins._patch(plugins.CUA_SKILL, source)
+        self.assertTrue(patched.startswith('---\nname: computer-use\n'))
+        self.assertNotIn('setupComputerUseRuntime', patched)
 
 
 class SplitTopLevelTests(unittest.TestCase):

@@ -56,6 +56,9 @@ function main() {
     const notification = message.id === undefined || message.id === null;
     const method = message.method;
     if (method === 'initialize') {
+      // The helper compiles its Add-Type block once per session; starting it here moves that cost
+      // off the model's first action, which otherwise waits (and races the 4 s pointer read).
+      if (process.platform === 'win32') host.request('cursor', { timeout: 60000 }).catch(() => {});
       return reply(message.id, { protocolVersion: typeof message.params?.protocolVersion === 'string' ? message.params.protocolVersion : PROTOCOL_VERSION,
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: 'windows-desktop', title: 'Windows Desktop (CCode Computer Use)', version: SERVER_VERSION },

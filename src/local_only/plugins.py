@@ -32,6 +32,67 @@ PPTX_SKILL = 'presentations-plugin/skills/pptx/SKILL.md'
 PPTX_RERUN = ('then fix the real hits and re-run.',
               'then fix the real hits and re-run once; report anything still flagged in the final message '
               'instead of iterating again.')
+# The Computer Use plugin's executor is not part of this payload, so its skill must drive the
+# desktop MCP backends instead of the missing nodeRepl runtime it was written for.
+CUA_SKILL = 'zcode-cua-plugin/skills/computer-use/SKILL.md'
+CUA_DOC = 'zcode-cua-plugin/docs/computer-use.md'
+CUA_SKILL_ANCHOR = '## Bootstrap every call'
+CUA_SKILL_CONTENT = '''---
+name: computer-use
+description: "Use when a task needs a native desktop app's own UI or the OS. Drive it with the windows-desktop (Windows) or linux-desktop (Linux) MCP tools. For anything inside a web page, use Browser Use. Main agent only."
+---
+
+# Computer Use
+
+Operate the user's desktop through this platform's desktop MCP server: `windows-desktop` on
+Windows, `linux-desktop` on Linux. Use the tools that are actually listed in this session.
+
+- Main agent only. Never delegate Computer Use to a subagent.
+- Prefer a dedicated connector, API, CLI or skill when one can complete the task.
+- Do not use AppleScript, `osascript`, JXA, System Events, shell commands, or
+  `mcp__node_repl__js` for desktop control: this plugin's runtime is not installed here. When a
+  desktop tool is missing, say so instead of falling back to another automation stack.
+
+## Loop
+
+1. `screen_read_text` first: it returns the foreground window's elements with stable ids and
+   desktop coordinates, and it works while the app stays in the background.
+2. Act by `element=<id>`; coordinates are the last resort, for canvas, games, and content
+   accessibility cannot see. `screen_focus` before `screen_type`/`screen_key` when the target
+   is not already focused.
+3. Verify with `screen_wait_text` for an expected string, `screen_sense` for the change line,
+   or `screen_screenshot` when you need to see layout or color. `screen_verify` warns when an
+   action changed nothing.
+4. Re-observe after uncertain transitions. Success means the desktop changed, not that a call
+   returned.
+
+## Coordinates and views
+
+- Coordinates read from a screenshot are **view pixels**; the backend maps them to the desktop.
+  Never rescale them yourself, and pass `view_id=<view#N>` from the screenshot header when the
+  shot is older than the previous step.
+- `region=[x,y,w,h]` on `screen_screenshot` takes **desktop** pixels: use it to zoom on small
+  text instead of guessing.
+- `screen_screenshot({ annotate: true })` overlays numbered marks so you can click by id.
+
+## Pointer guard
+
+- Moving the mouse yourself means STOPPED: yield, stop acting, and tell the user. A parked
+  pointer is not a takeover and stray nudges are ignored.
+- Never pass `force=true` to defeat takeover; use it only after the user hands control back.
+- Windows: capture runs directly with no portal dialog; UIPI blocks input to elevated windows
+  and the UAC secure desktop, and no mode pierces that. Linux asks the desktop portal for
+  screen-sharing and input permission on first use.
+- Use a vision model for screenshot work.
+
+## First call
+
+The desktop backend starts on demand and compiles its helper once per session, so the first
+action can take a few seconds. Retry once instead of switching tools or giving up.
+'''
+CUA_DOC_NOTE = ('> CCode ships this plugin without its CUA runtime. Drive the desktop with the '
+                '`windows-desktop` (Windows) or `linux-desktop` (Linux) MCP tools; read the '
+                '`computer-use` skill for the loop.\n\n')
 
 
 def _baseline_files():
@@ -95,6 +156,12 @@ def _patch(relative, text):
         text = replace_once(text, ACCOUNT_THOUGHT_LINE, '')
     if relative == PPTX_SKILL:
         text = replace_once(text, *PPTX_RERUN)
+    if relative == CUA_SKILL:
+        if CUA_SKILL_ANCHOR not in text:
+            raise ValueError('Computer Use skill anchor is missing in ' + relative)
+        text = CUA_SKILL_CONTENT
+    if relative == CUA_DOC:
+        text = CUA_DOC_NOTE + text
     text = rebrand.apply(text)
     left = rebrand.leftover(text)
     if left:

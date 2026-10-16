@@ -82,13 +82,17 @@ class HelperHost {
   }
 
   request(op, args = {}) {
+    // The first request pays the helper's own start (PowerShell plus one Add-Type compile), so it
+    // gets a cold-start budget; explicit per-op timeouts (the 4 s pointer read) stay as they are.
+    const cold = this.child === null;
     const child = this.start();
+    const limit = args.timeout || (cold ? Math.max(this.timeout, 60000) : this.timeout);
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new HelperError('The Windows desktop helper timed out after ' + this.timeout + ' ms on ' + op + '.', 'timeout'));
-      }, args.timeout || this.timeout);
+        reject(new HelperError('The Windows desktop helper timed out after ' + limit + ' ms on ' + op + '.', 'timeout'));
+      }, limit);
       timer.unref?.();
       this.pending.set(id, { resolve, reject, timer });
       child.stdin.write(JSON.stringify({ id, op, args }) + '\n', error => {
