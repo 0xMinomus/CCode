@@ -330,6 +330,16 @@ Batas yang tidak diklaim setara Linux:
 - Artifact: `CCode-1.0.1-win-x64.exe` 155.044.734 byte, SHA256 `fd945bcbd7131604d0e9093d277baa01704da3669b83fff1870aaebc714d4bfa`; `CCode-1.0.1-win-x64.zip` 251.698.814 byte, SHA256 `432b10d82ead2730783fce1ff00f334a9e2288f22731d75613849022526f37d4`. Artifact 1.0.0 tetap terbit tanpa perubahan.
 - Catatan: server opsional Ripgrep masih memakai `cmd.exe` milik paket pihak ketiga (shim de-quote), jadi jendela konsol singkat masih mungkin saat ia benar-benar dipakai; Codegraph, backend desktop, installer, dan reindex kini senyap.
 
+### Patch 1.0.2 (2026-10-16)
+
+- Fitur: Computer Use dua baris native (enable + tombol composer) dengan tombol composer Windows, guard yang menoleransi gerakan kecil 16 px sementara gerakan berkelanjutan 2500 ms tetap STOPPED; Install RTK sekali klik dari rilis resmi OSS 1.0.1 ter-pin (auto-aktif setelah kontrak `rewrite`/`gain` diverifikasi); bootstrap MCP merelokasi entry milik aplikasi — termasuk argumen script `windows-desktop` — setelah folder dipindah tanpa menyentuh server/setting user; startup prewarm default aktif dengan toggle General, entry HKCU Run / XDG autostart milik aplikasi, dan pembersihan uninstaller NSIS.
+- Gate: `make build` + `make test` hijau (321 tes, 41 skip eksplisit) plus `Checks passed` pada tree staged; `make obsidian` menyegarkan mirror vault.
+- Smoke runtime Windows pada kandidat staged: peluncuran `--hidden` memuat workspace tanpa jendela, peluncuran eksplisit menampilkan renderer yang sama (id target CDP dan PID tetap), bridge prewarm/RTK terpasang, dan tombol `Install` di panel Token savers mengunduh, memverifikasi, memasang, lalu mengaktifkan RTK; `rtk git status` nyata berjalan lewat Git Bash dengan perintah approval membawa binding PATH sendiri.
+- Heal MCP diuji dengan menyalin config namespace nyata (dua entry menunjuk pohon portable M1 yang sudah dihapus) ke root sementara: bootstrap menulis ulang command/args ke pohon aktif tanpa menyentuh setting user. Pin RTK diverifikasi ulang dengan mengunduh kedua arsip rilis dan memeriksa hash arsip, binary, dan LICENSE byte-per-byte.
+- Review pra-rilis menemukan empat defect nyata (versi RTK terkunci literal di dua tempat, reconcile prewarm sinkron di jalur startup, teks panel hardcoded, error IPC mentah di UI) dan semuanya diperbaiki sebelum artifact dibangun; dua temuan lain ditinjau dan diterima dengan alasan (kontrak status-1 RTK sudah terdokumentasi; probe binary ter-pin memakai env penuh hanya sebagai defense-in-depth).
+- Batas: UIPI/elevated dan multi-monitor/mixed-DPI seperti catatan 1.0.0; prewarm default-aktif berarti instance tersembunyi dihitung sebagai aplikasi berjalan (apply/install/backup harus menutupnya dulu); rewrite RTK terkelola memakai binding POSIX sehingga mengikuti dialek Git Bash di Windows; validasi runtime prewarm Linux dilakukan pemilik, bukan diklaim di sini.
+- Artifact: `CCode-1.0.2-win-x64.exe` 155.061.900 byte, SHA256 `b0401bbe24588ae0b5b7ed6e9a77958e7ea97645cd2b576a5d1a07cb114a9a03`; `CCode-1.0.2-win-x64.zip` 251.708.572 byte, SHA256 `a192639aab2585233b34998ab16b2c54e618d9f95f40115df972b397d62a7707`. Rilis diterbitkan di fork publik `0xMinomus/CCode`.
+
 ### Kandidat M1 (historis; digantikan rilis 1.0.0)
 
 - Berkas (dihapus saat pembersihan 2026-10-16): `CCode-3.14.5-win-x64-M1.zip`, 255.163.953 byte.
