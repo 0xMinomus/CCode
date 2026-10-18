@@ -56,7 +56,7 @@ MENU_ANCHOR = (
 )
 MENU_PATCHED = (
     'onOpenTaskPathInFileManager:()=>{__ccodeTaskFolder(f,u,n,Ee)},'
-    'onCopyWorkspacePath:()=>{Te(F.formatMessage({id:`appHeader.copyPath`}),n)},'
+    'onCopyWorkspacePath:()=>{__ccodeTaskCopyPath(f,u,n,Te,F.formatMessage({id:`appHeader.copyPath`}))},'
 )
 
 CRT_PREFIX = 'function CRt({header:e,context:t}){let{intl:n}=q(),'
@@ -65,9 +65,13 @@ HELPERS = (
     'try{let o=await window.ccodeTaskArchive?.folder?.({sessionId:e,taskId:t,workspacePath:n});'
     'if(o&&o.ok&&o.folder){let s=await window.ccodeTaskArchive.open?.({path:o.folder});if(s&&s.ok)return}}catch{}'
     'return r()}\n'
+    'async function __ccodeTaskCopyPath(e,t,n,r,o){'
+    'try{let s=await window.ccodeTaskArchive?.folder?.({sessionId:e,taskId:t,workspacePath:n});'
+    'if(s&&s.ok&&s.folder)return r(o,s.folder)}catch{}return r(o,n)}\n'
 )
 
-MARKERS = ('window.ccodeTaskArchive?.archive', 'window.ccodeTaskArchive?.upload', '__ccodeTaskFolder(')
+MARKERS = ('window.ccodeTaskArchive?.archive', 'window.ccodeTaskArchive?.upload',
+           '__ccodeTaskFolder(', '__ccodeTaskCopyPath(')
 
 
 def patch_renderer(text):

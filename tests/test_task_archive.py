@@ -36,6 +36,7 @@ class RendererHookTests(unittest.TestCase):
         for fragment in ('window.ccodeTaskArchive.archive({workspacePath:n?.workspacePath',
                          'window.ccodeTaskArchive.upload({workspacePath:n?.workspacePath',
                          'onOpenTaskPathInFileManager:()=>{__ccodeTaskFolder(f,u,n,Ee)}',
+                         'onCopyWorkspacePath:()=>{__ccodeTaskCopyPath(f,u,n,Te,F.formatMessage({id:`appHeader.copyPath`}))}',
                          'let __cu=await zRe(e,n,t,r);'):
             self.assertIn(fragment, patched)
 
