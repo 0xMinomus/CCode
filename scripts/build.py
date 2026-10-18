@@ -5,7 +5,7 @@ from asar import Archive
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from local_only import replace_once,rebrand
-from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents,default_commands,startup_prewarm,workspace_ux
+from local_only import storage,cloud,catalog,branding,skills_plugin,mcp_catalog,n8n_plugin,plugins,runtime_tuning,token_savers,marketplace,subagents,default_commands,startup_prewarm,workspace_ux,task_archive
 SKILL_MARKER='.ccode-skills.json'
 VENDOR_SKILL_SEEDS=('skills/dynamic-workflows/SKILL.md','skills/dynamic-workflows/examples.md','skills/dynamic-workflows/patterns.md')
 AGENT_RESOURCE='glm/ccode.cjs'
@@ -78,15 +78,17 @@ def main():
  s+='\n'+(ROOT/'src/renderer/default-commands.js').read_text()+'\n'
  s=default_commands.patch_renderer(s)
  s=workspace_ux.patch_renderer(s)
+ s=task_archive.patch_renderer(s)
  main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeLocalApp,ipcMain as ccodeLocalIpcMain} from "electron";
 import {createRequire as ccodeLocalCreateRequire} from "node:module";
 const ccodeLocalRequire=ccodeLocalCreateRequire(import.meta.url);
 ccodeLocalRequire(process.resourcesPath+"/activity/main.cjs").register({app:ccodeLocalApp,ipcMain:ccodeLocalIpcMain});
 ccodeLocalRequire(process.resourcesPath+"/mcp/main.cjs").register({app:ccodeLocalApp,ipcMain:ccodeLocalIpcMain});
 ccodeLocalRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcMain:ccodeLocalIpcMain});
+ccodeLocalRequire(process.resourcesPath+"/task-archive/main.cjs").register({ipcMain:ccodeLocalIpcMain});
 ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
 '''
- preload=view.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("ccodeActivity",{summary:(options)=>ipcRenderer.invoke("ccode-activity:summary",options)});contextBridge.exposeInMainWorld("ccodeTokenSavers",{snapshot:()=>ipcRenderer.invoke("ccode-token-savers:snapshot"),save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)});contextBridge.exposeInMainWorld("ccodeDetect",{run:()=>ipcRenderer.invoke("ccode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("ccode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("ccode-mcp-catalog:install",options)});})();\n'''
+ preload=view.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("ccodeActivity",{summary:(options)=>ipcRenderer.invoke("ccode-activity:summary",options)});contextBridge.exposeInMainWorld("ccodeTokenSavers",{snapshot:()=>ipcRenderer.invoke("ccode-token-savers:snapshot"),save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)});contextBridge.exposeInMainWorld("ccodeDetect",{run:()=>ipcRenderer.invoke("ccode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("ccode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("ccode-mcp-catalog:install",options)});contextBridge.exposeInMainWorld("ccodeTaskArchive",{archive:(options)=>ipcRenderer.invoke("ccode-task-archive:archive",options),folder:(options)=>ipcRenderer.invoke("ccode-task-archive:folder",options)});})();\n'''
  replacements[renderer]=s.encode();replacements[manifest['main_asset']]=main.encode();replacements[manifest['preload_asset']]=preload.encode()
  storage.patch_archive(view,replacements,renderer)
  early_main='out/main/chunk-HH7N2YVI.js'
@@ -120,9 +122,11 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  shutil.copy2(ROOT/'src/main/rtk-installer.cjs',output/'token-savers/rtk-installer.cjs')
  (output/'startup-prewarm').mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/'src/main/startup-prewarm.cjs',output/'startup-prewarm/main.cjs')
+ (output/'task-archive').mkdir(parents=True,exist_ok=True)
+ shutil.copy2(ROOT/'src/main/task-archive.cjs',output/'task-archive/main.cjs')
  (output/'model-sync').mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/'src/main/model-sync.cjs',output/'model-sync/main.cjs')
- rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers');rebrand.rewrite_tree(output/'model-sync')
+ rebrand.rewrite_tree(output/'activity');rebrand.rewrite_tree(output/'token-savers');rebrand.rewrite_tree(output/'model-sync');rebrand.rewrite_tree(output/'task-archive')
  command_files=default_commands.stage(output)
  (output/marketplace.RESOURCE_DIR).mkdir(parents=True,exist_ok=True)
  (output/marketplace.RESOURCE_FILE).write_text(marketplace.render_runtime())
@@ -134,7 +138,7 @@ ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
  subprocess.run(['node',str(ROOT/'services/mcp/stage.cjs'),str(output/'mcp')],check=True,cwd=ROOT)
  rebrand.rewrite_tree(output/'mcp')
  mcp_files=sorted(path.relative_to(output).as_posix() for path in (output/'mcp').rglob('*') if path.is_file())
- files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','token-savers/rtk-installer.cjs','startup-prewarm/main.cjs','model-sync/main.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
+ files=['app.asar',AGENT_RESOURCE,BUNDLE_META,'app-update.yml','activity/main.cjs','token-savers/main.cjs','token-savers/token-savers-runtime.cjs','token-savers/rtk-installer.cjs','startup-prewarm/main.cjs','task-archive/main.cjs','model-sync/main.cjs',*command_files,marketplace.RESOURCE_FILE,CATALOG_RESOURCE,*branding.PACKAGED_ICONS,*pack_files,*mcp_files,*payload['files']]
  proof={'application_name':manifest['application_name'],'patched_assets':sorted(replacements),
         'bundled_skill_pack':skills_plugin.PACK_DIR,'bundled_skills':skills,'plugin_payload':payload,
         'sha256':{name:hashlib.sha256((output/name).read_bytes()).hexdigest() for name in files}}

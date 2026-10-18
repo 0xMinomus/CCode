@@ -857,7 +857,9 @@ def nsis_script(tree, version, destination, size_kb, icon):
 
 
 def compile_installer(script, makensis):
-    subprocess.run([makensis, '/V2', str(script)], check=True)
+    """Compile the installer; POSIX makensis (the cross-build path) wants `-` switches."""
+    verbose = '/V2' if sys.platform == 'win32' else '-V2'
+    subprocess.run([makensis, verbose, str(script)], check=True)
 
 
 def zip_tree(tree, destination, prefix=None):
