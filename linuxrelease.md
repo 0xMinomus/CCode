@@ -150,3 +150,15 @@ Rilis Linux `v1.0.3+upstream.3.14.5` di-refresh di tempat: tag dan versi sama, b
 **Artifact (aset lama diganti di tempat).** AppImage 345.168.376 byte SHA256 `61691ab1f684095c452818d71fad515eae8e1c182aa2327625e94966a982e430`; deb 273.257.824 byte SHA256 `1a31656f44f0db10f60f5e696f2ced3dfd5758c1a37c38fdf54ce82103943512`; rpm 287.579.812 byte SHA256 `4b6bb19e6a477f744a8e9bb87b26ce5ad3af26075713e1e6e2bd241a22ce08bf`. `sha256sum -c SHA256SUMS` lulus untuk ketiganya. Halaman rilis diberi bagian "Post-release refresh (2026-10-18)"; label prerelease dan status unsigned tidak berubah.
 
 **Source rilis refresh:** commit `e6abf6c` di `origin/main`. Windows 1.0.3 di-refresh pada waktu yang sama (lihat `windowsrelease.md`).
+
+---
+
+## Refresh 1.0.3 kedua: menu task menunjuk folder + lampiran user (2026-10-18)
+
+Aset Linux `v1.0.3+upstream.3.14.5` dibangun ulang di tempat sekali lagi (tag dan versi sama) setelah perilaku folder per task dikoreksi: menu task (⋯) → **Open in File Manager** membuka folder `~/CCodeProject/task-*` milik task itu dan **Copy path** menyalin path folder tersebut, menu baris perubahan resolve ke salinan arsip, dan lampiran yang user kirim di composer ikut disimpan ke folder yang sama. Folder lama `…/workspace/default` milik user tidak disentuh.
+
+**Bukti.** `make build && make test` lulus (338 tes, 9 dilewati, `Checks passed`); smoke aplikasi terpasang di root terisolasi: upload lampiran + arsip file hasil task masuk folder yang sama, `resolve` memilih salinan arsip lalu file workspace, `open` membuka folder nyata tanpa menggantung — bug `shell.openPath` yang di-await ditemukan di smoke ini dan diperbaiki jadi fire-and-forget dengan tes regresi `OpenFolderTests` — dan boot tanpa baris `ReferenceError`/`Unknown channel`. Lookup `sessions[sess_c8088d92-…]` pada indeks nyata user (bentuk lama) mengembalikan folder task `hi` yang sudah ada.
+
+**Artifact (aset lama diganti di tempat).** AppImage 345.172.472 byte SHA256 `b28aa35e5219bd2124970babff6e6d55c29141779bc16cada8375ed84063779c`; deb 273.249.976 byte SHA256 `6a3b0ecbe97276eb14cdea36cae4ed5deb49c4d676dd7c8bff3ea4c907e146b8`; rpm 287.595.903 byte SHA256 `49b9e24eb48419b9a586bd689bf355acd2ff3bd1886c96ae0bdf8644c0971b02`. `sha256sum -c SHA256SUMS` lulus; halaman rilis diberi bagian "Post-release refresh 2 (2026-10-18)"; label prerelease dan status unsigned tidak berubah.
+
+**Source rilis refresh:** commit `ed93569` (folder per-task + lampiran user) dan `9a1e899` (Copy path di menu task) di `origin/main`. Windows di-refresh pada waktu yang sama (lihat `windowsrelease.md`).

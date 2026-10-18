@@ -340,6 +340,14 @@ Batas yang tidak diklaim setara Linux:
 - Batas: UIPI/elevated dan multi-monitor/mixed-DPI seperti catatan 1.0.0; prewarm default-aktif berarti instance tersembunyi dihitung sebagai aplikasi berjalan (apply/install/backup harus menutupnya dulu); rewrite RTK terkelola memakai binding POSIX sehingga mengikuti dialek Git Bash di Windows; validasi runtime prewarm Linux dilakukan pemilik, bukan diklaim di sini.
 - Artifact: `CCode-1.0.2-win-x64.exe` 155.061.900 byte, SHA256 `b0401bbe24588ae0b5b7ed6e9a77958e7ea97645cd2b576a5d1a07cb114a9a03`; `CCode-1.0.2-win-x64.zip` 251.708.572 byte, SHA256 `a192639aab2585233b34998ab16b2c54e618d9f95f40115df972b397d62a7707`. Rilis diterbitkan di fork publik `0xMinomus/CCode`.
 
+### Refresh 1.0.3 kedua: menu task menunjuk folder + lampiran user (2026-10-18)
+
+Rilis Windows `v1.0.3-win-x64` dibangun ulang sekali lagi di tempat: menu task (⋯) → **Open in File Manager** membuka folder `%USERPROFILE%\CCodeProject\task-*` milik task itu, **Copy path** menyalin path folder tersebut, menu baris perubahan resolve ke salinan arsip lebih dulu, dan lampiran user disimpan ke folder per-task yang sama. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama; identity gate lulus (8.339 berkas teks, 27.057 entri ASAR, tanpa identitas upstream).
+
+**Artifact baru.** `CCode-1.0.3-win-x64.exe` 155.135.712 byte SHA256 `d4ce5cefbca7236b6c887fc38b2223d6b846d94cf378375b6097959e35f0ffe4`; `CCode-1.0.3-win-x64.zip` 254.695.839 byte SHA256 `19eaa7262f45093bb1bfee3308bb16cab80bd0a36c78ee074537d0cb1913c5d1`. Ukuran asset di GitHub dicocokkan byte-for-byte dengan lokal; halaman rilis diberi bagian "Post-release refresh 2 (2026-10-18)" dan tetap **Latest**. SmartScreen tetap memperingatkan (unsigned).
+
+**Bukti dan batas.** Jalur menu/bridge diuji pada aplikasi terpasang di root terisolasi Linux (unit test `OpenFolderTests` + smoke bridge); biner Windows tidak di-smoke ulang di mesin Windows pada refresh ini. Batas 1.0.3 di bawah tidak berubah.
+
 ### Refresh 1.0.3: arsip per-task + menu file (2026-10-18)
 
 Rilis Windows `v1.0.3-win-x64` di-refresh di tempat: tag dan versi sama, biner baru. Batch perilaku "arsip per task tanpa project" (folder `%USERPROFILE%\CCodeProject\task-*` baru dibuat ketika task benar-benar menghasilkan file; boot, draft, dan sidebar tidak berubah) plus menu klik-kanan baris perubahan ikut masuk. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama dengan Linux; identity gate lulus (8.339 berkas teks, 27.057 entri ASAR, tanpa identitas upstream) dan `app/resources/task-archive/main.cjs` ada di dalam ZIP.
