@@ -176,3 +176,13 @@ Settings / Source Control
    - Uji persistensi di namespace terisolasi pada Linux dan Windows.
 3. **Milestone 3 (M3) — Plan 2: Resource Monitor Sidecar:**
    - Integrasikan `ccode-resource-monitor` sidecar dan hubungkan ke UI dashboard.
+
+---
+
+## 6. Ringkasan Output Konkret per Plan
+
+| Plan | Output Teknis (File & Biner) | Output Visual & Antarmuka (UI) | Output Manfaat Nyata bagi Pengguna |
+|---|---|---|---|
+| **Plan 1: Native Compositor Capture** *(Linux Saja)* | • Binary `services/desktop/bin/t3-hyprland-snap-shot`<br>• Binary `services/desktop/bin/t3-kde-snap-shot`<br>• Fast-path backend di `services/desktop/capture.py` | *(Tidak ada perubahan UI)* — Berjalan di latar belakang backend `linux-desktop` MCP. | • **Computer Use bebas pop-up izin** di Hyprland & KDE Wayland.<br>• Tangkapan layar window lebih cepat & presisi pada window manager tiling.<br>• Tetap aman dengan proteksi mouse takeover (*STOPPED*). |
+| **Plan 2: System Resource Monitor** *(Linux & Windows)* | • Sidecar `services/monitor/bin/ccode-resource-monitor`<br>• Modul WMI/PowerShell untuk Windows<br>• IPC bridge `src/main/resource-monitor.cjs` | • Widget status CPU & RAM live di header/footer CCode atau panel Activity. | • **Visibilitas beban sistem:** Melihat penggunaan CPU, RAM (RSS), dan disk I/O agen secara real-time.<br>• Deteksi proses macet atau runaway compile dari subagent background. |
+| **Plan 3: Source Control & PR Workflow** *(Linux & Windows)* | • Konfigurasi `<storage_dir>/v2/source-control.json`<br>• IPC bridge `src/main/source-control.cjs`<br>• Slash command baru `src/commands/pr.md` | • **Panel menu baru `Settings → Source Control`** (lengkap dengan toggle branch prefix, merge method, dan status auth GitHub CLI `gh`). | • **Commit history bersih:** Otomatis hapus credit/watermark bot AI (*no co-authored slop*).<br>• **Otomasi PR sekali ketik:** Ketik `/pr`, agen otomatis buat branch `ccode/...`, isi template PR repo, dan eksekusi `gh pr create`.<br>• **Review Guide maintainer:** Agen mencetak panduan review perubahan di chat. |
