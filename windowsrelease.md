@@ -340,6 +340,14 @@ Batas yang tidak diklaim setara Linux:
 - Batas: UIPI/elevated dan multi-monitor/mixed-DPI seperti catatan 1.0.0; prewarm default-aktif berarti instance tersembunyi dihitung sebagai aplikasi berjalan (apply/install/backup harus menutupnya dulu); rewrite RTK terkelola memakai binding POSIX sehingga mengikuti dialek Git Bash di Windows; validasi runtime prewarm Linux dilakukan pemilik, bukan diklaim di sini.
 - Artifact: `CCode-1.0.2-win-x64.exe` 155.061.900 byte, SHA256 `b0401bbe24588ae0b5b7ed6e9a77958e7ea97645cd2b576a5d1a07cb114a9a03`; `CCode-1.0.2-win-x64.zip` 251.708.572 byte, SHA256 `a192639aab2585233b34998ab16b2c54e618d9f95f40115df972b397d62a7707`. Rilis diterbitkan di fork publik `0xMinomus/CCode`.
 
+### Refresh 1.0.3 keempat: chip thinking level dihilangkan (2026-10-18)
+
+Rilis Windows `v1.0.3-win-x64` dibangun ulang di tempat sekali lagi: chip thinking level tidak ditampilkan sama sekali saat model hanya punya satu level tetap (mengganti varian ikon-saja pagi ini); model dengan pilihan level tetap menampilkan chipnya. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama.
+
+**Artifact baru.** `CCode-1.0.3-win-x64.exe` 155.135.139 byte SHA256 `6d42fdaeaf1def85d79c1ca75bbc2d1965e5082d3e7f7df9a0e3e17cb28c0b94`; `CCode-1.0.3-win-x64.zip` 254.696.134 byte SHA256 `a688143cb1914f5c7d9ea030c22de51b614449b1b5216f899236bd7bf4ef49e3`. Ukuran asset di GitHub dicocokkan byte-for-byte dengan lokal; catatan rilis diberi bagian "Post-release refresh 4 (2026-10-18)" dan tetap **Latest**. SmartScreen tetap memperingatkan (unsigned).
+
+**Bukti dan batas.** Perubahan diverifikasi pada aplikasi terpasang di root terisolasi Linux (DOM toolbar + 4 unit test); biner Windows tidak di-smoke ulang di mesin Windows pada refresh ini.
+
 ### Refresh 1.0.3 ketiga: chip thinking level ikon-saja (2026-10-18)
 
 Rilis Windows `v1.0.3-win-x64` dibangun ulang di tempat sekali lagi untuk perubahan UI kecil: chip thinking level di composer menjadi ikon otak saja dan pudar saat model punya level tetap (tidak bisa diklik), tanpa tulisan "Off", sementara tooltip/`aria-label` tetap membawa nama level; model dengan beberapa level tidak berubah. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama; identity gate lulus (8.339 berkas teks, 27.057 entri ASAR, tanpa identitas upstream).

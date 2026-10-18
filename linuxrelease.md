@@ -174,3 +174,15 @@ Aset Linux dibangun ulang di tempat sekali lagi (tag dan versi sama) untuk perub
 **Artifact (aset lama diganti di tempat).** AppImage 345.176.568 byte SHA256 `c8b10bd4b4ddc331c2b958439e2b71de069d4606776d0990461e1825b29a8af9`; deb 273.260.880 byte SHA256 `5e0bb66208d0806c33ec7f45cb99fa70fb1cc96d330e3d6e90b304ab2fa81fe5`; rpm 287.599.587 byte SHA256 `5df0731c975d890ad68fa7469682c41430819de9878f68db8b3c3bc67f12690b`. `sha256sum -c SHA256SUMS` lulus; catatan rilis diberi bagian "Post-release refresh 3 (2026-10-18)"; label prerelease dan status unsigned tidak berubah.
 
 **Source rilis refresh:** commit `874e9eb`. Windows di-refresh pada waktu yang sama (lihat `windowsrelease.md`).
+
+---
+
+## Refresh 1.0.3 keempat: chip thinking level dihilangkan (2026-10-18)
+
+Aset Linux dibangun ulang di tempat sekali lagi (tag dan versi sama) untuk mengoreksi perilaku chip thinking level: saat model yang dipilih hanya punya satu level tetap sehingga tidak bisa diklik, chip-nya sekarang **tidak ditampilkan sama sekali** (percobaan ikon-saja + pudar pagi ini diganti); model yang masih menawarkan pilihan tetap menampilkan chip dan labelnya seperti upstream.
+
+**Bukti.** `make build && make test` lulus: 342 tes (9 dilewati), staged syntax checks, `Checks passed`. Smoke aplikasi terpasang di root terisolasi memakai salinan `provider_config.json` pemilik: `[data-thought-level-fixed]` dan `[data-composer-thought-control]` keduanya tidak ada, sementara toolbar composer tetap menampilkan chip model (`9Router/combo/coding-harian`). Namespace asli tidak dipakai untuk smoke.
+
+**Artifact (aset lama diganti di tempat).** AppImage 345.176.568 byte SHA256 `85b2d27d0afb895d8a8ddfe5c68e122c7b89a34b4efd7ba9fa1539492a7d3b6f`; deb 273.276.480 byte SHA256 `cb017cd660911b6c1e58f959624f7626d9438ec39f59b75008871b0aa46c329c`; rpm 287.598.219 byte SHA256 `b971de8da43b8e346e207fb16a933f473bdc1081cce2b5a1d082e09d416f901a`. `sha256sum -c SHA256SUMS` lulus; catatan rilis diberi bagian "Post-release refresh 4 (2026-10-18)".
+
+**Source rilis refresh:** commit `04fdf8e`. Windows di-refresh pada waktu yang sama.
