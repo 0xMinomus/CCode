@@ -70,11 +70,13 @@ Windows and Linux can preload the workspace at login without showing a window. O
 ### Task output folders without a project
 
 Work started outside a project stays in the conversation workspace, so the sidebar keeps its single
-task list and no folder name appears while you work. Once a task actually produces files, CCode
-archives them into a hidden per-task folder (`~/CCodeProject/task-<date>-<time>-<id>`,
-`%USERPROFILE%\CCodeProject` on Windows): a later task that generates the same file name never
-overwrites the earlier result. In the change summary, right-click a changed or generated file for
-**Reveal in File Manager**, **Copy path**, and **Copy relative path**.
+task list and no folder name appears while you work. The moment the task — or you — hands over a
+file, CCode archives it into a private per-task folder (`~/CCodeProject/task-<date>-<time>-<id>`,
+`%USERPROFILE%\CCodeProject` on Windows): files you attach in the composer land there too, and a
+later task that regenerates the same file name never overwrites the earlier result. To find a
+task's folder, open the task menu (⋯) and pick **Open in File Manager**. In the change summary,
+right-click a changed or generated file for **Reveal in File Manager**, **Copy path**, and **Copy
+relative path** — all three resolve to the archived copy first.
 
 ### Built-in subagents
 

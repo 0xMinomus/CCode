@@ -43,6 +43,20 @@ class ChangeMenuTests(unittest.TestCase):
                          'workspaceRemoteSessionId'):
             self.assertIn(fragment, workspace_ux.CHANGE_MENU + workspace_ux.CHANGE_HOOK_PATCHED)
 
+    def test_row_actions_resolve_the_archived_copy_first(self):
+        patched = workspace_ux.patch_renderer(SOURCE)
+        self.assertIn('__ccodeTaskRowReveal', patched)
+        for fragment in ('window.ccodeTaskArchive?.resolve?.({workspacePath:t,relPath:n})',
+                         'await e.revealInFileManager({path:r,kind:`file`})',
+                         'await e.copyAbsolutePath({path:r})',
+                         '__ccodeTaskRowReveal(t.workspacePath,e.path,__ccodeRail)',
+                         '__ccodeTaskRowCopyPath(t.workspacePath,e.path,__ccodeRail)',
+                         'copyRelativePath({path:e.path})'):
+            self.assertIn(fragment, patched)
+        # The old relative-path mix-up is gone: Copy relative path no longer
+        # receives the absolute path the row already computed.
+        self.assertNotIn('copyRelativePath({path:e.path,relativePath:r})', patched)
+
 
 if __name__ == '__main__':
     unittest.main()

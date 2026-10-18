@@ -3,10 +3,13 @@
 The change-summary rows of a turn reuse the upstream Radix ContextMenu
 primitives (`JA`/`YA`/`XA`/`ZA`/`QA`) and the existing file-action hook (`Nj`)
 so a generated file can be found without leaving CCode: Reveal in File Manager,
-Copy path, Copy relative path.
+Copy path, Copy relative path. Every action resolves through `task-archive.cjs`
+first, so it points at the per-task copy when the file was archived and at the
+live workspace file otherwise — the hidden conversation workspace is never what
+the user is sent to.
 
 Folder creation is *not* done here: a task started outside a project keeps the
-upstream conversation workspace until it actually produces a file, and the
+upstream conversation workspace until it actually hands over a file, and the
 per-task archive is owned by `task-archive.cjs` (see `task_archive.py`). Every
 replacement goes through ``replace_once``: a missing or duplicated anchor fails
 ``make build`` instead of silently skipping the patch.
@@ -14,6 +17,7 @@ replacement goes through ``replace_once``: a missing or duplicated anchor fails
 
 from . import replace_once
 
+CRT_PREFIX = 'function CRt({header:e,context:t}){let{intl:n}=q(),'
 CHANGE_HOOK_ANCHOR = 'function CRt({header:e,context:t}){let{intl:n}=q(),r=e.fileChanges,'
 CHANGE_OPEN_ANCHOR = (
     'return(0,$.jsx)(`div`,{className:`w-full bg-background/50 overflow-hidden`,children:(0,$.jsxs)(`div`,{"aria-disabled":!i,'
@@ -31,12 +35,12 @@ CHANGE_HOOK_PATCHED = (
 CHANGE_MENU = (
     '(0,$.jsxs)(XA,{className:`w-56`,children:['
     '(0,$.jsxs)(ZA,{disabled:!__ccodeRail.canRevealInFileManager({path:e.path,kind:`file`}),'
-    'onSelect:()=>{void __ccodeRail.revealInFileManager({path:e.path,kind:`file`})},'
+    'onSelect:()=>{void __ccodeTaskRowReveal(t.workspacePath,e.path,__ccodeRail)},'
     'children:[(0,$.jsx)(sc,{className:`size-4`}),n.formatMessage({id:`git.changeContext.revealInFileManager`})]}),'
     '(0,$.jsx)(QA,{}),'
-    '(0,$.jsxs)(ZA,{onSelect:()=>{void __ccodeRail.copyAbsolutePath({path:e.path})},'
+    '(0,$.jsxs)(ZA,{onSelect:()=>{void __ccodeTaskRowCopyPath(t.workspacePath,e.path,__ccodeRail)},'
     'children:[(0,$.jsx)(Qs,{className:`size-4`}),n.formatMessage({id:`fileActions.copyAbsolutePath`})]}),'
-    '(0,$.jsxs)(ZA,{onSelect:()=>{void __ccodeRail.copyRelativePath({path:e.path,relativePath:r})},'
+    '(0,$.jsxs)(ZA,{onSelect:()=>{void __ccodeRail.copyRelativePath({path:e.path})},'
     'children:[(0,$.jsx)(Qs,{className:`size-4`}),n.formatMessage({id:`fileActions.copyRelativePath`})]})]})'
 )
 CHANGE_OPEN_PATCHED = (
@@ -45,11 +49,24 @@ CHANGE_OPEN_PATCHED = (
 )
 CHANGE_CLOSE_PATCHED = CHANGE_CLOSE_ANCHOR[:-len('},e.path)')] + '},e.path)})' + ',' + CHANGE_MENU + ']},e.path)'
 
-MARKERS = ('__ccodeRail',)
+# The rows know the workspace and the relative path, not the session id, so the
+# main process resolves: archived copy first, live workspace file otherwise.
+ROW_HELPERS = (
+    'async function __ccodeTaskRowTarget(t,n){'
+    'try{let e=await window.ccodeTaskArchive?.resolve?.({workspacePath:t,relPath:n});'
+    'if(e&&e.ok&&e.path)return e.path}catch{}return n}\n'
+    'async function __ccodeTaskRowReveal(t,n,e){let r=await __ccodeTaskRowTarget(t,n);'
+    'await e.revealInFileManager({path:r,kind:`file`})}\n'
+    'async function __ccodeTaskRowCopyPath(t,n,e){let r=await __ccodeTaskRowTarget(t,n);'
+    'await e.copyAbsolutePath({path:r})}\n'
+)
+
+MARKERS = ('__ccodeRail', '__ccodeTaskRowReveal(')
 
 
 def patch_renderer(text):
     """Add the change-summary context menu to the renderer bundle."""
+    text = replace_once(text, CRT_PREFIX, ROW_HELPERS + CRT_PREFIX)
     text = replace_once(text, CHANGE_HOOK_ANCHOR, CHANGE_HOOK_PATCHED)
     text = replace_once(text, CHANGE_OPEN_ANCHOR, CHANGE_OPEN_PATCHED)
     text = replace_once(text, CHANGE_CLOSE_ANCHOR, CHANGE_CLOSE_PATCHED)

@@ -127,7 +127,7 @@ Snapshot memakai SQLite backup API, menolak path traversal, dan menyimpan manife
 
 Di Windows perintahnya sama dengan `--root %LOCALAPPDATA%\CCode`. Deteksi "aplikasi sedang berjalan" mencocokkan argumen `--user-data-dir` proses `CCode.exe` dengan `<root>\electron`, jadi snapshot root uji terisolasi tetap dapat diambil sementara instance default pengguna berjalan; lock antar-skrip memakai `LockFileEx`, bukan `flock`.
 
-Hasil file task tanpa project diarsipkan ke `~/CCodeProject/task-*` (`%USERPROFILE%\CCodeProject\task-*` di Windows) hanya setelah task benar-benar menghasilkan file; folder dan indeks `.task-folders.json` berada di luar namespace, jadi snapshot `data_backup.py` tidak memuatnya. Salin manual bila perlu; folder lama aman dihapus.
+Hasil file task tanpa project diarsipkan ke `~/CCodeProject/task-*` (`%USERPROFILE%\CCodeProject\task-*` di Windows) begitu task atau lampiran user menghasilkan file; folder dan indeks `.task-folders.json` (`{sessions, files, latest}`) berada di luar namespace, jadi snapshot `data_backup.py` tidak memuatnya. Menu task (⋯) → Open in File Manager membuka folder task itu, dan menu baris perubahan menunjuk salinan arsip lebih dulu; workspace percakapan lama tidak dibersihkan otomatis — hapus manual bila perlu, folder lama aman dihapus.
 
 ## Rollback
 

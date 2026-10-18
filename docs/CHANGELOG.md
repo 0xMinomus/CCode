@@ -2,6 +2,15 @@
 
 ## 2026-10-18
 
+### Folder per task untuk file user + menu task menunjuk folder unik
+
+- Folder `~/CCodeProject/task-*` sekarang lahir dari dua jalur: file hasil task (`fileChanges`, seperti sebelumnya) dan lampiran yang user kirim di composer. `src/local_only/task_archive.py` membungkus transport `attachmentPut` dan mengirim bytes-nya ke IPC baru `ccode-task-archive:upload`; `src/main/task-archive.cjs` menyimpan salinan dengan nama yang sudah dibersihkan (path traversal dinetralkan) dan tetap memakai cap 64 MiB. Folder lama `…/workspace/default` milik user tidak disentuh atau dibersihkan.
+- Menu task (⋯ di header workspace) → **Open in File Manager** sekarang membuka folder unik task itu lewat IPC `:folder` + `:open`, dengan urutan lookup `sessions[sessionId]` → `sessions[taskId]` → folder terakhir untuk workspace tersebut, baru jatuh ke perilaku lama (workspace percakapan) bila tidak ada folder. Menu baris perubahan (**Reveal in File Manager**, **Copy path**) resolve lewat IPC `:resolve`: salinan arsip lebih dulu, file workspace bila belum diarsipkan; bug lama "Copy relative path" yang menyalin path absolut ikut diperbaiki.
+- Indeks `.task-folders.json` menjadi `{sessions, files, latest}`; bentuk lama `{sessionId: folder}` tetap dibaca (data user yang sudah ada), dan folder tidak lagi dibuat saat tidak ada file yang berhasil disalin.
+- Verifikasi: `make build && make test` lulus (338 tes, 9 dilewati, `Checks passed`) dan staged bundle memuat tiap hook tepat sekali. Smoke aplikasi terpasang di root terisolasi: `upload('../laporan.pdf')` tersanitasi ke `laporan.pdf` + membuat folder, `archive` menyalin `outputs/SMOKE.md` ke folder yang sama, `resolve` mengembalikan salinan arsip untuk file yang diarsipkan dan file workspace untuk yang belum, `folder` fallback ke folder terakhir per workspace, `open` menolak path tak ada (`skipped:'missing'`) dan membuka folder nyata tanpa menggantung. Lookup pada data nyata user (indeks bentuk lama) mengembalikan folder task `hi` yang sudah ada.
+- Bug yang ketahuan dari smoke ini: `shell.openPath` yang di-await membuat balasan IPC menggantung sampai peluncur file manager selesai aktivasi (`reply was never sent` pada folder nyata); sekarang peluncurannya fire-and-forget dan `OpenFolderTests` (2 tes) menguncinya dengan shell palsu yang tidak pernah resolve.
+- Batas: klik menu sebenarnya belum dijalankan tanpa task nyata yang punya perubahan file di smoke ini (helper menu diverifikasi unit + bridge-nya diuji langsung); artefak rilis 1.0.3 belum dibangun ulang untuk perubahan ini.
+
 ### Rilis 1.0.3 di-refresh: aset Linux dan Windows diganti dengan arsip per-task + menu file
 
 - Aset rilis 1.0.3 dibangun ulang dan diunggah ulang pada tag yang sama: `v1.0.3+upstream.3.14.5` (AppImage/deb/rpm + `SHA256SUMS`) dan `v1.0.3-win-x64` (exe/zip + `SHA256SUMS`), dengan bagian "Post-release refresh (2026-10-18)" pada kedua catatan rilis. Rilis Windows tetap **Latest**; rilis Linux tetap prerelease unsigned.

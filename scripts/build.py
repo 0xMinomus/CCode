@@ -79,16 +79,16 @@ def main():
  s=default_commands.patch_renderer(s)
  s=workspace_ux.patch_renderer(s)
  s=task_archive.patch_renderer(s)
- main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeLocalApp,ipcMain as ccodeLocalIpcMain} from "electron";
+ main=view.read(manifest['main_asset']).decode()+'''\nimport {app as ccodeLocalApp,ipcMain as ccodeLocalIpcMain,shell as ccodeLocalShell} from "electron";
 import {createRequire as ccodeLocalCreateRequire} from "node:module";
 const ccodeLocalRequire=ccodeLocalCreateRequire(import.meta.url);
 ccodeLocalRequire(process.resourcesPath+"/activity/main.cjs").register({app:ccodeLocalApp,ipcMain:ccodeLocalIpcMain});
 ccodeLocalRequire(process.resourcesPath+"/mcp/main.cjs").register({app:ccodeLocalApp,ipcMain:ccodeLocalIpcMain});
 ccodeLocalRequire(process.resourcesPath+"/token-savers/main.cjs").register({ipcMain:ccodeLocalIpcMain});
-ccodeLocalRequire(process.resourcesPath+"/task-archive/main.cjs").register({ipcMain:ccodeLocalIpcMain});
+ccodeLocalRequire(process.resourcesPath+"/task-archive/main.cjs").register({ipcMain:ccodeLocalIpcMain,shell:ccodeLocalShell});
 ccodeLocalRequire(process.resourcesPath+"/commands/main.cjs").register();
 '''
- preload=view.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("ccodeActivity",{summary:(options)=>ipcRenderer.invoke("ccode-activity:summary",options)});contextBridge.exposeInMainWorld("ccodeTokenSavers",{snapshot:()=>ipcRenderer.invoke("ccode-token-savers:snapshot"),save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)});contextBridge.exposeInMainWorld("ccodeDetect",{run:()=>ipcRenderer.invoke("ccode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("ccode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("ccode-mcp-catalog:install",options)});contextBridge.exposeInMainWorld("ccodeTaskArchive",{archive:(options)=>ipcRenderer.invoke("ccode-task-archive:archive",options),folder:(options)=>ipcRenderer.invoke("ccode-task-archive:folder",options)});})();\n'''
+ preload=view.read(manifest['preload_asset']).decode()+'''\n(()=>{const {contextBridge,ipcRenderer}=require("electron");contextBridge.exposeInMainWorld("ccodeActivity",{summary:(options)=>ipcRenderer.invoke("ccode-activity:summary",options)});contextBridge.exposeInMainWorld("ccodeTokenSavers",{snapshot:()=>ipcRenderer.invoke("ccode-token-savers:snapshot"),save:(settings)=>ipcRenderer.invoke("ccode-token-savers:save",settings)});contextBridge.exposeInMainWorld("ccodeDetect",{run:()=>ipcRenderer.invoke("ccode-detect:run")});contextBridge.exposeInMainWorld("ccodeMcpCatalog",{list:()=>ipcRenderer.invoke("ccode-mcp-catalog:list"),install:(options)=>ipcRenderer.invoke("ccode-mcp-catalog:install",options)});contextBridge.exposeInMainWorld("ccodeTaskArchive",{archive:(options)=>ipcRenderer.invoke("ccode-task-archive:archive",options),folder:(options)=>ipcRenderer.invoke("ccode-task-archive:folder",options),open:(options)=>ipcRenderer.invoke("ccode-task-archive:open",options),resolve:(options)=>ipcRenderer.invoke("ccode-task-archive:resolve",options),upload:(options)=>ipcRenderer.invoke("ccode-task-archive:upload",options)});})();\n'''
  replacements[renderer]=s.encode();replacements[manifest['main_asset']]=main.encode();replacements[manifest['preload_asset']]=preload.encode()
  storage.patch_archive(view,replacements,renderer)
  early_main='out/main/chunk-HH7N2YVI.js'
