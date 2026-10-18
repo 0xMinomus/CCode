@@ -162,3 +162,15 @@ Aset Linux `v1.0.3+upstream.3.14.5` dibangun ulang di tempat sekali lagi (tag da
 **Artifact (aset lama diganti di tempat).** AppImage 345.172.472 byte SHA256 `b28aa35e5219bd2124970babff6e6d55c29141779bc16cada8375ed84063779c`; deb 273.249.976 byte SHA256 `6a3b0ecbe97276eb14cdea36cae4ed5deb49c4d676dd7c8bff3ea4c907e146b8`; rpm 287.595.903 byte SHA256 `49b9e24eb48419b9a586bd689bf355acd2ff3bd1886c96ae0bdf8644c0971b02`. `sha256sum -c SHA256SUMS` lulus; halaman rilis diberi bagian "Post-release refresh 2 (2026-10-18)"; label prerelease dan status unsigned tidak berubah.
 
 **Source rilis refresh:** commit `ed93569` (folder per-task + lampiran user) dan `9a1e899` (Copy path di menu task) di `origin/main`. Windows di-refresh pada waktu yang sama (lihat `windowsrelease.md`).
+
+---
+
+## Refresh 1.0.3 ketiga: chip thinking level ikon-saja (2026-10-18)
+
+Aset Linux dibangun ulang di tempat sekali lagi (tag dan versi sama) untuk perubahan UI kecil: chip thinking level di composer menampilkan ikon otak saja dan pudar (`text-foreground-subtle`) saat model yang dipilih punya level tetap sehingga tidak bisa diklik — tanpa tulisan "Off" — sementara tooltip dan `aria-label` tetap membawa nama level. Model dengan beberapa level tidak berubah.
+
+**Bukti.** `make build && make test` lulus: 342 tes (9 dilewati) plus `Checks passed`; smoke aplikasi terpasang di root terisolasi memakai salinan `provider_config.json` pemilik: chip memakai `data-thought-level-fixed`, `textContent` kosong (hanya ikon), class memuat `text-foreground-subtle`, `aria-label="Off"`. Namespace asli tidak dipakai untuk smoke.
+
+**Artifact (aset lama diganti di tempat).** AppImage 345.176.568 byte SHA256 `c8b10bd4b4ddc331c2b958439e2b71de069d4606776d0990461e1825b29a8af9`; deb 273.260.880 byte SHA256 `5e0bb66208d0806c33ec7f45cb99fa70fb1cc96d330e3d6e90b304ab2fa81fe5`; rpm 287.599.587 byte SHA256 `5df0731c975d890ad68fa7469682c41430819de9878f68db8b3c3bc67f12690b`. `sha256sum -c SHA256SUMS` lulus; catatan rilis diberi bagian "Post-release refresh 3 (2026-10-18)"; label prerelease dan status unsigned tidak berubah.
+
+**Source rilis refresh:** commit `874e9eb`. Windows di-refresh pada waktu yang sama (lihat `windowsrelease.md`).

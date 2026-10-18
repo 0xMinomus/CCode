@@ -340,6 +340,14 @@ Batas yang tidak diklaim setara Linux:
 - Batas: UIPI/elevated dan multi-monitor/mixed-DPI seperti catatan 1.0.0; prewarm default-aktif berarti instance tersembunyi dihitung sebagai aplikasi berjalan (apply/install/backup harus menutupnya dulu); rewrite RTK terkelola memakai binding POSIX sehingga mengikuti dialek Git Bash di Windows; validasi runtime prewarm Linux dilakukan pemilik, bukan diklaim di sini.
 - Artifact: `CCode-1.0.2-win-x64.exe` 155.061.900 byte, SHA256 `b0401bbe24588ae0b5b7ed6e9a77958e7ea97645cd2b576a5d1a07cb114a9a03`; `CCode-1.0.2-win-x64.zip` 251.708.572 byte, SHA256 `a192639aab2585233b34998ab16b2c54e618d9f95f40115df972b397d62a7707`. Rilis diterbitkan di fork publik `0xMinomus/CCode`.
 
+### Refresh 1.0.3 ketiga: chip thinking level ikon-saja (2026-10-18)
+
+Rilis Windows `v1.0.3-win-x64` dibangun ulang di tempat sekali lagi untuk perubahan UI kecil: chip thinking level di composer menjadi ikon otak saja dan pudar saat model punya level tetap (tidak bisa diklik), tanpa tulisan "Off", sementara tooltip/`aria-label` tetap membawa nama level; model dengan beberapa level tidak berubah. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama; identity gate lulus (8.339 berkas teks, 27.057 entri ASAR, tanpa identitas upstream).
+
+**Artifact baru.** `CCode-1.0.3-win-x64.exe` 155.147.447 byte SHA256 `2d1b41053427b4fdcd85ce6b29b682ec04168b2762b1760f796af304e280e9d4`; `CCode-1.0.3-win-x64.zip` 254.696.193 byte SHA256 `44812988491adb43ad44741b0dff5ca7c66c8387b181033976cbca732bade098`. Ukuran asset di GitHub dicocokkan byte-for-byte dengan lokal; catatan rilis diberi bagian "Post-release refresh 3 (2026-10-18)" dan tetap **Latest**. SmartScreen tetap memperingatkan (unsigned).
+
+**Bukti dan batas.** Perubahan UI diverifikasi pada aplikasi terpasang di root terisolasi Linux (DOM chip + 4 unit test); biner Windows tidak di-smoke ulang di mesin Windows pada refresh ini.
+
 ### Refresh 1.0.3 kedua: menu task menunjuk folder + lampiran user (2026-10-18)
 
 Rilis Windows `v1.0.3-win-x64` dibangun ulang sekali lagi di tempat: menu task (⋯) → **Open in File Manager** membuka folder `%USERPROFILE%\CCodeProject\task-*` milik task itu, **Copy path** menyalin path folder tersebut, menu baris perubahan resolve ke salinan arsip lebih dulu, dan lampiran user disimpan ke folder per-task yang sama. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama; identity gate lulus (8.339 berkas teks, 27.057 entri ASAR, tanpa identitas upstream).

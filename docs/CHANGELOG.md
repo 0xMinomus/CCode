@@ -8,7 +8,7 @@
 - Percabangan yang bisa diklik tidak berubah: chip model dengan beberapa level tetap menampilkan label dan `text-foreground`. Ekspresi label baru (`M?null:…`) hanya di dalam cabang "satu opsi, sudah terpilih" milik upstream, jadi saat cabang itu tidak aktif kondisinya selalu false dan label tetap dirender.
 - Diterapkan di `src/local_only/runtime_tuning.py`: `patch_renderer` baru menangani dua anchor chip dan dipanggil dari `patch_archive`; anchor hilang berarti build gagal, bukan patch yang dilewati diam-diam.
 - Verifikasi: 4 unit test baru (`tests/test_runtime_tuning.py`), gate `make build && make test` lulus, dan smoke aplikasi terpasang di root terisolasi memakai salinan `provider_config.json` pemilik: chip memakai `data-thought-level-fixed`, `textContent` kosong (ikon saja), class memuat `text-foreground-subtle`, dan `aria-label="Off"`. Namespace asli tidak dipakai untuk smoke.
-- Versi tetap 1.0.3 sesuai permintaan; aset rilis Linux + Windows dibangun ulang di tempat setelah entri ini.
+- Versi tetap 1.0.3 sesuai permintaan; aset rilis Linux + Windows dibangun ulang di tempat: Linux AppImage 345.176.568 byte `c8b10bd4…`, deb 273.260.880 byte `5e0bb662…`, rpm 287.599.587 byte `5df0731c…`; Windows exe 155.147.447 byte `2d1b4105…`, zip 254.696.193 byte `44812988…`. Catatan rilis kedua tag diberi bagian "Post-release refresh 3 (2026-10-18)"; rincian di `linuxrelease.md` dan `windowsrelease.md`.
 
 ### Folder per task untuk file user + menu task menunjuk folder unik
 
