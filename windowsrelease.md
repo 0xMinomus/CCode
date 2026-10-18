@@ -340,6 +340,14 @@ Batas yang tidak diklaim setara Linux:
 - Batas: UIPI/elevated dan multi-monitor/mixed-DPI seperti catatan 1.0.0; prewarm default-aktif berarti instance tersembunyi dihitung sebagai aplikasi berjalan (apply/install/backup harus menutupnya dulu); rewrite RTK terkelola memakai binding POSIX sehingga mengikuti dialek Git Bash di Windows; validasi runtime prewarm Linux dilakukan pemilik, bukan diklaim di sini.
 - Artifact: `CCode-1.0.2-win-x64.exe` 155.061.900 byte, SHA256 `b0401bbe24588ae0b5b7ed6e9a77958e7ea97645cd2b576a5d1a07cb114a9a03`; `CCode-1.0.2-win-x64.zip` 251.708.572 byte, SHA256 `a192639aab2585233b34998ab16b2c54e618d9f95f40115df972b397d62a7707`. Rilis diterbitkan di fork publik `0xMinomus/CCode`.
 
+### Refresh 1.0.3: arsip per-task + menu file (2026-10-18)
+
+Rilis Windows `v1.0.3-win-x64` di-refresh di tempat: tag dan versi sama, biner baru. Batch perilaku "arsip per task tanpa project" (folder `%USERPROFILE%\CCodeProject\task-*` baru dibuat ketika task benar-benar menghasilkan file; boot, draft, dan sidebar tidak berubah) plus menu klik-kanan baris perubahan ikut masuk. Installer dan ZIP dibangun di Linux dengan NSIS 3.12 portable dari staged tree yang sama dengan Linux; identity gate lulus (8.339 berkas teks, 27.057 entri ASAR, tanpa identitas upstream) dan `app/resources/task-archive/main.cjs` ada di dalam ZIP.
+
+**Artifact baru.** `CCode-1.0.3-win-x64.exe` 155.155.910 byte SHA256 `4d8abc0544c0dbaa372aa99a983cbea50c0ed15caf9ddffb263d324444d85007`; `CCode-1.0.3-win-x64.zip` 254.693.136 byte SHA256 `646f4b7b25b4ce79f67fa3b5ef1753f27b0ccfd0dfec228d84507f17635d657e`. Ukuran asset di GitHub cocok byte-for-byte dengan lokal (exe/zip/SHA256SUMS); halaman rilis diberi bagian "Post-release refresh (2026-10-18)" dan tetap **Latest**. SmartScreen tetap memperingatkan (unsigned).
+
+**Bukti dan batas.** Perilaku arsip diuji lewat unit test modul Node plus panggilan bridge nyata pada aplikasi terpasang di root terisolasi (Linux host); jalur Windows-spesifik (`%USERPROFILE%\CCodeProject`) tidak dijalankan di mesin Windows pada refresh ini, dan biner Windows tidak di-smoke ulang di Windows. Batas 1.0.3 di bawah tidak berubah.
+
 ### Patch 1.0.3 (2026-10-16)
 
 - Gejala yang dilaporkan pemilik pada 1.0.2: task Computer Use pertama gagal tiga kali ("Operation failed") sebelum berjalan. Bukti dari `tool_usage` sesi: tiga panggilan `mcp__node_repl__js` gagal validasi input schema karena skill bawaan plugin `computer-use` mengarahkan agent ke runtime CUA lewat nodeRepl, sedangkan executor plugin itu tidak ikut di payload; setelah gagal, model beralih ke MCP `windows-desktop` dan task selesai (call pertama 6,7 detik).

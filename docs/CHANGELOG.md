@@ -2,6 +2,13 @@
 
 ## 2026-10-18
 
+### Rilis 1.0.3 di-refresh: aset Linux dan Windows diganti dengan arsip per-task + menu file
+
+- Aset rilis 1.0.3 dibangun ulang dan diunggah ulang pada tag yang sama: `v1.0.3+upstream.3.14.5` (AppImage/deb/rpm + `SHA256SUMS`) dan `v1.0.3-win-x64` (exe/zip + `SHA256SUMS`), dengan bagian "Post-release refresh (2026-10-18)" pada kedua catatan rilis. Rilis Windows tetap **Latest**; rilis Linux tetap prerelease unsigned.
+- Digest baru: AppImage 345.168.376 byte `61691ab1f684095c452818d71fad515eae8e1c182aa2327625e94966a982e430`; deb 273.257.824 byte `1a31656f44f0db10f60f5e696f2ced3dfd5758c1a37c38fdf54ce82103943512`; rpm 287.579.812 byte `4b6bb19e6a477f744a8e9bb87b26ce5ad3af26075713e1e6e2bd241a22ce08bf`; exe 155.155.910 byte `4d8abc0544c0dbaa372aa99a983cbea50c0ed15caf9ddffb263d324444d85007`; zip 254.693.136 byte `646f4b7b25b4ce79f67fa3b5ef1753f27b0ccfd0dfec228d84507f17635d657e`.
+- Bukti: gate akhir `make build && make test` lulus (332 tes, 9 dilewati, `Checks passed`); smoke aplikasi terpasang di root terisolasi membuktikan boot tanpa folder dan sidebar tetap satu bagian **Tasks**, bridge arsip menyalin file uji serta menolak path di luar workspace percakapan, dan hash asar staged == deployed (`713004d50a17aa85d7ec0f92d2ae95b14bff1d1642e0a1184762165728ce2388`).
+- Batas: menu baris perubahan belum dijalankan terhadap ringkasan perubahan nyata (diuji unit); installer Windows dibangun di Linux dengan NSIS 3.12 portable dan tidak di-smoke ulang di mesin Windows pada refresh ini; jumlah tes 332 vs 325 di entri 1.0.3 sebelumnya berasal dari entri T3Code dan suite yang berubah, bukan pelonggaran assertion.
+
 ### Perencanaan adopsi fitur T3Code (Compositor Capture, Resource Monitor, Source Control UI)
 
 - Evaluasi perbandingan fitur antara CCode (v1.0.3 basis upstream 3.14.5) dan T3Code (v0.1.0 Beta, MIT) selesai dilakukan. Tiga area kapabilitas dirumuskan ke dalam dokumen perencanaan `18octplanupdate.md`:
@@ -16,7 +23,7 @@
 - Tidak ada folder yang dibuat saat aplikasi dibuka atau draft dimulai: task tanpa project tetap memakai workspace percakapan upstream (`data/.ccode/workspace/default`), jadi sidebar tetap satu bagian **Tasks** dan tidak ada nama folder yang muncul di UI.
 - Folder `~/CCodeProject/task-<tanggal>-<jam>-<acak>` baru dibuat ketika sebuah task benar-benar menghasilkan file: `src/main/task-archive.cjs` menerima path dari hasil `fileChanges` (dipanggil otomatis oleh kartu pratinjau asisten), memastikan workspace-nya memang workspace percakapan, lalu menyalin file (maks 64 MiB per file) ke folder task tersebut. Pemetaan `sessionId → folder` disimpan di `~/CCodeProject/.task-folders.json`, sehingga file berikutnya dari task yang sama memakai folder yang sama; workspace dan UI tidak berubah.
 - Hook renderer (`src/local_only/task_archive.py`) membungkus transport `fileChanges` dan mengirim path secara fire-and-forget: kegagalan salin tidak memblokir ringkasan perubahan. `src/local_only/workspace_ux.py` menambahkan menu klik-kanan di baris perubahan (**Reveal in File Manager**, **Copy path**, **Copy relative path**) memakai primitif ContextMenu upstream dan hook aksi file `Nj`.
-- Verifikasi: unit test baru (hook renderer + modul arsip via Node: salin di dalam workspace percakapan, tolak workspace project dan path di luar, pakai ulang folder per sesi, indeks tertulis) dan gate `make build && make test`. Smoke root terisolasi: boot tidak membuat folder; panggilan bridge arsip dari renderer menyalin file uji ke folder tersembunyi.
+- Verifikasi: unit test baru (hook renderer + modul arsip via Node: salin di dalam workspace percakapan, tolak workspace project dan path di luar, pakai ulang folder per sesi, indeks tertulis) dan gate `make build && make test`. Smoke root terisolasi: boot tidak membuat folder; panggilan bridge arsip dari renderer menyalin file uji ke folder tersembunyi. Iterasi akhir memakai perilaku versi ketiga (tanpa folder saat boot) dan diuji ulang di aplikasi terpasang sebelum rilis di-refresh: lihat entri "Rilis 1.0.3 di-refresh" (2026-10-18).
 - Batas: lampiran dari sisi pengguna belum diarsipkan (trigger adalah file hasil perubahan task); file >64 MiB dilewati; file yang sudah dihapus sebelum arsip berjalan dilewati; arsip menyimpan salinan (workspace tetap sumber kerja), jadi regenerasi nama yang sama dalam satu task menimpa salinan task itu sendiri, bukan hasil task lain.
 
 ### Audit kebocoran: bersihkan jalur pribadi dari berkas yang dilacak
