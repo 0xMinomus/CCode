@@ -1,4 +1,4 @@
-"""Agent runtime tuning: fast default effort, explicit stop rule, honest chip.
+"""Agent runtime tuning: fast default effort, explicit stop rule, hidden fixed-level chip.
 
 A new session started at the highest available reasoning level (`values.at(-1)`),
 so every step of a simple request paid the slowest effort. The preferred level is
@@ -8,10 +8,10 @@ The selection completers read the level out of an optional member chain, so the
 helper takes the level list itself: repeating the chain in a conditional would
 introduce a second, unguarded reference to the minified receiver.
 
-The composer's thinking-level chip keeps its label only while the level is
-actually selectable. A model with a single, fixed level (its name already carries
-it, e.g. `gemini-3.8-flash-high`) is not clickable, so that branch renders the
-brain icon alone and dims to `text-foreground-subtle`.
+The composer's thinking-level chip is hidden while the level cannot be picked:
+a model with a single, fixed level (its name already carries it, e.g.
+`gemini-3.8-flash-high`) shows no chip at all, and a model that still offers a
+choice keeps the chip and its label untouched.
 """
 
 from . import replace_once
@@ -29,18 +29,16 @@ RENDERER_SELECTION = ('let n=(e.providers.find(e=>e.providerId===t.providerId)'
                       '?.models.find(e=>e.modelId===t.modelId))?.config.optionSpecs.reasoningLevel.values);')
 HELPER = '\nfunction ccodePreferredReasoningLevel(e){return e&&e.includes("low")?"low":e?.at(-1)}\n'
 
-# The chip's label span is shared by the clickable branches; `M` is the upstream
-# flag for "single option, already selected" (the non-clickable branch).
-CHIP_LABEL = ('(0,$.jsx)(`span`,{ref:y,className:Z(`min-w-0 whitespace-nowrap`,o,n!==void 0'
-              '&&`group-data-[composer-compact]/thought:hidden`),children:(0,$.jsx)(VH,{label:N})})',
-              'M?null:(0,$.jsx)(`span`,{ref:y,className:Z(`min-w-0 whitespace-nowrap`,o,n!==void 0'
-              '&&`group-data-[composer-compact]/thought:hidden`),children:(0,$.jsx)(VH,{label:N})})')
-CHIP_FIXED = ('children:(0,$.jsx)(`span`,{className:Z(`inline-flex h-7 items-center gap-1 rounded-lg '
-              'px-1.5 py-1.5 text-ui-base text-foreground`,v,f),"aria-label":N,"data-thought-level-fixed":`true`,',
-              'children:(0,$.jsx)(`span`,{className:Z(`inline-flex h-7 items-center gap-1 rounded-lg '
-              'px-1.5 py-1.5 text-ui-base text-foreground-subtle`,v,f),"aria-label":N,"data-thought-level-fixed":`true`,')
-MARKERS = ('M?null:(0,$.jsx)(`span`,{ref:y,',
-           'text-ui-base text-foreground-subtle`,v,f),"aria-label":N,"data-thought-level-fixed":`true`')
+# `M` is the upstream flag for "single option, already selected": the level
+# cannot be picked there, so the non-clickable chip is dropped entirely and the
+# toolbar shows nothing for it. Models that still offer a choice keep their chip
+# and label exactly as upstream.
+CHIP_HIDDEN = ('return M?(0,$.jsx)(uA,{title:F,triggerRef:p,children:(0,$.jsx)(`span`,{className:Z('
+               '`inline-flex h-7 items-center gap-1 rounded-lg px-1.5 py-1.5 text-ui-base text-foreground`,'
+               'v,f),"aria-label":N,"data-thought-level-fixed":`true`,"data-composer-thought-control":'
+               'n!==void 0||void 0,"data-composer-collapse-priority":n,"data-testid":Ba,children:V})})',
+               'return M?null')
+MARKERS = ('return M?null:r===`select`?',)
 
 HARNESS_HEAD = ('return["# Harness","- Text you output outside of tool use is displayed to the user '
                 'as Github-flavored markdown in a terminal.",')
@@ -62,9 +60,8 @@ def patch_agent(text):
 
 
 def patch_renderer(text):
-    """Icon-only, dimmed chip for a model whose thinking level cannot be picked."""
-    text = replace_once(text, *CHIP_LABEL)
-    text = replace_once(text, *CHIP_FIXED)
+    """Hide the thinking chip while the model's level cannot be picked."""
+    text = replace_once(text, *CHIP_HIDDEN)
     for marker in MARKERS:
         if marker not in text:
             raise ValueError('Reasoning chip patch marker is missing from the renderer bundle: ' + marker)
