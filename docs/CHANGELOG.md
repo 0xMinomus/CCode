@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-18
+
+### Perencanaan adopsi fitur T3Code (Compositor Capture, Resource Monitor, Source Control UI)
+
+- Evaluasi perbandingan fitur antara CCode (v1.0.3 basis upstream 3.14.5) dan T3Code (v0.1.0 Beta, MIT) selesai dilakukan. Tiga area kapabilitas dirumuskan ke dalam dokumen perencanaan `18octplanupdate.md`:
+  - **Plan 1 (Linux only): Native Compositor Capture.** Mengadopsi binary capture mandiri Hyprland (`t3-hyprland-snap-shot`, Wayland toplevel export protocol) dan KDE (`t3-kde-snap-shot`, KWin DBus) untuk bypass portal PipeWire interaktif di lingkungan Wayland non-GNOME. Windows diabaikan (sudah memakai `.NET` + `SendInput`).
+  - **Plan 2 (Linux & Windows): System Resource Monitor Sidecar.** Mengadopsi daemon pelacak resource (`cumulativeCpuTime`, `residentMemory`, `processTree`) dari T3Code untuk Linux, dan modul WMI/PowerShell ringan untuk Windows guna memantau beban komputasi subagent di background.
+  - **Plan 3 (Linux & Windows): Full UI Settings → Source Control & PR Workflow.** Membangun panel antarmuka penuh `Settings → Source Control` di CCode untuk deteksi Git dan GitHub CLI `gh`, preferensi branch worktree (`ccode/...`), pembersihan credit/watermark bot pada commit git (*remove agent credits*), penerapan template repo, serta slash command `/pr` bawaan. Engine visual diff pihak ketiga (Pierre Diff) sengaja tidak diadopsi agar CCode bebas bloat dan tidak merusak integritas bundle ASAR.
+
 ## 2026-10-16
 
 ### Arsip per task tanpa project + menu file di baris perubahan
