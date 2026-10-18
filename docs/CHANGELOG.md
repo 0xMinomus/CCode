@@ -2,6 +2,14 @@
 
 ## 2026-10-18
 
+### Chip thinking level: ikon otak saja + pudar saat level model terkunci
+
+- Model yang level thinking-nya tidak bisa dipilih — spec levelnya cuma satu nilai, seperti seluruh model 9Router di config pemilik (`["disabled"]`) — kini menampilkan chip **ikon otak saja** di composer, tanpa tulisan "Off", dengan warna pudar `text-foreground-subtle`. `aria-label` dan tooltip tetap membawa nama level ("Off"), jadi informasinya tidak hilang untuk hover atau screen reader.
+- Percabangan yang bisa diklik tidak berubah: chip model dengan beberapa level tetap menampilkan label dan `text-foreground`. Ekspresi label baru (`M?null:…`) hanya di dalam cabang "satu opsi, sudah terpilih" milik upstream, jadi saat cabang itu tidak aktif kondisinya selalu false dan label tetap dirender.
+- Diterapkan di `src/local_only/runtime_tuning.py`: `patch_renderer` baru menangani dua anchor chip dan dipanggil dari `patch_archive`; anchor hilang berarti build gagal, bukan patch yang dilewati diam-diam.
+- Verifikasi: 4 unit test baru (`tests/test_runtime_tuning.py`), gate `make build && make test` lulus, dan smoke aplikasi terpasang di root terisolasi memakai salinan `provider_config.json` pemilik: chip memakai `data-thought-level-fixed`, `textContent` kosong (ikon saja), class memuat `text-foreground-subtle`, dan `aria-label="Off"`. Namespace asli tidak dipakai untuk smoke.
+- Versi tetap 1.0.3 sesuai permintaan; aset rilis Linux + Windows dibangun ulang di tempat setelah entri ini.
+
 ### Folder per task untuk file user + menu task menunjuk folder unik
 
 - Folder `~/CCodeProject/task-*` sekarang lahir dari dua jalur: file hasil task (`fileChanges`, seperti sebelumnya) dan lampiran yang user kirim di composer. `src/local_only/task_archive.py` membungkus transport `attachmentPut` dan mengirim bytes-nya ke IPC baru `ccode-task-archive:upload`; `src/main/task-archive.cjs` menyimpan salinan dengan nama yang sudah dibersihkan (path traversal dinetralkan) dan tetap memakai cap 64 MiB. Folder lama `…/workspace/default` milik user tidak disentuh atau dibersihkan.
